@@ -369,12 +369,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             >
               <Menu size={18} />
             </button>
-            <div style={{ minWidth: 0 }}>
+
+            {/* Mobile view logo */}
+            <div className="flex sm:hidden items-center gap-2">
+              <img
+                src="/logo.jpg"
+                alt="The Bottle Club Logo"
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 8,
+                  objectFit: 'contain',
+                  background: '#e6d0a7',
+                  padding: 2,
+                  border: '1px solid rgba(0,212,255,0.25)',
+                }}
+              />
+              <span style={{ fontSize: 13, fontWeight: 800, color: '#e8f0ff', fontFamily: "'Outfit', sans-serif" }}>
+                The Bottle Club
+              </span>
+            </div>
+
+            {/* Desktop view title */}
+            <div style={{ minWidth: 0 }} className="hidden sm:block">
               <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#e8f0ff', fontFamily: "'Outfit', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 🚀 The Bottle Club Admin
               </p>
-              <p style={{ margin: 0, fontSize: 11, color: '#00d4ff', opacity: 0.6, fontFamily: 'monospace' }} className="hidden sm:block">
-                E-Commerce & POS Control Center
+              <p style={{ margin: 0, fontSize: 11, color: '#00d4ff', opacity: 0.6, fontFamily: 'monospace' }}>
+                E-Commerce &amp; POS Control Center
               </p>
             </div>
           </div>
