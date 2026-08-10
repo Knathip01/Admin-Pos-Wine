@@ -600,7 +600,7 @@ export default function AdminDashboard() {
                   const roleLabels: Record<string, string> = { manager: 'Manager', cashier: 'Cashier', stock_staff: 'Stock Staff', kitchen: 'Kitchen', bar: 'Bar' }
                   return (
                     <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.02)' }}>
-                      <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justify: 'center', fontSize: 14, flexShrink: 0 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>
                         {roleIcons[u.role] || '👤'}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>

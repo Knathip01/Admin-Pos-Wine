@@ -790,7 +790,7 @@ export default function ReportsPage() {
                 >
                   <X size={20} />
                 </button>
-                <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', justify: 'center' }}>
+                <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', justifyContent: 'center' }}>
                   {selectedShopReportImage.map((img, idx) => (
                     <img
                       key={idx}

@@ -1,4 +1,4 @@
-import type { Language } from '@/context/LanguageContext';
+type Language = string;
 
 export const ACCOUNT_TRANSLATIONS: Record<Language, Record<string, string>> = {
   th: {

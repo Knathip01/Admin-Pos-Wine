@@ -1,4 +1,4 @@
-import type { Language } from '@/context/LanguageContext';
+type Language = string;
 
 export const COUNTRIES = [
   { code: 'TH', nameKey: 'country.th' },

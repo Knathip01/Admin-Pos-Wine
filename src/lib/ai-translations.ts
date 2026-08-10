@@ -1,4 +1,4 @@
-import type { Language } from '@/context/LanguageContext';
+type Language = string;
 
 export const AI_SPEECH_LOCALES: Record<Language, string> = {
   th: 'th-TH',
