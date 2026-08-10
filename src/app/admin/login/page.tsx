@@ -20,34 +20,23 @@ export default function AdminLoginPage() {
     setErrorMsg(null)
 
     try {
-      // Authenticate against Supabase Auth of project pos
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password.trim(),
       })
 
       if (error) {
-        // Fallback check for specified credentials superadmin@thebottleclub.com / postthebottleclub
-        if (
-          email.trim().toLowerCase() === 'superadmin@thebottleclub.com' &&
-          password.trim() === 'postthebottleclub'
-        ) {
-          router.push('/admin')
-          return
-        }
-        throw new Error(error.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง')
+        throw new Error('อีเมลหรือรหัสผ่านไม่ถูกต้อง')
       }
 
-      router.push('/admin')
-    } catch (err: any) {
-      // If superadmin@thebottleclub.com / postthebottleclub, allow login smoothly
-      if (
-        email.trim().toLowerCase() === 'superadmin@thebottleclub.com' &&
-        password.trim() === 'postthebottleclub'
-      ) {
-        router.push('/admin')
-        return
+      if (data.user) {
+        // Get redirect target from URL params or default to /admin
+        const params = new URLSearchParams(window.location.search)
+        const redirectTo = params.get('redirectTo') || '/admin'
+        router.push(redirectTo)
+        router.refresh()
       }
+    } catch (err: any) {
       setErrorMsg(err.message || 'เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบข้อมูลอีกครั้ง')
     } finally {
       setLoading(false)
