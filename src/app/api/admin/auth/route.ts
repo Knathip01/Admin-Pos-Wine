@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
 import { adminLogin } from '@/lib/admin-auth';
 import { query } from '@/lib/db';
 
@@ -45,6 +44,8 @@ export async function POST(request: NextRequest) {
     const admin = result.rows[0];
     if (!admin) return unauthorized();
 
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const bcrypt = require('bcryptjs') as typeof import('bcryptjs');
     const isValidPassword = await bcrypt.compare(password, admin.password_hash);
     if (!isValidPassword) return unauthorized();
 
