@@ -3,7 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { OrderStatusBadge } from '@/components/admin/OrderStatusBadge'
+import OrderStatusBadge from '@/components/admin/OrderStatusBadge'
 import { INITIAL_SALES } from '@/lib/mock-data'
 import { ArrowLeft, Printer, Wine, CheckCircle2, User, CreditCard } from 'lucide-react'
 
