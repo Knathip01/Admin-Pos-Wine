@@ -25,29 +25,47 @@ interface RealSale {
   created_at: string;
 }
 
-/* ─── Fetch REAL Live Data from Supabase POS ─── */
+/* ─── Fetch REAL Live Data from Supabase — NO fake fallback ─── */
 async function fetchAdminContext() {
-  let posProducts: RealProduct[] = [
-    { id: '1', name: 'คิว', price: 1000, stock: 46, cost: 500, country: 'ไทย', vintage: '2026' },
-    { id: '2', name: 'kawpat', price: 1000, stock: 7, cost: 500 },
-    { id: '3', name: 'ไก่ทอด', price: 100, stock: 8, cost: 72 }
-  ];
+  let posProducts: RealProduct[] = [];
+  let totalPosRevenue = 0;
+  let totalPosOrders = 0;
+  let isConnected = false;
 
-  let totalPosRevenue = 6600;
-  let totalPosOrders = 12;
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    return {
+      pos: {
+        status: 'ไม่ได้เชื่อมต่อฐานข้อมูล (ไม่มี Supabase credentials)',
+        products: [] as RealProduct[],
+        totalProducts: 0,
+        totalRevenue: 0,
+        totalOrders: 0,
+        isConnected: false,
+      },
+      webWine: {
+        status: 'ไม่ได้เชื่อมต่อฐานข้อมูล',
+        products: [] as RealProduct[],
+        totalProducts: 0,
+        totalRevenue: 0,
+      }
+    };
+  }
 
   try {
-    const prodRes = await fetch(`${SUPABASE_URL}/rest/v1/products?select=id,name,price,stock,cost,country,vintage&order=name.asc`, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-      },
-      cache: 'no-store'
-    });
+    const prodRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/products?select=id,name,price,stock,cost,country,vintage&order=name.asc`,
+      {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        cache: 'no-store'
+      }
+    );
 
     if (prodRes.ok) {
       const data = await prodRes.json();
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         posProducts = data.map((p: any) => ({
           id: p.id,
           name: p.name,
@@ -57,94 +75,53 @@ async function fetchAdminContext() {
           country: p.country || '',
           vintage: p.vintage || ''
         }));
+        isConnected = true;
       }
     }
 
-    const salesRes = await fetch(`${SUPABASE_URL}/rest/v1/sales?select=id,receipt_no,total_amount,status,created_at&status=eq.paid`, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-      },
-      cache: 'no-store'
-    });
+    const salesRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/sales?select=id,receipt_no,total_amount,status,created_at&status=eq.paid`,
+      {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        cache: 'no-store'
+      }
+    );
 
     if (salesRes.ok) {
       const salesData: RealSale[] = await salesRes.json();
-      if (Array.isArray(salesData) && salesData.length > 0) {
-        totalPosRevenue = salesData.reduce((sum, s) => sum + (parseFloat(s.total_amount as any) || 0), 0);
+      if (Array.isArray(salesData)) {
+        totalPosRevenue = salesData.reduce(
+          (sum, s) => sum + (parseFloat(s.total_amount as any) || 0), 0
+        );
         totalPosOrders = salesData.length;
+        isConnected = true;
       }
     }
   } catch (err) {
-    console.warn('Supabase fetch warning, using live POS fallback data.');
+    console.warn('Supabase fetch error:', err);
   }
 
   return {
     pos: {
-      status: 'เชื่อมต่อฐานข้อมูลจริง Live DB (Supabase)',
+      status: isConnected
+        ? 'เชื่อมต่อฐานข้อมูลจริง (Supabase)'
+        : 'เชื่อมต่อไม่สำเร็จ ไม่มีข้อมูล',
       products: posProducts,
       totalProducts: posProducts.length,
       totalRevenue: totalPosRevenue,
-      totalOrders: totalPosOrders
+      totalOrders: totalPosOrders,
+      isConnected,
     },
     webWine: {
-      status: 'ยังไม่มีข้อมูล (ยังไม่ได้เชื่อมต่อฐานข้อมูล Web Wine E-Com)',
+      status: 'ยังไม่ได้เชื่อมต่อฐานข้อมูล Web Wine E-Com',
       products: [] as RealProduct[],
       totalProducts: 0,
       totalRevenue: 0,
-      pendingSlips: 0
     }
   };
-}
-
-function generateFallbackReply(userQuery: string, ctx: Awaited<ReturnType<typeof fetchAdminContext>>): string {
-  const q = userQuery.toLowerCase();
-
-  // 🍷 / 🖥️ Products lookup
-  if (q.includes('สินค้าทั้งหมด') || q.includes('ดูสินค้า') || q.includes('รายการสินค้า') || q.includes('ค้นหา') || q.includes('ราคา') || q.includes('pos')) {
-    const posList = ctx.pos.products.map((p, i) =>
-      `${i + 1}. **[POS] ${p.name}**\n   - ราคา: **฿${p.price.toLocaleString('th-TH')}** | สต็อกคงเหลือ: **${p.stock}** ชิ้น${p.country ? ` (${p.country} · ${p.vintage})` : ''}`
-    ).join('\n');
-
-    return `📦 **รายการสินค้าในระบบ (ข้อมูลจริงจาก POS หน้าร้าน):**\n\n${posList}\n\n` +
-      `-----------------------------------\n` +
-      `🍷 **ระบบ Web Wine E-Commerce:**\n` +
-      `• **สถานะ:** ${ctx.webWine.status}\n` +
-      `• **จำนวนสินค้า:** 0 รายการ`;
-  }
-
-  // 💵 Financial & Revenue/Expense Calculation (Real POS Data)
-  if (q.includes('รายจ่าย') || q.includes('รายรับ') || q.includes('กำไร') || q.includes('ทุน') || q.includes('คำนวณ') || q.includes('การเงิน') || q.includes('วิเคราะห์') || q.includes('ยอดขาย')) {
-    const rev = ctx.pos.totalRevenue;
-    const cogs = Math.round(rev * 0.55); // ต้นทุนสินค้า POS
-    const opex = Math.round(rev * 0.15); // ค่าบริหารจัดการ 15%
-    const totalExp = cogs + opex;
-    const netProfit = rev - totalExp;
-    const margin = rev > 0 ? Math.round((netProfit / rev) * 100) : 0;
-
-    return `📊 **สรุปคำนวณ รายรับ-รายจ่าย (ข้อมูลจริงจาก POS หน้าร้าน):**\n\n` +
-      `🖥️ **รายรับจริงจาก POS หน้าร้าน:** **฿${rev.toLocaleString('th-TH')}** (${ctx.pos.totalOrders} ออเดอร์ชำระแล้ว)\n` +
-      `🍷 **รายรับ Web Wine E-Com:** ฿0.00 (ยังไม่มีข้อมูล DB)\n` +
-      `-----------------------------------\n` +
-      `• **ต้นทุนสินค้าจริงประมาณการ (COGS ~55%):** ฿${cogs.toLocaleString('th-TH')}\n` +
-      `• **ค่าใช้จ่ายดำเนินงาน (OPEX ~15%):** ฿${opex.toLocaleString('th-TH')}\n` +
-      `• **รวมรายจ่ายทั้งหมด (Total Expenses):** **฿${totalExp.toLocaleString('th-TH')}**\n` +
-      `-----------------------------------\n` +
-      `📈 **กำไรสุทธิประมาณการ (Net Profit):** **฿${netProfit.toLocaleString('th-TH')}** (Margin: ${margin}%)`;
-  }
-
-  if (q.includes('เว็บ') || q.includes('web') || q.includes('wine')) {
-    return `🍷 **ระบบ Web Wine E-Commerce:**\n` +
-      `- **สถานะ:** ${ctx.webWine.status}\n` +
-      `- **สินค้า:** 0 รายการ (รอการสร้างฐานข้อมูล E-Com)`;
-  }
-
-  const posList = ctx.pos.products.map((p, i) => `${i + 1}. **[POS] ${p.name}** (฿${p.price.toLocaleString('th-TH')} | สต็อก ${p.stock})`).join('\n');
-
-  return `🍷 **Bottle AI ผู้ช่วยสรุปข้อมูลจริง POS & Web Wine:**\n\n` +
-    `🖥️ **ข้อมูลจริงระบบ POS หน้าร้าน (${ctx.pos.totalProducts} รายการ):**\n${posList}\n\n` +
-    `🍷 **ระบบ Web Wine E-Commerce:** ${ctx.webWine.status}\n\n` +
-    `ถามผมเกี่ยวกับสินค้า POS หรือคำนวณรายรับ-รายจ่ายเพิ่มเติมได้เลยครับ!`;
 }
 
 function buildContext(ctx: Awaited<ReturnType<typeof fetchAdminContext>>) {
@@ -155,25 +132,29 @@ function buildContext(ctx: Awaited<ReturnType<typeof fetchAdminContext>>) {
   const totalExp = cogs + opex;
   const netProfit = rev - totalExp;
 
-  const posProdText = ctx.pos.products.map(p => `• [POS] ${p.name} (ราคา ${thb(p.price)}, สต็อก ${p.stock} ชิ้น${p.country ? `, ${p.country} ${p.vintage}` : ''})`).join('\n');
+  const posProdText = ctx.pos.products.length > 0
+    ? ctx.pos.products.map(p =>
+        `• ${p.name} (ราคา ${thb(p.price)}, สต็อก ${p.stock} ชิ้น${p.country ? `, ${p.country} ${p.vintage}` : ''})`
+      ).join('\n')
+    : '• ไม่มีข้อมูลสินค้าในระบบ';
 
   return [
-    `=== 🖥️ 1. REAL STORE POS DATA (LIVE SUPABASE DB) ===`,
+    `=== 🖥️ 1. ข้อมูล POS หน้าร้าน ===`,
     `สถานะ: ${ctx.pos.status}`,
-    `ยอดขายจริง POS หน้าร้าน: ${thb(ctx.pos.totalRevenue)} (${ctx.pos.totalOrders} ออเดอร์สำเร็จ)`,
-    `รายการสินค้าจริง POS หน้าร้าน (${ctx.pos.totalProducts} รายการ):\n${posProdText}`,
+    `จำนวนสินค้า: ${ctx.pos.totalProducts} รายการ`,
+    `ยอดขาย POS: ${thb(rev)} (${ctx.pos.totalOrders} ออเดอร์สำเร็จ)`,
+    `รายการสินค้า:\n${posProdText}`,
     ``,
-    `=== 🍷 2. WEB WINE E-COM DATA ===`,
-    `สถานะระบบ Web Wine: ${ctx.webWine.status}`,
-    `จำนวนสินค้า Web Wine: 0 รายการ (ยังไม่มีข้อมูลในระบบ)`,
-    `ยอดขาย Web Wine: ฿0.00`,
+    `=== 🍷 2. Web Wine E-Commerce ===`,
+    `สถานะ: ${ctx.webWine.status}`,
+    `จำนวนสินค้า: 0 รายการ`,
     ``,
-    `=== 📊 3. FINANCIAL SUMMARY (REAL POS DATA) ===`,
-    `รายรับจริง POS: ${thb(rev)}`,
-    `ต้นทุนสินค้า COGS (55%): ${thb(cogs)}`,
-    `ค่าใช้จ่ายดำเนินงาน OPEX (15%): ${thb(opex)}`,
-    `รวมรายจ่ายทั้งหมด: ${thb(totalExp)}`,
-    `กำไรสุทธิประมาณการ: ${thb(netProfit)}`
+    `=== 📊 3. สรุปการเงิน ===`,
+    `รายรับรวม: ${thb(rev)}`,
+    `ต้นทุนสินค้าประมาณการ (55%): ${thb(cogs)}`,
+    `ค่าดำเนินงานประมาณการ (15%): ${thb(opex)}`,
+    `รวมค่าใช้จ่าย: ${thb(totalExp)}`,
+    `กำไรสุทธิประมาณการ: ${thb(netProfit)}`,
   ].join('\n');
 }
 
@@ -184,11 +165,7 @@ function cleanReply(raw: string): string {
     .replace(/\*\s*Goal:[\s\S]*?(?=\n[A-Z*]|\n\n|$)/g, '')
     .replace(/\*\s*Draft \d+[\s\S]*?(?=\n[A-Z*]|\n\n|$)/g, '')
     .replace(/\*\s*Self-Correction[\s\S]*?(?=\n[A-Z*]|\n\n|$)/g, '')
-    .replace(/\*\s*Possibility [A-Z]:[\s\S]*?(?=\n[A-Z*]|\n\n|$)/g, '')
     .replace(/\(Internal Monologue\)[\s\S]*?(?=\n\n|$)/g, '')
-    .replace(/\(Self-Correction.*?\).*?(?=\n|$)/gm, '')
-    .replace(/The user (said|asked|is asking|wants).*?(?=\n|$)/gm, '')
-    .replace(/\* Query \d+.*?(?=\n|$)/gm, '')
     .trim();
 
   const lines = text.split('\n').filter(l => l.trim().length > 0);
@@ -198,41 +175,41 @@ function cleanReply(raw: string): string {
     /[ก-๙]/.test(l) || l.startsWith('•') || l.startsWith('-') || l.match(/^\d\./)
   );
 
-  if (firstGoodIdx >= 0) {
-    return lines.slice(firstGoodIdx).join('\n').trim();
-  }
-  return text;
+  return firstGoodIdx >= 0 ? lines.slice(firstGoodIdx).join('\n').trim() : text;
 }
 
 export async function POST(request: NextRequest) {
   const { messages } = await request.json() as {
     messages: { role: 'user' | 'model'; text: string }[];
   };
-  if (!messages?.length) return NextResponse.json({ error: 'messages required' }, { status: 400 });
+
+  if (!messages?.length) {
+    return NextResponse.json({ error: 'messages required' }, { status: 400 });
+  }
+
+  // Require Gemini API key — no silent fallback
+  if (!GEMINI_API_KEY) {
+    return NextResponse.json(
+      { error: 'GEMINI_API_KEY ยังไม่ได้ตั้งค่า กรุณาเพิ่ม Environment Variable ใน Vercel' },
+      { status: 503 }
+    );
+  }
 
   const ctx = await fetchAdminContext();
   const ctxText = buildContext(ctx);
 
-  const SYSTEM_USER = `You are "Bottle AI" — an AI store assistant for The Bottle Club.
+  const SYSTEM_USER = `You are "Bottle AI" — AI assistant for The Bottle Club admin system.
 
-IMPORTANT SYSTEM DATA RULES (STRICT):
-1. 🖥️ STORE POS (POS หน้าร้าน): Has REAL LIVE DB DATA. Products in POS are:
-   - "คิว" (Price ฿1,000, Stock 46, Country: ไทย 2026)
-   - "kawpat" (Price ฿1,000, Stock 7)
-   - "ไก่ทอด" (Price ฿100, Stock 8)
-2. 🍷 WEB WINE E-COM (Web Wine): Has NO DATA YET (ยังไม่มีข้อมูล / 0 products).
+STRICT RULES:
+1. ตอบเป็นภาษาไทยเท่านั้น
+2. ใช้เฉพาะข้อมูลจริงที่ได้รับด้านล่าง ห้ามแต่งข้อมูลขึ้นมาเอง
+3. ถ้าไม่มีข้อมูลให้บอกตรงๆ ว่า "ไม่มีข้อมูล" หรือ "ยังไม่มีข้อมูลในระบบ"
+4. ห้ามเดาหรือสร้างตัวเลข ราคา หรือสินค้าที่ไม่มีในข้อมูลที่ให้มา
 
-DO NOT invent fake wine products for Web Wine. Explicitly state that Web Wine currently has no data / 0 products, while POS contains the real live items ("คิว", "kawpat", "ไก่ทอด").
-
-RULES:
-1. Respond in Thai language only.
-2. Provide exact real numbers from POS.
-3. Be professional and concise.
-
-LIVE STORE SYSTEM DATA:
+ข้อมูลระบบจริง ณ ขณะนี้:
 ${ctxText}`;
 
-  const SYSTEM_MODEL = `รับทราบครับ ผม Bottle AI เข้าใจแล้วว่าระบบ Web Wine ยังไม่มีข้อมูลสินค้า ส่วนระบบ POS มีข้อมูลสินค้าจริง ("คิว", "kawpat", "ไก่ทอด") พร้อมคำนวณยอดขายจริงครับ`;
+  const SYSTEM_MODEL = `รับทราบครับ ผม Bottle AI จะตอบโดยใช้ข้อมูลจริงจากระบบเท่านั้น ถ้าไม่มีข้อมูลจะแจ้งให้ทราบครับ`;
 
   const contents = [
     { role: 'user',  parts: [{ text: SYSTEM_USER  }] },
@@ -255,19 +232,24 @@ ${ctxText}`;
     });
 
     if (!res.ok) {
-      const userQuery = messages[messages.length - 1]?.text || '';
-      const fallbackReply = generateFallbackReply(userQuery, ctx);
-      return NextResponse.json({ reply: fallbackReply, isLiveData: true, ctx });
+      const errText = await res.text();
+      console.error('Gemini API error:', res.status, errText);
+      return NextResponse.json(
+        { error: `Gemini API error ${res.status} — กรุณาตรวจสอบ GEMINI_API_KEY` },
+        { status: 502 }
+      );
     }
 
     const data = await res.json();
-    const raw  = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-    const reply = cleanReply(raw) || generateFallbackReply(messages[messages.length - 1]?.text || '', ctx);
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    const reply = cleanReply(raw) || 'ไม่สามารถสร้างคำตอบได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง';
 
-    return NextResponse.json({ reply, isLiveData: true, ctx });
+    return NextResponse.json({ reply, isLiveData: ctx.pos.isConnected, ctx });
   } catch (e: any) {
-    const userQuery = messages[messages.length - 1]?.text || '';
-    const fallbackReply = generateFallbackReply(userQuery, ctx);
-    return NextResponse.json({ reply: fallbackReply, isLiveData: true, ctx });
+    console.error('AI chat error:', e);
+    return NextResponse.json(
+      { error: 'เกิดข้อผิดพลาดในการเชื่อมต่อ Gemini API' },
+      { status: 500 }
+    );
   }
 }
