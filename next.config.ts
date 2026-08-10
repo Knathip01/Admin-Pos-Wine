@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  serverExternalPackages: ['bcryptjs'],
+  turbopack: {
+    resolveAlias: {
+      bcryptjs: 'bcryptjs/index.js',
+    },
+  },
 };
 
 export default nextConfig;
