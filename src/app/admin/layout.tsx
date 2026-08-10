@@ -324,7 +324,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             }}
           >
             <div style={{ width: 40, height: 4, background: 'rgba(0,212,255,0.15)', borderRadius: 999, margin: '10px auto 0', flexShrink: 0 }} />
-            <div style={{ flex: 1, overflow: 'hidden' }}>
+            <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
               <SidebarContent
                 onLogout={handleLogout}
                 onNavigate={() => setSidebarOpen(false)}
