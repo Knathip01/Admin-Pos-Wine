@@ -816,3 +816,88 @@
   border: 1px solid rgba(157,78,221,0.30);
   box-shadow: 0 0 12px rgba(157,78,221,0.10), inset 0 0 12px rgba(157,78,221,0.04);
 }
+
+/* ═══════════════════════════════════════════
+   📱 MOBILE RESPONSIVE — Admin Panel
+   Breakpoints: sm=640px, md=768px, lg=1024px
+   ═══════════════════════════════════════════ */
+
+/* Prevent horizontal overflow globally */
+* { box-sizing: border-box; }
+body { overflow-x: hidden; }
+
+/* Tables — horizontal scroll on mobile */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+}
+
+/* Generic mobile grid fixes */
+@media (max-width: 768px) {
+  /* All grids collapse to 1 or 2 cols */
+  [style*="grid-template-columns: repeat(4"] { grid-template-columns: repeat(2, 1fr) !important; }
+  [style*="grid-template-columns: repeat(3"] { grid-template-columns: repeat(2, 1fr) !important; }
+  
+  /* Prevent content overflow */
+  .admin-card, .admin-glass-panel {
+    min-width: 0;
+    overflow: hidden;
+  }
+  
+  /* Tables scroll horizontally */
+  table {
+    min-width: 600px;
+  }
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Stat cards — 2 columns on mobile */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  /* Full width buttons on mobile */
+  .btn-mobile-full {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  /* Hide non-essential columns in tables */
+  .col-hide-mobile {
+    display: none !important;
+  }
+  
+  /* Reduce padding on mobile */
+  .admin-content-padding {
+    padding: 12px !important;
+  }
+  
+  /* Stacked flex on mobile */
+  .flex-mobile-col {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  
+  /* Chart height on mobile */
+  .chart-container {
+    height: 200px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra small screens */
+  [style*="grid-template-columns: repeat(2"] { grid-template-columns: 1fr !important; }
+  
+  /* Smaller font sizes */
+  .admin-page-title {
+    font-size: 18px !important;
+  }
+  
+  /* Compact cards */
+  .kpi-card {
+    padding: 12px !important;
+  }
+}

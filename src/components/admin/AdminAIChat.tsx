@@ -230,7 +230,7 @@ export default function AdminAIChat() {
             id="admin-ai-chat-window"
             className="pointer-events-auto flex flex-col rounded-2xl overflow-hidden"
             style={{
-              width: 400, height: 580,
+              width: 'min(400px, calc(100vw - 48px))', height: 'min(580px, calc(100dvh - 120px))',
               background: '#ffffff',
               boxShadow: '0 32px 80px rgba(0,0,0,0.2), 0 8px 24px rgba(196,30,58,0.1)',
               border: '1px solid rgba(0,0,0,0.08)',
