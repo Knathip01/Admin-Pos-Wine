@@ -10,7 +10,6 @@ import {
 
 const posNavItems = [
   { href: '/admin/pos-console', icon: LayoutDashboard, label: 'ภาพรวม POS Console' },
-  { href: '/admin/analytics',   icon: BarChart3,       label: 'Analytics รวม' },
   { href: '/admin/pos',         icon: ShoppingCart,    label: 'หน้าจุดขาย (POS Terminal)' },
   { href: '/admin/billing',     icon: Tag,             label: 'รับชำระบิล & ใบเสร็จ' },
   { href: '/admin/inventory',   icon: Warehouse,       label: 'จัดการสต็อกหน้าร้าน' },
