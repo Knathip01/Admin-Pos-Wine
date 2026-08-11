@@ -53,50 +53,45 @@ export default function AdminDashboard() {
     setLoading(true)
     setErrorMsg(null)
     try {
-      const today = new Date().toISOString().slice(0, 10)
-      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
-      const sevenDaysAgo = new Date()
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-      sevenDaysAgo.setHours(0, 0, 0, 0)
-      const sevenDaysAgoISO = sevenDaysAgo.toISOString()
+      const now = new Date()
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString()
+      const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString()
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0).toISOString()
+      const sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7, 0, 0, 0).toISOString()
 
-      // Timeout wrapper to prevent infinite loading
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('TIMEOUT')), 4000)
-      )
-
-      const fetchData = Promise.all([
-        supabase.from('sales').select('total_amount').eq('status', 'paid').gte('created_at', `${today}T00:00:00`).lte('created_at', `${today}T23:59:59`),
+      const [todaySalesRes, monthSalesRes, customersRes, lowStockRes, saleItemsRes, pendingRes, salesLast7DaysRes] = await Promise.all([
+        supabase.from('sales').select('total_amount').eq('status', 'paid').gte('created_at', todayStart).lte('created_at', todayEnd),
         supabase.from('sales').select('total_amount').eq('status', 'paid').gte('created_at', monthStart),
         supabase.from('customers').select('id', { count: 'exact', head: true }),
         supabase.from('products').select('id, name, stock, min_stock').eq('is_active', true),
         supabase.from('sale_items').select('product_name, quantity, line_total').limit(200),
         supabase.from('sales').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('sales').select('total_amount, created_at').in('status', ['paid', 'pending']).gte('created_at', sevenDaysAgoISO)
+        supabase.from('sales').select('total_amount, created_at').in('status', ['paid', 'pending']).gte('created_at', sevenDaysAgo)
       ])
 
-      const [todaySalesRes, monthSalesRes, customersRes, lowStockRes, saleItemsRes, pendingRes, salesLast7DaysRes] = await Promise.race([fetchData, timeoutPromise])
-
-      const errors = [
-        todaySalesRes.error, monthSalesRes.error, customersRes.error,
-        lowStockRes.error, saleItemsRes.error, pendingRes.error, salesLast7DaysRes.error
-      ].filter(Boolean)
-      if (errors.length > 0) throw new Error(errors.map(e => e!.message).join(' | '))
-
-      const todaySales = (todaySalesRes.data || []).reduce((s, r) => s + r.total_amount, 0)
+      const todaySales = (todaySalesRes.data || []).reduce((s, r) => s + (r.total_amount || 0), 0)
       const todayOrders = (todaySalesRes.data || []).length
-      const monthSales = (monthSalesRes.data || []).reduce((s, r) => s + r.total_amount, 0)
+      const monthSales = (monthSalesRes.data || []).reduce((s, r) => s + (r.total_amount || 0), 0)
       const monthOrders = (monthSalesRes.data || []).length
       const allActiveProducts = lowStockRes.data || []
       const lowStockList = allActiveProducts.filter(p => p.stock <= p.min_stock)
 
-      setStats({ todaySales, todayOrders, totalCustomers: customersRes.count || 0, lowStockCount: lowStockList.length, monthSales, monthOrders, pendingOrders: pendingRes.count || 0 })
+      setStats({
+        todaySales,
+        todayOrders,
+        totalCustomers: customersRes.count || 0,
+        lowStockCount: lowStockList.length,
+        monthSales,
+        monthOrders,
+        pendingOrders: pendingRes.count || 0
+      })
       setLowStockProducts(lowStockList.slice(0, 5))
 
       const productMap = new Map<string, { qty: number; revenue: number }>()
       for (const item of saleItemsRes.data || []) {
+        if (!item.product_name) continue
         const existing = productMap.get(item.product_name) || { qty: 0, revenue: 0 }
-        productMap.set(item.product_name, { qty: existing.qty + item.quantity, revenue: existing.revenue + item.line_total })
+        productMap.set(item.product_name, { qty: existing.qty + (item.quantity || 0), revenue: existing.revenue + (item.line_total || 0) })
       }
       const top = Array.from(productMap.entries())
         .map(([name, v]) => ({ name, qty: v.qty, revenue: v.revenue }))
@@ -106,45 +101,34 @@ export default function AdminDashboard() {
       const salesData = salesLast7DaysRes.data || []
       const days = []
       for (let i = 6; i >= 0; i--) {
-        const d = new Date()
-        d.setDate(d.getDate() - i)
+        const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i)
         const dateStr = d.toISOString().slice(0, 10)
-        const daySales = salesData.filter(s => s.created_at.slice(0, 10) === dateStr)
-        days.push({ date: formatDateShort(d.toISOString()), sales: daySales.reduce((sum, s) => sum + s.total_amount, 0), orders: daySales.length })
+        const daySales = salesData.filter(s => s.created_at && s.created_at.slice(0, 10) === dateStr)
+        days.push({
+          date: formatDateShort(d.toISOString()),
+          sales: daySales.reduce((sum, s) => sum + (s.total_amount || 0), 0),
+          orders: daySales.length
+        })
       }
       setChartData(days)
 
       const { data: staffData } = await supabase.from('profiles').select('*').order('role', { ascending: true })
       setStaffUsers(staffData || [])
     } catch (err: any) {
-      console.warn('Dashboard fetch timed out or failed, using fallback data:', err)
+      console.error('Error loading dashboard from Supabase:', err)
+      setErrorMsg(err.message || 'ไม่สามารถดึงข้อมูลจากฐานข้อมูล Supabase ได้')
       setStats({
-        todaySales: 28450,
-        todayOrders: 14,
-        totalCustomers: 128,
-        lowStockCount: 2,
-        monthSales: 485000,
-        monthOrders: 187,
-        pendingOrders: 3,
+        todaySales: 0,
+        todayOrders: 0,
+        totalCustomers: 0,
+        lowStockCount: 0,
+        monthSales: 0,
+        monthOrders: 0,
+        pendingOrders: 0,
       })
-      setLowStockProducts([
-        { id: '1', name: 'Château Margaux 2015', stock: 2, min_stock: 5 },
-        { id: '2', name: 'Dom Pérignon Vintage 2012', stock: 0, min_stock: 3 },
-      ])
-      setTopProducts([
-        { name: 'Château Lafite Rothschild 2018', qty: 24, revenue: 144000 },
-        { name: 'Opus One 2019', qty: 18, revenue: 99000 },
-        { name: 'Penfolds Grange 2017', qty: 15, revenue: 82500 },
-        { name: 'Sassicaia 2018', qty: 12, revenue: 60000 },
-        { name: 'Cloudy Bay Sauvignon Blanc 2022', qty: 30, revenue: 45000 },
-      ])
-      const days = []
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date()
-        d.setDate(d.getDate() - i)
-        days.push({ date: formatDateShort(d.toISOString()), sales: Math.floor(25000 + Math.random() * 40000), orders: Math.floor(8 + Math.random() * 12) })
-      }
-      setChartData(days)
+      setLowStockProducts([])
+      setTopProducts([])
+      setChartData([])
     } finally {
       setLoading(false)
     }
