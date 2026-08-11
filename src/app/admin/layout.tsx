@@ -30,14 +30,14 @@ const bottleClubNavItems = [
 
 // 🖥️ Section 2: Admin Project POS (Store Cashier & Operations)
 const posNavItems = [
-  { href: '/admin',            icon: LayoutDashboard, label: 'Dashboard POS',       roles: ['super_admin', 'manager'] },
+  { href: '/admin/analytics',  icon: BarChart3,       label: 'Analytics รวม',        roles: ['super_admin', 'manager'] },
+  { href: '/admin',            icon: LayoutDashboard, label: 'Dashboard POS',        roles: ['super_admin', 'manager'] },
   { href: '/admin/pos',        icon: ShoppingCart,    label: 'หน้าขาย (POS Terminal)', roles: ['super_admin', 'manager', 'cashier'] },
   { href: '/admin/billing',    icon: Receipt,         label: 'รับชำระบิล & ใบเสร็จ', roles: ['super_admin', 'manager', 'cashier'] },
   { href: '/admin/products',   icon: Package,         label: 'จัดการสินค้า POS',    roles: ['super_admin', 'manager'] },
   { href: '/admin/categories', icon: Tag,             label: 'หมวดหมู่ POS',        roles: ['super_admin', 'manager'] },
   { href: '/admin/inventory',  icon: Warehouse,       label: 'สต็อกสินค้าหน้าร้าน',   roles: ['super_admin', 'manager', 'stock_staff'] },
   { href: '/admin/reports',    icon: BarChart3,       label: 'รายงานภาษี & ยอดขาย', roles: ['super_admin', 'manager'] },
-  { href: '/admin/analytics',  icon: BarChart3,       label: 'Analytics รวม', roles: ['super_admin', 'manager'] },
   { href: '/admin/qrcode',     icon: QrCode,          label: 'QR เมนูดิจิทัล',       roles: ['super_admin', 'manager'] },
   { href: '/admin/users',      icon: UserCog,         label: 'ผู้ใช้งานพนักงาน',     roles: ['super_admin'] },
   { href: '/admin/settings',   icon: Settings,        label: 'ตั้งค่าระบบ',          roles: ['super_admin'] },
