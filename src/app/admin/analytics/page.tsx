@@ -267,7 +267,7 @@ export default function AnalyticsDashboard() {
               <BarChart data={dailyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis dataKey="date" stroke="#4a5a78" fontSize={12} tickMargin={10} />
-                <YAxis stroke="#4a5a78" fontSize={12} tickFormatter={(val) => \`฿\${(val/1000)}k\`} />
+                <YAxis stroke="#4a5a78" fontSize={12} tickFormatter={(val) => `฿${(val/1000)}k`} />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="revenue" name="ยอดขาย (Revenue)" fill={COLORS.bar1} radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -284,7 +284,7 @@ export default function AnalyticsDashboard() {
               <LineChart data={dailyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                 <XAxis dataKey="date" stroke="#4a5a78" fontSize={12} />
-                <YAxis stroke="#4a5a78" fontSize={12} tickFormatter={(val) => \`฿\${(val/1000)}k\`} />
+                <YAxis stroke="#4a5a78" fontSize={12} tickFormatter={(val) => `฿${(val/1000)}k`} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend wrapperStyle={{ fontSize: 12, paddingTop: 10 }} />
                 <Line type="monotone" dataKey="revenue" name="รายรับ" stroke={COLORS.revenue} strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
@@ -314,7 +314,7 @@ export default function AnalyticsDashboard() {
                     const k = entry.name.toLowerCase()
                     // @ts-ignore
                     const fill = COLORS.payment[k] || COLORS.payment.mixed
-                    return <Cell key={\`cell-\${index}\`} fill={fill} />
+                    return <Cell key={`cell-${index}`} fill={fill} />
                   })}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
@@ -341,7 +341,7 @@ export default function AnalyticsDashboard() {
                   strokeWidth={2}
                 >
                   {financeData.map((entry, index) => (
-                    <Cell key={\`cell-\${index}\`} fill={entry.color} />
+                    <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
@@ -366,7 +366,7 @@ export default function AnalyticsDashboard() {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                 <XAxis dataKey="date" stroke="#4a5a78" fontSize={12} />
-                <YAxis stroke="#4a5a78" fontSize={12} tickFormatter={(val) => \`฿\${(val/1000)}k\`} />
+                <YAxis stroke="#4a5a78" fontSize={12} tickFormatter={(val) => `฿${(val/1000)}k`} />
                 <Tooltip content={<CustomTooltip />} />
                 <Area type="monotone" dataKey="cumulative" name="รายรับสะสม" stroke={COLORS.bar2} fillOpacity={1} fill="url(#colorCum)" strokeWidth={2} />
               </AreaChart>
@@ -383,7 +383,7 @@ export default function AnalyticsDashboard() {
               <BarChart data={comparisonData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis dataKey="name" stroke="#4a5a78" fontSize={12} />
-                <YAxis stroke="#4a5a78" fontSize={12} tickFormatter={(val) => \`฿\${(val/1000)}k\`} />
+                <YAxis stroke="#4a5a78" fontSize={12} tickFormatter={(val) => `฿${(val/1000)}k`} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend wrapperStyle={{ fontSize: 12, paddingTop: 10 }} />
                 <Bar dataKey="ช่วงก่อนหน้า" fill="rgba(255,255,255,0.2)" radius={[4, 4, 0, 0]} />
@@ -421,7 +421,7 @@ export default function AnalyticsDashboard() {
                 />
                 <Scatter name="Products" data={scatterData} fill={COLORS.revenue}>
                   {scatterData.map((entry, index) => (
-                    <Cell key={\`cell-\${index}\`} fill={COLORS.revenue} fillOpacity={0.6} />
+                    <Cell key={`cell-${index}`} fill={COLORS.revenue} fillOpacity={0.6} />
                   ))}
                 </Scatter>
               </ScatterChart>
