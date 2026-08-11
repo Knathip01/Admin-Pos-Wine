@@ -30,8 +30,8 @@ const bottleClubNavItems = [
 
 // 🖥️ Section 2: Admin Project POS (Store Cashier & Operations)
 const posNavItems = [
-  { href: '/admin/analytics',  icon: BarChart3,       label: 'Analytics รวม',        roles: ['super_admin', 'manager'] },
   { href: '/admin',            icon: LayoutDashboard, label: 'Dashboard POS',        roles: ['super_admin', 'manager'] },
+  { href: '/admin/analytics',  icon: BarChart3,       label: 'Analytics รวม',        roles: ['super_admin', 'manager'] },
   { href: '/admin/pos',        icon: ShoppingCart,    label: 'หน้าขาย (POS Terminal)', roles: ['super_admin', 'manager', 'cashier'] },
   { href: '/admin/billing',    icon: Receipt,         label: 'รับชำระบิล & ใบเสร็จ', roles: ['super_admin', 'manager', 'cashier'] },
   { href: '/admin/products',   icon: Package,         label: 'จัดการสินค้า POS',    roles: ['super_admin', 'manager'] },
