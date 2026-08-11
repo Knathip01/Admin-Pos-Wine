@@ -353,28 +353,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           boxShadow: '0 2px 20px rgba(0,0,0,0.4)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-            {/* Logo + Brand Header */}
-            <div
+            {/* Hamburger 3-lines button — mobile only */}
+            <button
+              type="button"
               onClick={() => setSidebarOpen(true)}
-              className="flex items-center gap-2.5 lg:pointer-events-none cursor-pointer lg:cursor-default"
+              className="lg:hidden"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+                background: 'rgba(0,212,255,0.08)',
+                border: '1px solid rgba(0,212,255,0.20)',
+                color: '#00d4ff', cursor: 'pointer',
+              }}
+              aria-label="เปิดเมนู"
             >
-              <img
-                src="/logo.jpg"
-                alt="The Bottle Club Logo"
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  objectFit: 'contain',
-                  background: '#e6d0a7',
-                  padding: 2,
-                  border: '1px solid rgba(0,212,255,0.25)',
-                }}
-              />
-              <span style={{ fontSize: 14, fontWeight: 800, color: '#e8f0ff', fontFamily: "'Outfit', sans-serif" }}>
-                The Bottle Club
-              </span>
-            </div>
+              <Menu size={18} />
+            </button>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
