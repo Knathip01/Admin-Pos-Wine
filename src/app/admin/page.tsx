@@ -171,18 +171,6 @@ export default function AdminDashboard() {
       href: '/admin/reports'
     },
     {
-      title: 'ลูกค้าทั้งหมด',
-      value: `${stats?.totalCustomers || 0} คน`,
-      sub: 'สมาชิกสะสม',
-      trend: 5.1,
-      color: '#c084fc',
-      bg: 'rgba(192,132,252,0.08)',
-      border: 'rgba(192,132,252,0.2)',
-      icon: <Users size={18} />,
-      spark: generateSparkline(stats?.totalCustomers || 100, 10, 9),
-      href: undefined
-    },
-    {
       title: 'บิลค้างชำระ',
       value: `${stats?.pendingOrders || 0} บิล`,
       sub: 'รอชำระเงิน',
@@ -307,7 +295,7 @@ export default function AdminDashboard() {
         )}
 
         {/* ── KPI Cards ── */}
-        <div className="dash-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20, position: 'relative', zIndex: 1 }}>
+        <div className="dash-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20, position: 'relative', zIndex: 1 }}>
           {kpiCards.map((card, i) => {
             const kpiColors = ['cyan', 'blue', 'purple', 'amber'] as const
             const inner = (
