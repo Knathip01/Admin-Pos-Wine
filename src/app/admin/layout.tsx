@@ -287,43 +287,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         ].join(', ')
       }} />
 
-      {/* Desktop Sidebar */}
-      <aside style={{
-        width: 240, flexShrink: 0,
-        position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 40,
-        background: 'rgba(6, 10, 20, 0.97)',
-        borderRight: '1px solid rgba(0,212,255,0.08)',
-        boxShadow: '4px 0 40px rgba(0,0,0,0.7)',
-        display: 'none'
-      }} className="lg:!flex lg:flex-col">
-        <SidebarContent
-          onLogout={handleLogout}
-          onNavigate={() => setSidebarOpen(false)}
-          pathname={pathname}
-          profile={profile}
-          onSwitchProfile={(p) => setProfile(p)}
-        />
-      </aside>
-
-      {/* Mobile Drawer */}
+      {/* Menu Dropdown / Drawer (Computers & Mobile) */}
       {sidebarOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 60 }} className="lg:hidden">
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60 }}>
           <div
-            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.80)', backdropFilter: 'blur(8px)' }}
+            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.80)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
             onClick={() => setSidebarOpen(false)}
           />
           <aside
             style={{
               position: 'absolute', bottom: 0, left: 0, right: 0,
-              background: 'rgba(6,10,20,0.97)',
+              background: 'rgba(6,10,20,0.98)',
               borderRadius: '20px 20px 0 0',
-              borderTop: '1px solid rgba(0,212,255,0.12)',
+              borderTop: '1px solid rgba(0,212,255,0.15)',
               maxHeight: '88dvh',
+              maxWidth: 450, margin: '0 auto',
               display: 'flex', flexDirection: 'column',
-              paddingBottom: 'env(safe-area-inset-bottom)'
+              paddingBottom: 'env(safe-area-inset-bottom)',
+              boxShadow: '0 -10px 50px rgba(0,0,0,0.8)'
             }}
           >
-            <div style={{ width: 40, height: 4, background: 'rgba(0,212,255,0.15)', borderRadius: 999, margin: '10px auto 0', flexShrink: 0 }} />
+            <div style={{ width: 40, height: 4, background: 'rgba(0,212,255,0.20)', borderRadius: 999, margin: '10px auto 0', flexShrink: 0 }} />
             <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
               <SidebarContent
                 onLogout={handleLogout}
@@ -338,7 +322,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}
 
       {/* Main Content */}
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1, overflowX: 'hidden' }} className="lg:ml-[240px]">
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1, overflowX: 'hidden' }}>
         {/* Top Header */}
         <header style={{
           position: 'sticky', top: 0, zIndex: 30,
@@ -353,17 +337,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           boxShadow: '0 2px 20px rgba(0,0,0,0.4)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-            {/* Hamburger 3-lines button — mobile only */}
+            {/* Hamburger 3-lines button — computers & mobile */}
             <button
               type="button"
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden"
+              onClick={() => setSidebarOpen(prev => !prev)}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 width: 38, height: 38, borderRadius: 10, flexShrink: 0,
                 background: 'rgba(0,212,255,0.08)',
                 border: '1px solid rgba(0,212,255,0.20)',
                 color: '#00d4ff', cursor: 'pointer',
+                transition: 'all 150ms'
               }}
               aria-label="เปิดเมนู"
             >
