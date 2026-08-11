@@ -37,6 +37,7 @@ const posNavItems = [
   { href: '/admin/categories', icon: Tag,             label: 'หมวดหมู่ POS',        roles: ['super_admin', 'manager'] },
   { href: '/admin/inventory',  icon: Warehouse,       label: 'สต็อกสินค้าหน้าร้าน',   roles: ['super_admin', 'manager', 'stock_staff'] },
   { href: '/admin/reports',    icon: BarChart3,       label: 'รายงานภาษี & ยอดขาย', roles: ['super_admin', 'manager'] },
+  { href: '/admin/analytics',  icon: BarChart3,       label: 'Analytics รวม', roles: ['super_admin', 'manager'] },
   { href: '/admin/qrcode',     icon: QrCode,          label: 'QR เมนูดิจิทัล',       roles: ['super_admin', 'manager'] },
   { href: '/admin/users',      icon: UserCog,         label: 'ผู้ใช้งานพนักงาน',     roles: ['super_admin'] },
   { href: '/admin/settings',   icon: Settings,        label: 'ตั้งค่าระบบ',          roles: ['super_admin'] },
