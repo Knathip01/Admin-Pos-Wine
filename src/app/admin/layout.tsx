@@ -96,6 +96,25 @@ function SidebarContent({ onLogout, onNavigate, pathname, profile, onSwitchProfi
       {/* Navigation Sections */}
       <nav style={{ flex: 1, overflowY: 'auto', padding: '12px 10px', scrollbarWidth: 'none' }}>
         
+        {/* Analytics Shortcut Button */}
+        <Link
+          href="/admin/analytics" onClick={onNavigate}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '9px 10px', borderRadius: 10, marginBottom: 8,
+            textDecoration: 'none', fontSize: 12, fontWeight: 700,
+            color: '#00e676',
+            background: 'linear-gradient(135deg, rgba(0,230,118,0.15), rgba(0,212,255,0.08))',
+            border: '1px solid rgba(0,230,118,0.3)',
+            boxShadow: '0 4px 14px rgba(0,230,118,0.12)',
+            transition: 'all 150ms'
+          }}
+        >
+          <BarChart3 size={15} style={{ color: '#00e676' }} />
+          <span style={{ flex: 1 }}>Analytics รวม</span>
+          <ChevronRight size={14} style={{ color: '#00e676' }} />
+        </Link>
+
         {/* POS Shortcut Button */}
         <Link
           href="/admin/pos" onClick={onNavigate}
