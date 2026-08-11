@@ -353,31 +353,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           boxShadow: '0 2px 20px rgba(0,0,0,0.4)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-            {/* Hamburger — mobile only */}
-            <button
-              type="button"
+            {/* Logo + Brand Header */}
+            <div
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden"
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                width: 38, height: 38, borderRadius: 10, flexShrink: 0,
-                background: 'rgba(0,212,255,0.08)',
-                border: '1px solid rgba(0,212,255,0.20)',
-                color: '#00d4ff', cursor: 'pointer',
-              }}
-              aria-label="เปิดเมนู"
+              className="flex items-center gap-2.5 lg:pointer-events-none cursor-pointer lg:cursor-default"
             >
-              <Menu size={18} />
-            </button>
-
-            {/* Mobile view logo */}
-            <div className="flex sm:hidden items-center gap-2">
               <img
                 src="/logo.jpg"
                 alt="The Bottle Club Logo"
                 style={{
-                  width: 30,
-                  height: 30,
+                  width: 32,
+                  height: 32,
                   borderRadius: 8,
                   objectFit: 'contain',
                   background: '#e6d0a7',
@@ -385,19 +371,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   border: '1px solid rgba(0,212,255,0.25)',
                 }}
               />
-              <span style={{ fontSize: 13, fontWeight: 800, color: '#e8f0ff', fontFamily: "'Outfit', sans-serif" }}>
+              <span style={{ fontSize: 14, fontWeight: 800, color: '#e8f0ff', fontFamily: "'Outfit', sans-serif" }}>
                 The Bottle Club
               </span>
-            </div>
-
-            {/* Desktop view title */}
-            <div style={{ minWidth: 0 }} className="hidden sm:block">
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#e8f0ff', fontFamily: "'Outfit', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                🚀 The Bottle Club Admin
-              </p>
-              <p style={{ margin: 0, fontSize: 11, color: '#00d4ff', opacity: 0.6, fontFamily: 'monospace' }}>
-                E-Commerce &amp; POS Control Center
-              </p>
             </div>
           </div>
 

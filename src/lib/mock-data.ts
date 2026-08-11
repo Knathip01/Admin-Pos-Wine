@@ -3,7 +3,7 @@ import { Product, Category, Customer, Sale, InventoryMovement, Profile, Review, 
 export const INITIAL_PROFILES: Profile[] = [
   {
     id: 'usr-1',
-    full_name: 'คุณสมชาย บริหารดี (Super Admin)',
+    full_name: 'Super Admin',
     role: 'super_admin',
     phone: '081-999-8888',
     avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
