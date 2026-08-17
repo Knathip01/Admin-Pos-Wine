@@ -181,9 +181,13 @@ export default function AdminDashboardPage() {
 
         <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
-              style={{ background: 'linear-gradient(135deg, #c41e3a 0%, #7f1d1d 100%)', boxShadow: '0 4px 16px rgba(196, 30, 58, 0.35)' }}>
-              <Activity className="w-6 h-6 text-white" />
+            <div className="relative shrink-0">
+              <img
+                src="/logo.jpg"
+                alt="The Bottle Club Logo"
+                className="w-12 h-12 rounded-2xl object-contain bg-[#e6d0a7] p-1 border border-white/10"
+                style={{ boxShadow: '0 4px 16px rgba(196, 30, 58, 0.35)' }}
+              />
             </div>
             <div>
               <div className="flex items-center gap-2">
