@@ -81,7 +81,6 @@ export default function AdminLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-[#100e17] text-white text-xs pl-10 pr-4 py-3 rounded-xl border border-gray-700 focus:outline-none focus:border-[#d4af37]"
-                placeholder="superadmin@thebottleclub.com"
                 required
               />
             </div>
@@ -96,7 +95,6 @@ export default function AdminLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-[#100e17] text-white text-xs pl-10 pr-4 py-3 rounded-xl border border-gray-700 focus:outline-none focus:border-[#d4af37]"
-                placeholder="••••••••"
                 required
               />
             </div>
