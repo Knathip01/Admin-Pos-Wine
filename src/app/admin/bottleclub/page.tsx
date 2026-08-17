@@ -188,7 +188,7 @@ export default function AdminDashboardPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl sm:text-2xl font-black font-serif tracking-tight" style={{ color: '#f1f5f9' }}>
-                  Control Center
+                  Dashboard Web Wine
                 </h1>
                 <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase px-2 py-0.5 rounded-full"
                   style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
@@ -197,7 +197,7 @@ export default function AdminDashboardPage() {
                 </span>
               </div>
               <p className="text-xs mt-0.5 font-medium" style={{ color: '#64748b' }}>
-                ภาพรวม e-Commerce Web Wine {lastUpdated && `• อัปเดตล่าสุด ${lastUpdated.toLocaleTimeString('th-TH')}`}
+                {lastUpdated ? `อัปเดตล่าสุด ${lastUpdated.toLocaleTimeString('th-TH')}` : 'กำลังโหลด...'}
               </p>
             </div>
           </div>
