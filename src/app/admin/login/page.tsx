@@ -54,7 +54,7 @@ export default function AdminLoginPage() {
         <div className="text-center space-y-3 mb-8">
           <div className="w-20 h-20 rounded-2xl mx-auto shadow-2xl flex items-center justify-center border border-[#d4af37]/40 overflow-hidden bg-[#e6d0a7] p-1">
             <img
-              src="/logo.jpg"
+              src="/thebottleclub.jpg"
               alt="The Bottle Club Logo"
               className="w-full h-full object-contain rounded-xl"
             />
