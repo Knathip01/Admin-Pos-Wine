@@ -30,7 +30,7 @@ const T = {
   textMut: '#2a3a58',
 
   cyan:    '#00d4ff',
-  red:     '#ff4466',
+  red:     '#ff1744',
   amber:   '#f59e0b',
   green:   '#00e676',
   purple:  '#9d4edd',
