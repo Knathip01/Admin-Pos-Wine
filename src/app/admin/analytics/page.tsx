@@ -40,12 +40,12 @@ const T = {
 }
 
 const PAY_COLORS: Record<string, string> = {
-  cash:     '#f2c65c',
-  transfer: '#38bdf8',
-  qr:       '#68dfcb',
-  card:     '#a78bfa',
-  mixed:    '#fb7185',
-  other:    '#94a3b8',
+  cash:     '#ff7043',   // ส้มแดงสด — เงินสด
+  transfer: '#42a5f5',   // ฟ้าสด — โอนเงิน
+  qr:       '#ab47bc',   // ม่วงสด — QR Code
+  card:     '#26c6da',   // เขียวฟ้า — บัตรเครดิต
+  mixed:    '#ec407a',   // ชมพูบานเย็น — หลายช่องทาง
+  other:    '#78909c',   // เทา — อื่นๆ
 }
 
 /* ══════════════════════════════════════════
