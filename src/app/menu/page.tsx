@@ -59,7 +59,7 @@ export default function CustomerMenuPage() {
         minHeight: '100dvh', background: '#07080a',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16
       }}>
-        <img src="/logo.jpg" alt="Logo" style={{ width: 64, height: 64, borderRadius: 16, objectFit: 'cover' }} className="animate-pulse" />
+        <img src="/thebottleclub.jpg" alt="Logo" style={{ width: 64, height: 64, borderRadius: 16, objectFit: 'cover' }} className="animate-pulse" />
         <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>กำลังโหลดเมนู...</p>
       </div>
     }>
@@ -823,7 +823,7 @@ function CustomerMenuContent() {
           padding: '12px 16px 8px', textAlign: 'center'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 2 }}>
-            <img src="/logo.jpg" alt="Logo" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover' }} />
+            <img src="/thebottleclub.jpg" alt="Logo" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover' }} />
             <span style={{ fontSize: 15, fontWeight: 800, color: 'white', letterSpacing: '-0.3px' }}>{shopName}</span>
           </div>
           <p style={{ margin: 0, fontSize: 11, color: 'var(--text-secondary)' }}>

@@ -67,7 +67,7 @@ function SidebarContent({ onLogout, onNavigate, pathname, profile, onSwitchProfi
               background: 'radial-gradient(circle, rgba(0,212,255,0.35) 0%, transparent 70%)'
             }} />
             <img
-              src="/logo.jpg"
+              src="/thebottleclub.jpg"
               alt="The Bottle Club Logo"
               style={{
                 width: 40, height: 40, borderRadius: 10, flexShrink: 0, position: 'relative',

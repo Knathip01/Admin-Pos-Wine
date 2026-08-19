@@ -119,7 +119,7 @@ export default function AdminSidebar({ admin = { name: 'Super Admin', email: 'ad
         <div className="relative shrink-0">
           <div className="absolute -inset-1.5 rounded-xl opacity-40"
             style={{ background: 'radial-gradient(circle, rgba(0,212,255,0.35) 0%, transparent 70%)' }} />
-          <img src="/logo.jpg" alt="The Bottle Club"
+          <img src="/thebottleclub.jpg" alt="The Bottle Club"
             className="relative w-10 h-10 rounded-xl object-contain bg-[#e6d0a7] p-0.5"
             style={{ border: '1px solid rgba(0,212,255,0.25)' }} />
           <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full"

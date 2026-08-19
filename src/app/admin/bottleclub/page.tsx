@@ -183,7 +183,7 @@ export default function AdminDashboardPage() {
           <div className="flex items-center gap-4">
             <div className="relative shrink-0">
               <img
-                src="/logo.jpg"
+                src="/thebottleclub.jpg"
                 alt="The Bottle Club Logo"
                 className="w-12 h-12 rounded-2xl object-contain bg-[#e6d0a7] p-1 border border-white/10"
                 style={{ boxShadow: '0 4px 16px rgba(196, 30, 58, 0.35)' }}
