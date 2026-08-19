@@ -30,9 +30,12 @@ export default function AdminLoginPage() {
       }
 
       if (data.user) {
-        // Get redirect target from URL params or default to /admin
+        // Get redirect target from URL params or default to /admin/analytics
         const params = new URLSearchParams(window.location.search)
-        const redirectTo = params.get('redirectTo') || '/admin'
+        let redirectTo = params.get('redirectTo') || '/admin/analytics'
+        if (redirectTo === '/admin' || redirectTo === '/admin/login') {
+          redirectTo = '/admin/analytics'
+        }
         router.push(redirectTo)
         router.refresh()
       }

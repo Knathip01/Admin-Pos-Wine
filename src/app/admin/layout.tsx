@@ -60,7 +60,7 @@ function SidebarContent({ onLogout, onNavigate, pathname, profile, onSwitchProfi
 
       {/* Brand Header */}
       <div style={{ padding: '16px 14px 12px', borderBottom: '1px solid rgba(0,212,255,0.08)', flexShrink: 0 }}>
-        <Link href="/admin" onClick={onNavigate} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+        <Link href="/admin/analytics" onClick={onNavigate} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <div style={{
               position: 'absolute', inset: -6, borderRadius: 14, opacity: 0.4,
