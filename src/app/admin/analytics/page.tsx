@@ -7,44 +7,50 @@ import { formatCurrency } from '@/lib/utils'
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   AreaChart, Area, ScatterChart, Scatter,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer, ReferenceLine,
 } from 'recharts'
+import type { PieLabelRenderProps } from 'recharts'
 import {
   TrendingUp, TrendingDown, DollarSign, Package,
-  ArrowRight, Loader2, BarChart2, RefreshCw,
-  Activity, Zap, CreditCard, ShoppingBag
+  Loader2, BarChart2, RefreshCw, Activity,
+  Zap, CreditCard, ShoppingBag, ChevronUp, ChevronDown,
+  ArrowRight, Sparkles,
 } from 'lucide-react'
 
-/* ─── Color palette ─────────────────────────────────── */
-const C = {
-  revenue: '#00d4ff',
-  cogs: '#ff4466',
-  opex: '#f59e0b',
-  profit: '#00e676',
-  purple: '#9d4edd',
-  teal: '#00bfa5',
-  payment: {
-    cash: '#f2c65c',
-    transfer: '#38bdf8',
-    qr: '#68dfcb',
-    card: '#a78bfa',
-    mixed: '#fb7185',
-    other: '#94a3b8',
-  } as Record<string, string>,
+/* ══════════════════════════════════════════
+   DESIGN TOKENS
+══════════════════════════════════════════ */
+const T = {
+  bg:      '#060a14',
+  card:    'rgba(10,16,30,0.92)',
+  border:  'rgba(255,255,255,0.055)',
+  textPri: '#e8f4ff',
+  textSec: '#4a5a78',
+  textMut: '#2a3a58',
+
+  cyan:    '#00d4ff',
+  red:     '#ff4466',
+  amber:   '#f59e0b',
+  green:   '#00e676',
+  purple:  '#9d4edd',
+  teal:    '#00bfa5',
+  blue:    '#3b82f6',
+  rose:    '#fb7185',
 }
 
-/* ─── Tooltip ──────────────────────────────────────── */
-const tooltipBox: React.CSSProperties = {
-  background: 'rgba(6,10,20,0.97)',
-  border: '1px solid rgba(0,212,255,0.18)',
-  borderRadius: 12,
-  padding: '12px 16px',
-  color: '#e8f0ff',
-  fontSize: 12,
-  boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-  backdropFilter: 'blur(16px)',
+const PAY_COLORS: Record<string, string> = {
+  cash:     '#f2c65c',
+  transfer: '#38bdf8',
+  qr:       '#68dfcb',
+  card:     '#a78bfa',
+  mixed:    '#fb7185',
+  other:    '#94a3b8',
 }
 
+/* ══════════════════════════════════════════
+   SHARED TOOLTIP
+══════════════════════════════════════════ */
 function ChartTip({ active, payload, label }: {
   active?: boolean
   payload?: { name: string; value: number; color?: string }[]
@@ -52,13 +58,30 @@ function ChartTip({ active, payload, label }: {
 }) {
   if (!active || !payload?.length) return null
   return (
-    <div style={tooltipBox}>
-      {label && <p style={{ margin: '0 0 8px', fontWeight: 700, color: '#00d4ff', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</p>}
+    <div style={{
+      background: 'rgba(4,8,18,0.97)',
+      border: '1px solid rgba(0,212,255,0.2)',
+      borderRadius: 14, padding: '12px 16px',
+      boxShadow: '0 16px 48px rgba(0,0,0,0.7)',
+      backdropFilter: 'blur(20px)',
+      minWidth: 160,
+    }}>
+      {label && (
+        <p style={{ margin: '0 0 10px', fontSize: 10, fontWeight: 800, color: T.cyan,
+          textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          {label}
+        </p>
+      )}
       {payload.map((e, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '4px 0' }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: e.color ?? '#fff', flexShrink: 0, display: 'inline-block' }} />
-          <span style={{ color: '#8899bb', fontSize: 11 }}>{e.name}:</span>
-          <span style={{ color: '#e8f0ff', fontWeight: 700 }}>{formatCurrency(e.value)}</span>
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <span style={{
+            width: 8, height: 8, borderRadius: 2,
+            background: e.color ?? '#fff', flexShrink: 0, display: 'inline-block',
+          }} />
+          <span style={{ fontSize: 11, color: '#6a7a9a', flex: 1 }}>{e.name}</span>
+          <span style={{ fontSize: 12, fontWeight: 800, color: T.textPri }}>
+            {formatCurrency(e.value)}
+          </span>
         </div>
       ))}
     </div>
@@ -73,110 +96,197 @@ function ScatterTip({ active, payload }: {
   const d = payload[0]?.payload
   if (!d) return null
   return (
-    <div style={tooltipBox}>
-      <p style={{ margin: '0 0 8px', fontWeight: 700, color: '#00d4ff', fontSize: 12 }}>{d.name}</p>
-      <div style={{ display: 'flex', gap: 16 }}>
-        <div><span style={{ color: '#4a5a78', fontSize: 11 }}>ราคา</span><br /><span style={{ color: '#f59e0b', fontWeight: 700 }}>{formatCurrency(d.price)}</span></div>
-        <div><span style={{ color: '#4a5a78', fontSize: 11 }}>ขายได้</span><br /><span style={{ color: '#00e676', fontWeight: 700 }}>{d.sold} ขวด</span></div>
+    <div style={{
+      background: 'rgba(4,8,18,0.97)',
+      border: '1px solid rgba(0,212,255,0.2)',
+      borderRadius: 14, padding: '12px 16px',
+      boxShadow: '0 16px 48px rgba(0,0,0,0.7)',
+      backdropFilter: 'blur(20px)',
+    }}>
+      <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: T.cyan }}>{d.name}</p>
+      <div style={{ display: 'flex', gap: 20 }}>
+        <div>
+          <p style={{ margin: 0, fontSize: 10, color: T.textSec }}>ราคา</p>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: T.amber }}>{formatCurrency(d.price)}</p>
+        </div>
+        <div>
+          <p style={{ margin: 0, fontSize: 10, color: T.textSec }}>ขายได้</p>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: T.green }}>{d.sold} ขวด</p>
+        </div>
       </div>
     </div>
   )
 }
 
-/* ─── KPI Card ─────────────────────────────────────── */
-function KpiCard({
-  label, value, color, Icon, growth, sub, prefix = ''
-}: {
-  label: string, value: number, color: string,
-  Icon: React.ElementType, growth?: string | null,
-  sub?: string, prefix?: string
-}) {
-  const positive = growth ? Number(growth) >= 0 : null
+/* ══════════════════════════════════════════
+   PIE LABEL (TypeScript-safe)
+══════════════════════════════════════════ */
+const RADIAN = Math.PI / 180
+function renderPieLabel(props: PieLabelRenderProps): React.ReactElement | null {
+  const { cx, cy, midAngle, innerRadius, outerRadius, percent } = props
+  if (percent === undefined || percent < 0.07) return null
+  const cxN = typeof cx === 'number' ? cx : Number(cx ?? 0)
+  const cyN = typeof cy === 'number' ? cy : Number(cy ?? 0)
+  const mid = midAngle ?? 0
+  const inner = typeof innerRadius === 'number' ? innerRadius : 0
+  const outer = typeof outerRadius === 'number' ? outerRadius : 0
+  const radius = inner + (outer - inner) * 0.55
+  const x = cxN + radius * Math.cos(-mid * RADIAN)
+  const y = cyN + radius * Math.sin(-mid * RADIAN)
   return (
-    <div style={{
-      background: 'rgba(13,21,38,0.85)',
-      border: `1px solid ${color}26`,
-      borderRadius: 20,
-      padding: '20px 22px',
-      boxShadow: `0 0 40px ${color}0d, 0 4px 24px rgba(0,0,0,0.4)`,
-      backdropFilter: 'blur(16px)',
-      position: 'relative',
-      overflow: 'hidden',
-      transition: 'transform 0.2s, box-shadow 0.2s',
-    }}
+    <text x={x} y={y} fill="#fff" textAnchor="middle"
+      dominantBaseline="central" fontSize={11} fontWeight={800}
+      style={{ pointerEvents: 'none' }}>
+      {(percent * 100).toFixed(0)}%
+    </text>
+  )
+}
+
+/* ══════════════════════════════════════════
+   KPI CARD
+══════════════════════════════════════════ */
+interface KpiProps {
+  label: string
+  value: number
+  color: string
+  Icon: React.ElementType
+  growth?: string | null
+  sub?: string
+  isCurrency?: boolean
+}
+function KpiCard({ label, value, color, Icon, growth, sub, isCurrency = true }: KpiProps) {
+  const pos = growth ? Number(growth) >= 0 : null
+  return (
+    <div
+      style={{
+        position: 'relative', overflow: 'hidden',
+        background: T.card,
+        border: `1px solid ${color}22`,
+        borderRadius: 20, padding: '20px 22px',
+        boxShadow: `0 0 0 1px ${color}0a, 0 8px 32px rgba(0,0,0,0.45)`,
+        backdropFilter: 'blur(20px)',
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        cursor: 'default',
+      }}
       onMouseEnter={e => {
-        (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)'
-        ;(e.currentTarget as HTMLDivElement).style.boxShadow = `0 0 60px ${color}22, 0 8px 32px rgba(0,0,0,0.5)`
+        const el = e.currentTarget as HTMLDivElement
+        el.style.transform = 'translateY(-3px)'
+        el.style.boxShadow = `0 0 0 1px ${color}30, 0 20px 60px rgba(0,0,0,0.6), 0 0 40px ${color}18`
       }}
       onMouseLeave={e => {
-        (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'
-        ;(e.currentTarget as HTMLDivElement).style.boxShadow = `0 0 40px ${color}0d, 0 4px 24px rgba(0,0,0,0.4)`
+        const el = e.currentTarget as HTMLDivElement
+        el.style.transform = 'translateY(0)'
+        el.style.boxShadow = `0 0 0 1px ${color}0a, 0 8px 32px rgba(0,0,0,0.45)`
       }}
     >
-      {/* Glow blob */}
+      {/* Corner glow */}
       <div style={{
-        position: 'absolute', top: -30, right: -30, width: 100, height: 100,
-        borderRadius: '50%', background: color, opacity: 0.07, filter: 'blur(30px)', pointerEvents: 'none'
+        position: 'absolute', top: -40, right: -40,
+        width: 120, height: 120, borderRadius: '50%',
+        background: color, opacity: 0.06, filter: 'blur(40px)', pointerEvents: 'none',
       }} />
+      {/* Bottom accent bar */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, borderRadius: '0 0 20px 20px',
+        background: `linear-gradient(90deg, transparent, ${color}60, transparent)`,
+      }} />
+
+      {/* Top row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
-        <p style={{ margin: 0, fontSize: 11, color: '#6a7a98', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{label}</p>
+        <p style={{ margin: 0, fontSize: 10.5, color: T.textSec, fontWeight: 700,
+          letterSpacing: '0.07em', textTransform: 'uppercase' }}>
+          {label}
+        </p>
         <div style={{
-          width: 34, height: 34, borderRadius: 10,
-          background: `${color}18`, border: `1px solid ${color}30`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center'
+          width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+          background: `${color}14`, border: `1px solid ${color}25`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <Icon size={16} style={{ color }} />
+          <Icon size={15} color={color} />
         </div>
       </div>
-      <p style={{ margin: '0 0 8px', fontSize: 28, fontWeight: 900, color, letterSpacing: '-0.02em' }}>
-        {prefix}{formatCurrency(value)}
+
+      {/* Value */}
+      <p style={{
+        margin: '0 0 6px',
+        fontSize: isCurrency ? 26 : 30,
+        fontWeight: 900, color,
+        letterSpacing: '-0.03em', lineHeight: 1,
+      }}>
+        {isCurrency ? formatCurrency(value) : value.toLocaleString('th-TH')}
       </p>
-      {sub && <p style={{ margin: '4px 0 0', fontSize: 11, color: '#4a5a78' }}>{sub}</p>}
+
+      {/* Sub / growth */}
+      {sub && (
+        <p style={{ margin: '4px 0 0', fontSize: 11, color: T.textSec }}>{sub}</p>
+      )}
       {growth && (
         <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 6,
-          padding: '3px 8px', borderRadius: 20,
-          background: positive ? 'rgba(0,230,118,0.1)' : 'rgba(255,68,102,0.1)',
-          border: `1px solid ${positive ? 'rgba(0,230,118,0.25)' : 'rgba(255,68,102,0.25)'}`,
+          display: 'inline-flex', alignItems: 'center', gap: 3, marginTop: 8,
+          padding: '3px 9px', borderRadius: 20,
+          background: pos ? 'rgba(0,230,118,0.1)' : 'rgba(255,68,102,0.1)',
+          border: `1px solid ${pos ? 'rgba(0,230,118,0.2)' : 'rgba(255,68,102,0.2)'}`,
         }}>
-          {positive ? <TrendingUp size={10} style={{ color: C.profit }} /> : <TrendingDown size={10} style={{ color: C.cogs }} />}
-          <span style={{ fontSize: 11, fontWeight: 700, color: positive ? C.profit : C.cogs }}>
-            {positive ? '+' : ''}{growth}% vs ช่วงก่อน
+          {pos
+            ? <ChevronUp size={11} color={T.green} strokeWidth={3} />
+            : <ChevronDown size={11} color={T.red} strokeWidth={3} />
+          }
+          <span style={{ fontSize: 11, fontWeight: 800, color: pos ? T.green : T.red }}>
+            {pos ? '+' : ''}{growth}%
           </span>
+          <span style={{ fontSize: 10, color: T.textSec }}>vs ก่อนหน้า</span>
         </div>
       )}
     </div>
   )
 }
 
-/* ─── Chart Card ───────────────────────────────────── */
-function ChartCard({ title, sub, children, accent = '#00d4ff', fullWidth = false }: {
-  title: string, sub?: string, children: React.ReactNode, accent?: string, fullWidth?: boolean
+/* ══════════════════════════════════════════
+   CHART CARD WRAPPER
+══════════════════════════════════════════ */
+function ChartCard({
+  title, sub, badge, accent = T.cyan, children, gridSpan,
+}: {
+  title: string, sub?: string, badge?: string, accent?: string,
+  children: React.ReactNode, gridSpan?: string,
 }) {
   return (
     <div style={{
-      background: 'rgba(13,21,38,0.85)',
-      border: '1px solid rgba(255,255,255,0.055)',
-      borderRadius: 20,
-      padding: '22px 24px',
-      boxShadow: '0 8px 40px rgba(0,0,0,0.35)',
-      backdropFilter: 'blur(16px)',
+      background: T.card, border: `1px solid ${T.border}`,
+      borderRadius: 20, padding: '22px 24px',
+      boxShadow: '0 8px 48px rgba(0,0,0,0.4)',
+      backdropFilter: 'blur(20px)',
       display: 'flex', flexDirection: 'column',
-      gridColumn: fullWidth ? '1 / -1' : undefined,
+      gridColumn: gridSpan,
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-        <div style={{ width: 3, height: 18, borderRadius: 2, background: accent, flexShrink: 0 }} />
-        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#e8f0ff' }}>{title}</h3>
+      {/* Card header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 3, height: 18, borderRadius: 3, background: `linear-gradient(to bottom, ${accent}, ${accent}44)`, flexShrink: 0 }} />
+          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: T.textPri }}>{title}</h3>
+        </div>
+        {badge && (
+          <span style={{
+            fontSize: 9, fontWeight: 800, letterSpacing: '0.1em',
+            padding: '3px 8px', borderRadius: 20, textTransform: 'uppercase',
+            background: `${accent}14`, border: `1px solid ${accent}25`, color: accent,
+          }}>
+            {badge}
+          </span>
+        )}
       </div>
-      {sub && <p style={{ margin: '0 0 16px 13px', fontSize: 11.5, color: '#4a5a78' }}>{sub}</p>}
-      <div style={{ flex: 1, minHeight: 280, marginTop: sub ? 0 : 16 }}>
-        {children}
-      </div>
+      {sub && (
+        <p style={{ margin: '0 0 16px 13px', fontSize: 11, color: T.textSec, lineHeight: 1.5 }}>{sub}</p>
+      )}
+      {!sub && <div style={{ marginBottom: 16 }} />}
+      <div style={{ flex: 1, minHeight: 260 }}>{children}</div>
     </div>
   )
 }
 
-/* ─── Main page ─────────────────────────────────────── */
+/* ══════════════════════════════════════════
+   MAIN PAGE
+══════════════════════════════════════════ */
 export default function AnalyticsDashboard() {
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState(30)
@@ -187,444 +297,341 @@ export default function AnalyticsDashboard() {
 
   const fetchData = useCallback(async (days: number) => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true); setError(null)
       const supabase = createClient()
-
       const now = new Date()
-      const currentFrom = new Date(now)
-      currentFrom.setDate(currentFrom.getDate() - days)
-      currentFrom.setHours(0, 0, 0, 0)
-
-      const prevFrom = new Date(currentFrom)
-      prevFrom.setDate(prevFrom.getDate() - days)
+      const from = new Date(now); from.setDate(from.getDate() - days); from.setHours(0,0,0,0)
+      const prevFrom = new Date(from); prevFrom.setDate(prevFrom.getDate() - days)
 
       const [
         { data: salesData, error: salesErr },
         { data: stockData },
         { data: productsData },
       ] = await Promise.all([
-        supabase
-          .from('sales')
+        supabase.from('sales')
           .select('id,created_at,total_amount,payment_method,status,sale_items(quantity,cost,line_total,product_name)')
           .gte('created_at', prevFrom.toISOString()),
-        supabase
-          .from('stock_receipts')
-          .select('id,total_cost,created_at')
-          .gte('created_at', currentFrom.toISOString()),
+        supabase.from('stock_receipts').select('id,total_cost,created_at').gte('created_at', from.toISOString()),
         supabase.from('products').select('id,name,price,cost,stock'),
       ])
-
       if (salesErr) throw salesErr
 
       const allPaid = (salesData ?? []).filter((s: { status: string }) => s.status === 'paid')
-      const current = allPaid.filter((s: { created_at: string }) => new Date(s.created_at) >= currentFrom)
-      const prev = allPaid.filter((s: { created_at: string }) => new Date(s.created_at) < currentFrom)
+      const cur = allPaid.filter((s: { created_at: string }) => new Date(s.created_at) >= from)
+      const prv = allPaid.filter((s: { created_at: string }) => new Date(s.created_at) < from)
 
-      /* KPI */
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const revenue = current.reduce((sum: number, s: any) => sum + Number(s.total_amount), 0)
+      const revenue = cur.reduce((s: number, x: any) => s + Number(x.total_amount), 0)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const cogs = current.reduce((sum: number, s: any) => {
+      const cogs = cur.reduce((s: number, x: any) =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const c = (s.sale_items ?? []).reduce((x: number, it: any) =>
-          x + Number(it.cost ?? 0) * Number(it.quantity ?? 0), 0)
-        return sum + c
-      }, 0)
+        s + (x.sale_items ?? []).reduce((c: number, it: any) => c + Number(it.cost??0)*Number(it.quantity??0), 0), 0)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const receiptsCost = (stockData ?? []).reduce((sum: number, r: any) => sum + Number(r.total_cost ?? 0), 0)
+      const receiptsCost = (stockData ?? []).reduce((s: number, r: any) => s + Number(r.total_cost??0), 0)
       const opex = receiptsCost + revenue * 0.08
       const netProfit = revenue - cogs - opex
-      const prevRevenue = prev.reduce((sum: number, s: { total_amount: number }) =>
-        sum + Number(s.total_amount), 0)
-      const txCount = current.length
+      const prevRevenue = prv.reduce((s: number, x: { total_amount: number }) => s + Number(x.total_amount), 0)
+      const txCount = cur.length
       const avgOrder = txCount > 0 ? revenue / txCount : 0
 
-      /* Daily data */
+      // Daily
       const dayMap: Record<string, { date: string; revenue: number; cogs: number; profit: number; ts: number }> = {}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      current.forEach((s: any) => {
+      cur.forEach((s: any) => {
         const dt = new Date(s.created_at)
         const label = dt.toLocaleDateString('th-TH', { month: 'short', day: 'numeric' })
         if (!dayMap[label]) dayMap[label] = { date: label, revenue: 0, cogs: 0, profit: 0, ts: dt.getTime() }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const sc = (s.sale_items ?? []).reduce((x: number, it: any) =>
-          x + Number(it.cost ?? 0) * Number(it.quantity ?? 0), 0)
+        const sc = (s.sale_items??[]).reduce((x: number, it: any) => x + Number(it.cost??0)*Number(it.quantity??0), 0)
         const sr = Number(s.total_amount)
-        dayMap[label].revenue += sr
-        dayMap[label].cogs += sc
-        dayMap[label].profit += sr - sc - sr * 0.08
+        dayMap[label].revenue += sr; dayMap[label].cogs += sc; dayMap[label].profit += sr - sc - sr*0.08
       })
       const dailyData = Object.values(dayMap).sort((a, b) => a.ts - b.ts)
 
-      /* Cumulative */
+      // Cumulative
       let cum = 0
-      const areaData = dailyData.map(d => {
-        cum += d.revenue
-        return { date: d.date, cumulative: cum }
-      })
+      const areaData = dailyData.map(d => { cum += d.revenue; return { date: d.date, cumulative: cum } })
 
-      /* Payment methods */
+      // Payments
       const payMap: Record<string, number> = {}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      current.forEach((s: any) => {
-        const pm = String(s.payment_method ?? 'other')
-        payMap[pm] = (payMap[pm] ?? 0) + Number(s.total_amount)
-      })
-      const paymentData = Object.entries(payMap).map(([k, v]) => ({
-        name: k === 'cash' ? '💵 เงินสด' : k === 'transfer' ? '🏦 โอนเงิน' : k === 'qr' ? '📱 QR Code' : k === 'card' ? '💳 บัตร' : k.toUpperCase(),
-        value: v,
-        key: k,
-      }))
+      cur.forEach((s: any) => { const pm = String(s.payment_method ?? 'other'); payMap[pm] = (payMap[pm]??0) + Number(s.total_amount) })
+      const payLabels: Record<string, string> = { cash: 'เงินสด', transfer: 'โอนเงิน', qr: 'QR Code', card: 'บัตรเครดิต', mixed: 'หลายช่องทาง' }
+      const paymentData = Object.entries(payMap).map(([k, v]) => ({ name: payLabels[k] ?? k, value: v, key: k }))
 
-      /* Donut */
+      // Donut finance
       const financeData = [
-        { name: 'ต้นทุนขาย', value: Math.max(cogs, 0), color: C.cogs },
-        { name: 'ค่าดำเนินงาน', value: Math.max(opex, 0), color: C.opex },
-        { name: 'กำไรสุทธิ', value: Math.max(netProfit, 0), color: C.profit },
+        { name: 'ต้นทุนขาย', value: Math.max(cogs, 0), color: T.red },
+        { name: 'ค่าดำเนินงาน', value: Math.max(opex, 0), color: T.amber },
+        { name: 'กำไรสุทธิ', value: Math.max(netProfit, 0), color: T.green },
       ]
 
-      /* Comparison */
-      const prevCogs = prevRevenue * 0.4
-      const prevProfit = prevRevenue * 0.45
+      // Comparison
       const comparisonData = [
-        { name: 'ยอดขายรวม', current: revenue, prev: prevRevenue },
-        { name: 'ต้นทุนรวม', current: cogs, prev: prevCogs },
-        { name: 'กำไรสุทธิ', current: netProfit, prev: prevProfit },
+        { name: 'ยอดขาย', current: revenue, prev: prevRevenue },
+        { name: 'ต้นทุน', current: cogs, prev: prevRevenue * 0.4 },
+        { name: 'กำไร', current: netProfit, prev: prevRevenue * 0.45 },
       ]
 
-      /* Scatter */
+      // Scatter
       const soldMap: Record<string, number> = {}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      current.forEach((s: any) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(s.sale_items ?? []).forEach((it: any) => {
-          if (it.product_name) {
-            soldMap[it.product_name] = (soldMap[it.product_name] ?? 0) + Number(it.quantity ?? 0)
-          }
-        })
-      })
+      cur.forEach((s: any) => { (s.sale_items??[]).forEach((it: any) => { if(it.product_name) soldMap[it.product_name] = (soldMap[it.product_name]??0) + Number(it.quantity??0) }) })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const scatterData = (productsData ?? [])
-        .map((p: any) => ({ name: p.name, price: Number(p.price ?? 0), sold: soldMap[p.name] ?? 0 }))
-        .filter((d: { sold: number }) => d.sold > 0)
+      const scatterData = (productsData??[]).map((p: any) => ({ name: p.name, price: Number(p.price??0), sold: soldMap[p.name]??0 })).filter((d: { sold: number }) => d.sold > 0)
 
-      setData({ revenue, cogs, opex, netProfit, prevRevenue, txCount, avgOrder, dailyData, areaData, paymentData, financeData, comparisonData, scatterData })
+      // Top products
+      const topProducts = Object.entries(soldMap)
+        .map(([name, sold]) => ({ name, sold }))
+        .sort((a, b) => b.sold - a.sold)
+        .slice(0, 6)
+
+      setData({ revenue, cogs, opex, netProfit, prevRevenue, txCount, avgOrder,
+        dailyData, areaData, paymentData, financeData, comparisonData, scatterData, topProducts })
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to load analytics')
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
+    } finally { setLoading(false); setRefreshing(false) }
   }, [])
 
-  useEffect(() => {
-    fetchData(period)
-  }, [period, fetchData])
+  useEffect(() => { fetchData(period) }, [period, fetchData])
 
-  const handleRefresh = () => {
-    setRefreshing(true)
-    fetchData(period)
-  }
-
-  /* ─── Loading ─────────── */
-  if (loading) {
-    return (
+  /* Loading */
+  if (loading) return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '65vh', gap: 20 }}>
       <div style={{
-        display: 'flex', flexDirection: 'column', justifyContent: 'center',
-        alignItems: 'center', height: '65vh', gap: 16
+        width: 72, height: 72, borderRadius: 22,
+        background: 'linear-gradient(135deg, rgba(0,212,255,0.12), rgba(157,78,221,0.12))',
+        border: '1px solid rgba(0,212,255,0.2)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: '0 0 60px rgba(0,212,255,0.15)',
       }}>
-        <div style={{
-          width: 64, height: 64, borderRadius: 18,
-          background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.2)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 0 40px rgba(0,212,255,0.15)',
-        }}>
-          <Loader2 size={28} color={C.revenue} className="animate-spin" />
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#e8f0ff' }}>กำลังโหลดข้อมูล Analytics</p>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#4a5a78' }}>กรุณารอสักครู่...</p>
-        </div>
+        <Loader2 size={30} color={T.cyan} className="animate-spin" />
       </div>
-    )
-  }
-
-  /* ─── Error ───────────── */
-  if (error || !data) {
-    return (
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 12,
-        color: '#ff4466', padding: '16px 20px',
-        background: 'rgba(255,68,102,0.06)', borderRadius: 16,
-        border: '1px solid rgba(255,68,102,0.2)', margin: 20
-      }}>
-        <Activity size={20} color="#ff4466" />
-        <div>
-          <p style={{ margin: 0, fontWeight: 700 }}>เกิดข้อผิดพลาด</p>
-          <p style={{ margin: '2px 0 0', fontSize: 13, opacity: 0.7 }}>{error}</p>
-        </div>
+      <div style={{ textAlign: 'center' }}>
+        <p style={{ margin: 0, fontSize: 17, fontWeight: 800, color: T.textPri }}>กำลังโหลด Analytics</p>
+        <p style={{ margin: '5px 0 0', fontSize: 13, color: T.textSec }}>กำลังดึงข้อมูลจาก Supabase...</p>
       </div>
-    )
-  }
+    </div>
+  )
 
-  const { revenue, cogs, opex, netProfit, prevRevenue, txCount, avgOrder, dailyData, areaData, paymentData, financeData, comparisonData, scatterData } = data
-  const margin = revenue > 0 ? ((netProfit / revenue) * 100).toFixed(1) : '0.0'
+  /* Error */
+  if (error || !data) return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '18px 22px',
+      background: 'rgba(255,68,102,0.07)', border: '1px solid rgba(255,68,102,0.2)', borderRadius: 18, margin: 20 }}>
+      <Activity size={22} color={T.red} />
+      <div><p style={{ margin: 0, fontWeight: 800, color: T.red }}>เกิดข้อผิดพลาด</p>
+        <p style={{ margin: '3px 0 0', fontSize: 12, color: T.textSec }}>{error}</p></div>
+    </div>
+  )
+
+  const { revenue, cogs, opex, netProfit, prevRevenue, txCount, avgOrder,
+    dailyData, areaData, paymentData, financeData, comparisonData, scatterData, topProducts } = data
+
+  const margin   = revenue > 0 ? ((netProfit / revenue) * 100).toFixed(1) : '0.0'
   const revGrowth = prevRevenue > 0 ? (((revenue - prevRevenue) / prevRevenue) * 100).toFixed(1) : null
+  const fmtK = (v: number) => v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'k' : String(v)
+  const topSold = topProducts[0]?.sold ?? 1
 
-  const fmtK = (v: number) => {
-    if (v >= 1000000) return (v / 1000000).toFixed(1) + 'M'
-    if (v >= 1000) return (v / 1000).toFixed(0) + 'k'
-    return String(v)
-  }
-
-  const RADIAN = Math.PI / 180
-  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: { cx: number; cy: number; midAngle: number; innerRadius: number; outerRadius: number; percent: number }) => {
-    if (percent < 0.05) return null
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5
-    const x = cx + radius * Math.cos(-midAngle * RADIAN)
-    const y = cy + radius * Math.sin(-midAngle * RADIAN)
-    return (
-      <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={12} fontWeight={700}>
-        {(percent * 100).toFixed(0)}%
-      </text>
-    )
-  }
+  const PERIODS = [{ label: '7 วัน', val: 7 }, { label: '30 วัน', val: 30 }, { label: '90 วัน', val: 90 }]
 
   return (
-    <div style={{ padding: '20px 0', display: 'flex', flexDirection: 'column', gap: 28 }}>
+    <div style={{ padding: '20px 0', display: 'flex', flexDirection: 'column', gap: 26 }}>
 
-      {/* ══ Header ══════════════════════════════════════════ */}
+      {/* ══ HEADER ════════════════════════════════════════════════ */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          {/* Icon */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          {/* Icon box */}
           <div style={{
-            width: 48, height: 48, borderRadius: 14,
-            background: 'linear-gradient(135deg, rgba(0,212,255,0.15), rgba(157,78,221,0.15))',
-            border: '1px solid rgba(0,212,255,0.2)',
+            width: 52, height: 52, borderRadius: 16, flexShrink: 0,
+            background: 'linear-gradient(135deg, rgba(0,212,255,0.15) 0%, rgba(157,78,221,0.18) 100%)',
+            border: '1px solid rgba(0,212,255,0.22)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 24px rgba(0,212,255,0.12)',
+            boxShadow: '0 0 30px rgba(0,212,255,0.18), inset 0 1px 0 rgba(255,255,255,0.08)',
           }}>
-            <BarChart2 size={22} color={C.revenue} />
+            <BarChart2 size={24} color={T.cyan} />
           </div>
           <div>
-            <h1 style={{
-              margin: 0, fontSize: 26, fontWeight: 900, letterSpacing: '-0.03em',
-              background: 'linear-gradient(90deg, #00d4ff 0%, #9d4edd 60%, #00e676 100%)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            }}>
-              Analytics Dashboard
-            </h1>
-            <p style={{ margin: '3px 0 0', color: '#4a5a78', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Zap size={12} color="#f59e0b" />
-              ภาพรวมสถิติการขายและสถานะทางการเงิน
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h1 style={{
+                margin: 0, fontSize: 27, fontWeight: 900, letterSpacing: '-0.03em',
+                background: `linear-gradient(100deg, ${T.cyan} 0%, ${T.purple} 55%, ${T.green} 100%)`,
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              }}>Analytics Dashboard</h1>
+              <span style={{
+                fontSize: 9, fontWeight: 800, padding: '3px 7px', borderRadius: 6,
+                background: 'rgba(0,230,118,0.12)', border: '1px solid rgba(0,230,118,0.22)',
+                color: T.green, letterSpacing: '0.08em',
+              }}>LIVE</span>
+            </div>
+            <p style={{ margin: '4px 0 0', fontSize: 12.5, color: T.textSec, display: 'flex', alignItems: 'center', gap: 5 }}>
+              <Zap size={11} color={T.amber} />
+              ภาพรวมสถิติการขายและสถานะทางการเงิน · อัปเดตแบบ Real-time
             </p>
           </div>
         </div>
 
         {/* Controls */}
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          {/* Refresh */}
           <button
-            onClick={handleRefresh}
-            title="รีเฟรช"
+            onClick={() => { setRefreshing(true); fetchData(period) }}
             style={{
-              width: 36, height: 36, borderRadius: 10, background: 'rgba(13,21,38,0.9)',
-              border: '1px solid rgba(0,212,255,0.15)', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#4a5a78', transition: 'all 0.2s',
+              width: 36, height: 36, borderRadius: 10,
+              background: T.card, border: `1px solid ${T.border}`,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: T.textSec, transition: 'all 0.2s',
             }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = C.revenue; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,212,255,0.4)' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#4a5a78'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,212,255,0.15)' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = `${T.cyan}50`; (e.currentTarget as HTMLButtonElement).style.color = T.cyan }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = T.border; (e.currentTarget as HTMLButtonElement).style.color = T.textSec }}
           >
             <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
           </button>
 
-          {/* Period selector */}
           <div style={{
-            display: 'flex', gap: 4, background: 'rgba(13,21,38,0.9)', padding: '4px',
-            borderRadius: 12, border: '1px solid rgba(0,212,255,0.1)',
+            display: 'flex', gap: 3, padding: 4, borderRadius: 12,
+            background: T.card, border: `1px solid ${T.border}`,
           }}>
-            {[
-              { label: '7 วัน', val: 7 },
-              { label: '30 วัน', val: 30 },
-              { label: '90 วัน', val: 90 },
-            ].map(p => (
-              <button
-                key={p.val}
-                onClick={() => setPeriod(p.val)}
-                style={{
-                  padding: '6px 14px', borderRadius: 9, fontSize: 12, fontWeight: 700,
-                  border: 'none', cursor: 'pointer', transition: 'all 0.2s',
-                  background: period === p.val
-                    ? 'linear-gradient(135deg, rgba(0,212,255,0.2), rgba(157,78,221,0.2))'
-                    : 'transparent',
-                  color: period === p.val ? '#e8f0ff' : '#4a5a78',
-                  boxShadow: period === p.val ? `0 0 12px rgba(0,212,255,0.15), inset 0 0 0 1px rgba(0,212,255,0.25)` : 'none',
-                }}
-              >
-                {p.label}
-              </button>
+            {PERIODS.map(p => (
+              <button key={p.val} onClick={() => setPeriod(p.val)} style={{
+                padding: '6px 14px', borderRadius: 9, fontSize: 11.5, fontWeight: 700,
+                border: 'none', cursor: 'pointer', transition: 'all 0.18s',
+                background: period === p.val
+                  ? `linear-gradient(135deg, rgba(0,212,255,0.2), rgba(157,78,221,0.22))`
+                  : 'transparent',
+                color: period === p.val ? T.textPri : T.textSec,
+                boxShadow: period === p.val ? `inset 0 0 0 1px rgba(0,212,255,0.28)` : 'none',
+              }}>{p.label}</button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* ══ KPI Cards ════════════════════════════════════════ */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px,1fr))', gap: 16 }}>
-        <KpiCard label="รายรับ (Revenue)" value={revenue} color={C.revenue} Icon={DollarSign} growth={revGrowth} />
-        <KpiCard label="ต้นทุนขาย (COGS)" value={cogs} color={C.cogs} Icon={Package} />
-        <KpiCard label="ค่าดำเนินงาน (OpEx)" value={opex} color={C.opex} Icon={TrendingDown} />
-        <KpiCard label="กำไรสุทธิ (Net Profit)" value={netProfit} color={C.profit} Icon={TrendingUp}
-          sub={`Margin: ${margin}%`} />
-        <KpiCard label="จำนวนบิล" value={txCount} color={C.purple} Icon={ShoppingBag}
-          prefix="" />
-        <KpiCard label="มูลค่าเฉลี่ย/บิล" value={avgOrder} color={C.teal} Icon={CreditCard} />
+      {/* ══ KPI CARDS ════════════════════════════════════════════ */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px,1fr))', gap: 14 }}>
+        <KpiCard label="รายรับ (Revenue)" value={revenue} color={T.cyan} Icon={DollarSign} growth={revGrowth} />
+        <KpiCard label="ต้นทุนขาย (COGS)" value={cogs} color={T.red} Icon={Package} />
+        <KpiCard label="ค่าดำเนินงาน (OpEx)" value={opex} color={T.amber} Icon={TrendingDown} />
+        <KpiCard label="กำไรสุทธิ (Net Profit)" value={netProfit} color={T.green} Icon={TrendingUp} sub={`Margin ${margin}%`} />
+        <KpiCard label="จำนวนบิล" value={txCount} color={T.purple} Icon={ShoppingBag} isCurrency={false} sub="รายการที่ชำระแล้ว" />
+        <KpiCard label="มูลค่าเฉลี่ย / บิล" value={avgOrder} color={T.teal} Icon={CreditCard} />
       </div>
 
-      {/* ══ Financial Flow Bar ═══════════════════════════════ */}
+      {/* ══ FINANCIAL FLOW ══════════════════════════════════════ */}
       <div style={{
-        background: 'rgba(13,21,38,0.85)',
-        border: '1px solid rgba(255,255,255,0.055)',
-        borderRadius: 20, padding: '18px 24px',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
-        backdropFilter: 'blur(16px)',
+        background: T.card, border: `1px solid ${T.border}`,
+        borderRadius: 20, padding: '20px 24px',
+        boxShadow: '0 4px 30px rgba(0,0,0,0.35)', backdropFilter: 'blur(20px)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-          <div style={{ width: 3, height: 16, borderRadius: 2, background: 'linear-gradient(to bottom, #00d4ff, #9d4edd)' }} />
-          <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: '#6a7a98', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Financial Flow
+        {/* Section label */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
+          <Sparkles size={13} color={T.amber} />
+          <p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: T.textSec, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            Financial Cascade Flow
           </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+
+        {/* Flow nodes */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           {[
-            { label: 'รายรับ', value: revenue, color: C.revenue, pct: '100%' },
+            { label: 'รายรับ', value: revenue, color: T.cyan, pct: '100%' },
             null,
-            { label: 'ต้นทุนขาย', value: cogs, color: C.cogs, pct: revenue > 0 ? `${((cogs/revenue)*100).toFixed(1)}%` : '–' },
+            { label: 'ต้นทุนขาย', value: cogs, color: T.red, pct: revenue > 0 ? `${((cogs/revenue)*100).toFixed(1)}%` : '—' },
             null,
-            { label: 'ค่าดำเนินงาน', value: opex, color: C.opex, pct: revenue > 0 ? `${((opex/revenue)*100).toFixed(1)}%` : '–' },
+            { label: 'ค่าดำเนินงาน', value: opex, color: T.amber, pct: revenue > 0 ? `${((opex/revenue)*100).toFixed(1)}%` : '—' },
             null,
-            { label: 'กำไรสุทธิ', value: netProfit, color: C.profit, pct: `${margin}%` },
+            { label: 'กำไรสุทธิ', value: netProfit, color: T.green, pct: `${margin}%` },
           ].map((item, idx) => {
-            if (item === null) {
-              return <ArrowRight key={idx} size={16} style={{ color: '#2a3a58', flexShrink: 0 }} />
-            }
+            if (!item) return (
+              <ArrowRight key={`arrow-${idx}`} size={14} style={{ color: T.textMut, flexShrink: 0, margin: '0 2px' }} />
+            )
             return (
-              <div key={idx} style={{
-                flex: 1, minWidth: 130, padding: '10px 14px',
-                background: `${item.color}0c`, borderRadius: 12,
-                border: `1px solid ${item.color}1a`,
+              <div key={item.label} style={{
+                flex: 1, minWidth: 120, padding: '12px 16px', borderRadius: 14,
+                background: `${item.color}09`, border: `1px solid ${item.color}1e`,
+                position: 'relative', overflow: 'hidden',
               }}>
-                <p style={{ margin: '0 0 2px', fontSize: 10, color: '#4a5a78', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  {item.label}
-                </p>
-                <p style={{ margin: '0 0 2px', fontSize: 18, fontWeight: 900, color: item.color }}>
-                  {formatCurrency(item.value)}
-                </p>
-                <p style={{ margin: 0, fontSize: 10, color: item.color, opacity: 0.65, fontWeight: 600 }}>
-                  {item.pct}
-                </p>
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2,
+                  background: item.color, opacity: 0.35, borderRadius: '0 0 14px 14px' }} />
+                <p style={{ margin: '0 0 2px', fontSize: 9.5, color: T.textSec, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{item.label}</p>
+                <p style={{ margin: '0 0 3px', fontSize: 18, fontWeight: 900, color: item.color, letterSpacing: '-0.02em' }}>{formatCurrency(item.value)}</p>
+                <p style={{ margin: 0, fontSize: 10, color: item.color, opacity: 0.7, fontWeight: 700 }}>{item.pct}</p>
               </div>
             )
           })}
         </div>
 
         {/* Progress bar */}
-        <div style={{ marginTop: 16, display: 'flex', height: 6, borderRadius: 4, overflow: 'hidden', gap: 2 }}>
-          {revenue > 0 && <>
-            <div style={{ flex: cogs, background: C.cogs, borderRadius: 4 }} />
-            <div style={{ flex: opex, background: C.opex, borderRadius: 4 }} />
-            <div style={{ flex: Math.max(netProfit, 0), background: C.profit, borderRadius: 4 }} />
-          </>}
-        </div>
-        <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
-          {[
-            { label: 'ต้นทุนขาย', color: C.cogs },
-            { label: 'ค่าดำเนินงาน', color: C.opex },
-            { label: 'กำไรสุทธิ', color: C.profit },
-          ].map(l => (
-            <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ width: 8, height: 8, borderRadius: 2, background: l.color, flexShrink: 0, display: 'inline-block' }} />
-              <span style={{ fontSize: 11, color: '#4a5a78' }}>{l.label}</span>
+        {revenue > 0 && (
+          <div style={{ marginTop: 18 }}>
+            <div style={{ display: 'flex', height: 8, borderRadius: 6, overflow: 'hidden', gap: 1 }}>
+              <div style={{ flex: Math.max(cogs, 0), background: `linear-gradient(90deg, ${T.red}cc, ${T.red})`, borderRadius: '6px 0 0 6px' }} />
+              <div style={{ flex: Math.max(opex, 0), background: `linear-gradient(90deg, ${T.amber}cc, ${T.amber})` }} />
+              <div style={{ flex: Math.max(netProfit, 0), background: `linear-gradient(90deg, ${T.green}cc, ${T.green})`, borderRadius: '0 6px 6px 0' }} />
             </div>
-          ))}
-        </div>
+            <div style={{ display: 'flex', gap: 20, marginTop: 10 }}>
+              {[{ l: 'ต้นทุนขาย', c: T.red }, { l: 'ค่าดำเนินงาน', c: T.amber }, { l: 'กำไรสุทธิ', c: T.green }].map(x => (
+                <div key={x.l} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 10, height: 10, borderRadius: 3, background: x.c, display: 'inline-block', flexShrink: 0 }} />
+                  <span style={{ fontSize: 11, color: T.textSec }}>{x.l}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* ══ Charts Grid 1 ════════════════════════════════════ */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px,1fr))', gap: 22 }}>
+      {/* ══ CHARTS ROW 1 ════════════════════════════════════════ */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 20 }}>
 
-        {/* 1: Bar Daily Sales */}
-        <ChartCard
-          title="ยอดขายรายวัน"
-          sub={`เปรียบเทียบยอดขายในแต่ละวัน (${period} วันล่าสุด)`}
-          accent={C.revenue}
-        >
+        {/* Bar: Daily Sales */}
+        <ChartCard title="ยอดขายรายวัน" sub={`${period} วันล่าสุด`} badge="BAR" accent={T.cyan}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={dailyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+            <BarChart data={dailyData} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
               <defs>
-                <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={C.revenue} stopOpacity={0.9} />
-                  <stop offset="100%" stopColor={C.revenue} stopOpacity={0.4} />
+                <linearGradient id="gBarRev" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={T.cyan} stopOpacity={1} />
+                  <stop offset="100%" stopColor={T.cyan} stopOpacity={0.3} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-              <XAxis dataKey="date" stroke="#2a3a58" fontSize={10} tickMargin={8} />
-              <YAxis stroke="#2a3a58" fontSize={10} tickFormatter={fmtK} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+              <XAxis dataKey="date" stroke={T.textMut} fontSize={10} tickLine={false} axisLine={false} />
+              <YAxis stroke={T.textMut} fontSize={10} tickLine={false} axisLine={false} tickFormatter={fmtK} />
               <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(0,212,255,0.04)' }} />
-              <Bar dataKey="revenue" name="ยอดขาย" fill="url(#barGrad)" radius={[5, 5, 0, 0]} maxBarSize={32} />
+              <Bar dataKey="revenue" name="ยอดขาย" fill="url(#gBarRev)" radius={[5,5,0,0]} maxBarSize={28} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
 
-        {/* 2: Line Trend */}
-        <ChartCard
-          title="แนวโน้มการเติบโต"
-          sub="รายรับ, ต้นทุน และกำไรรายวัน"
-          accent={C.profit}
-        >
+        {/* Line: Trend */}
+        <ChartCard title="แนวโน้มการเติบโต" sub="รายรับ · ต้นทุน · กำไรรายวัน" badge="LINE" accent={T.green}>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={dailyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-              <XAxis dataKey="date" stroke="#2a3a58" fontSize={10} />
-              <YAxis stroke="#2a3a58" fontSize={10} tickFormatter={fmtK} />
+            <LineChart data={dailyData} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
+              <XAxis dataKey="date" stroke={T.textMut} fontSize={10} tickLine={false} axisLine={false} />
+              <YAxis stroke={T.textMut} fontSize={10} tickLine={false} axisLine={false} tickFormatter={fmtK} />
               <Tooltip content={<ChartTip />} />
-              <Legend wrapperStyle={{ fontSize: 11, paddingTop: 10 }} />
-              <Line type="monotone" dataKey="revenue" name="รายรับ" stroke={C.revenue} strokeWidth={2.5} dot={false} activeDot={{ r: 5, fill: C.revenue }} />
-              <Line type="monotone" dataKey="cogs" name="ต้นทุน" stroke={C.cogs} strokeWidth={2} dot={false} strokeDasharray="5 3" />
-              <Line type="monotone" dataKey="profit" name="กำไร" stroke={C.profit} strokeWidth={2.5} dot={false} activeDot={{ r: 5, fill: C.profit }} />
+              <Legend wrapperStyle={{ fontSize: 10.5, paddingTop: 8 }} />
+              <Line type="monotone" dataKey="revenue" name="รายรับ" stroke={T.cyan} strokeWidth={2.5} dot={false} activeDot={{ r: 5, fill: T.cyan }} />
+              <Line type="monotone" dataKey="cogs" name="ต้นทุน" stroke={T.red} strokeWidth={1.8} dot={false} strokeDasharray="5 3" />
+              <Line type="monotone" dataKey="profit" name="กำไร" stroke={T.green} strokeWidth={2.5} dot={false} activeDot={{ r: 5, fill: T.green }} />
+              {dailyData.length > 0 && (
+                <ReferenceLine y={0} stroke="rgba(255,255,255,0.08)" strokeDasharray="4 4" />
+              )}
             </LineChart>
           </ResponsiveContainer>
         </ChartCard>
 
-        {/* 3: Pie Payment */}
-        <ChartCard
-          title="ช่องทางการชำระเงิน"
-          sub="สัดส่วนรายได้แยกตามประเภท"
-          accent={C.opex}
-        >
+        {/* Pie: Payment */}
+        <ChartCard title="ช่องทางชำระเงิน" sub="สัดส่วนรายได้แยกตามประเภท" badge="PIE" accent={T.amber}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <defs>
-                {Object.entries(C.payment).map(([k, v]) => (
-                  <radialGradient key={k} id={`grad-pay-${k}`} cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor={v} stopOpacity={1} />
-                    <stop offset="100%" stopColor={v} stopOpacity={0.75} />
-                  </radialGradient>
-                ))}
-              </defs>
               <Pie
-                data={paymentData}
-                cx="50%" cy="50%"
-                outerRadius={105}
-                paddingAngle={4}
-                dataKey="value"
-                stroke="none"
-                labelLine={false}
-                label={renderCustomLabel}
+                data={paymentData} cx="50%" cy="50%"
+                outerRadius={100} paddingAngle={4}
+                dataKey="value" stroke="none"
+                labelLine={false} label={renderPieLabel}
               >
                 {paymentData.map((entry: { key: string }, idx: number) => (
-                  <Cell key={idx} fill={`url(#grad-pay-${entry.key})`} />
+                  <Cell key={idx} fill={PAY_COLORS[entry.key] ?? PAY_COLORS.other} />
                 ))}
               </Pie>
               <Tooltip content={<ChartTip />} />
@@ -633,109 +640,148 @@ export default function AnalyticsDashboard() {
           </ResponsiveContainer>
         </ChartCard>
 
-        {/* 4: Donut Financial */}
-        <ChartCard
-          title="สัดส่วนทางการเงิน"
-          sub="การกระจายรายรับ: ต้นทุน / ค่าใช้จ่าย / กำไร"
-          accent={C.purple}
-        >
+        {/* Donut: Financial */}
+        <ChartCard title="สัดส่วนทางการเงิน" sub="ต้นทุน · ค่าใช้จ่าย · กำไร" badge="DONUT" accent={T.purple}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={financeData}
-                cx="50%" cy="50%"
-                innerRadius={72}
-                outerRadius={108}
-                paddingAngle={4}
-                dataKey="value"
-                stroke="none"
+                data={financeData} cx="50%" cy="50%"
+                innerRadius={68} outerRadius={102}
+                paddingAngle={5} dataKey="value" stroke="none"
               >
                 {financeData.map((entry: { color: string }, idx: number) => (
                   <Cell key={idx} fill={entry.color} />
                 ))}
               </Pie>
-              {/* Center label */}
-              <text x="50%" y="48%" textAnchor="middle" dominantBaseline="middle" fontSize={13} fill="#6a7a98" fontWeight={600}>
-                Margin
-              </text>
-              <text x="50%" y="58%" textAnchor="middle" dominantBaseline="middle" fontSize={20} fill={C.profit} fontWeight={900}>
-                {margin}%
-              </text>
+              {/* Center */}
+              <text x="50%" y="46%" textAnchor="middle" dominantBaseline="middle" fontSize={11} fill={T.textSec} fontWeight={600}>Margin</text>
+              <text x="50%" y="57%" textAnchor="middle" dominantBaseline="middle" fontSize={22} fill={Number(margin) >= 0 ? T.green : T.red} fontWeight={900}>{margin}%</text>
               <Tooltip content={<ChartTip />} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
             </PieChart>
           </ResponsiveContainer>
         </ChartCard>
 
-        {/* 5: Area Cumulative */}
-        <ChartCard
-          title="รายรับสะสม"
-          sub="ยอดขายรวมสะสมตามช่วงเวลา"
-          accent={C.purple}
-        >
+        {/* Area: Cumulative */}
+        <ChartCard title="รายรับสะสม" sub="ยอดขายรวมสะสมตามช่วงเวลา" badge="AREA" accent={T.purple}>
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={areaData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+            <AreaChart data={areaData} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
               <defs>
-                <linearGradient id="gradCum" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={C.purple} stopOpacity={0.45} />
-                  <stop offset="100%" stopColor={C.purple} stopOpacity={0.02} />
+                <linearGradient id="gArea" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={T.purple} stopOpacity={0.5} />
+                  <stop offset="100%" stopColor={T.purple} stopOpacity={0.02} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-              <XAxis dataKey="date" stroke="#2a3a58" fontSize={10} />
-              <YAxis stroke="#2a3a58" fontSize={10} tickFormatter={fmtK} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
+              <XAxis dataKey="date" stroke={T.textMut} fontSize={10} tickLine={false} axisLine={false} />
+              <YAxis stroke={T.textMut} fontSize={10} tickLine={false} axisLine={false} tickFormatter={fmtK} />
               <Tooltip content={<ChartTip />} />
               <Area type="monotone" dataKey="cumulative" name="รายรับสะสม"
-                stroke={C.purple} fill="url(#gradCum)" strokeWidth={2.5} />
+                stroke={T.purple} fill="url(#gArea)" strokeWidth={2.5} />
             </AreaChart>
           </ResponsiveContainer>
         </ChartCard>
 
-        {/* 6: Comparison Bar */}
-        <ChartCard
-          title="เปรียบเทียบผลประกอบการ"
-          sub={`${period} วันปัจจุบัน เทียบกับ ${period} วันก่อนหน้า`}
-          accent={C.teal}
-        >
+        {/* Comparison Bar */}
+        <ChartCard title="เปรียบเทียบผลประกอบการ" sub={`${period} วันปัจจุบัน vs ${period} วันก่อนหน้า`} badge="COMPARE" accent={T.teal}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={comparisonData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-              <XAxis dataKey="name" stroke="#2a3a58" fontSize={10} />
-              <YAxis stroke="#2a3a58" fontSize={10} tickFormatter={fmtK} />
+            <BarChart data={comparisonData} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="gBarCur" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={T.teal} stopOpacity={0.95} />
+                  <stop offset="100%" stopColor={T.teal} stopOpacity={0.4} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+              <XAxis dataKey="name" stroke={T.textMut} fontSize={10} tickLine={false} axisLine={false} />
+              <YAxis stroke={T.textMut} fontSize={10} tickLine={false} axisLine={false} tickFormatter={fmtK} />
               <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(0,191,165,0.04)' }} />
-              <Legend wrapperStyle={{ fontSize: 11, paddingTop: 10 }} />
-              <Bar dataKey="prev" name="ช่วงก่อนหน้า" fill="rgba(255,255,255,0.08)" radius={[5, 5, 0, 0]} maxBarSize={32} />
-              <Bar dataKey="current" name="ช่วงปัจจุบัน" fill={C.teal} radius={[5, 5, 0, 0]} maxBarSize={32} />
+              <Legend wrapperStyle={{ fontSize: 10.5, paddingTop: 8 }} />
+              <Bar dataKey="prev" name="ก่อนหน้า" fill="rgba(255,255,255,0.07)" radius={[5,5,0,0]} maxBarSize={26} />
+              <Bar dataKey="current" name="ปัจจุบัน" fill="url(#gBarCur)" radius={[5,5,0,0]} maxBarSize={26} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
 
       </div>
 
-      {/* ══ Scatter (full width) ════════════════════════════ */}
-      <ChartCard
-        title="ความสัมพันธ์ราคา vs ปริมาณขาย"
-        sub="แกน X: ราคาต่อขวด (บาท)  ·  แกน Y: จำนวนที่ขายได้ (ขวด)"
-        accent={C.revenue}
-      >
-        <div style={{ minHeight: 340 }}>
-          <ResponsiveContainer width="100%" height={340}>
-            <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-              <defs>
-                <radialGradient id="dotGrad" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor={C.revenue} stopOpacity={0.9} />
-                  <stop offset="100%" stopColor={C.purple} stopOpacity={0.5} />
-                </radialGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-              <XAxis type="number" dataKey="price" name="ราคา" stroke="#2a3a58" fontSize={11} tickFormatter={fmtK} />
-              <YAxis type="number" dataKey="sold" name="จำนวนขาย" stroke="#2a3a58" fontSize={11} />
-              <Tooltip content={<ScatterTip />} cursor={{ strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.1)' }} />
-              <Scatter name="สินค้า" data={scatterData} fill="url(#dotGrad)" fillOpacity={0.85} />
-            </ScatterChart>
-          </ResponsiveContainer>
+      {/* ══ ROW 2: Scatter + Top Products ═══════════════════════ */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20 }}>
+
+        {/* Scatter */}
+        <ChartCard title="ราคา vs ปริมาณขาย" sub="แกน X: ราคา/ขวด  ·  แกน Y: จำนวนที่ขายได้ (ขวด)" badge="SCATTER" accent={T.cyan}>
+          <div style={{ minHeight: 300 }}>
+            <ResponsiveContainer width="100%" height={300}>
+              <ScatterChart margin={{ top: 16, right: 20, bottom: 16, left: 10 }}>
+                <defs>
+                  <radialGradient id="dotGrad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor={T.cyan} stopOpacity={0.95} />
+                    <stop offset="100%" stopColor={T.purple} stopOpacity={0.6} />
+                  </radialGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
+                <XAxis type="number" dataKey="price" name="ราคา" stroke={T.textMut} fontSize={10} tickLine={false} axisLine={false} tickFormatter={fmtK} />
+                <YAxis type="number" dataKey="sold" name="จำนวนขาย" stroke={T.textMut} fontSize={10} tickLine={false} axisLine={false} />
+                <Tooltip content={<ScatterTip />} cursor={{ strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.08)' }} />
+                <Scatter name="สินค้า" data={scatterData} fill="url(#dotGrad)" fillOpacity={0.85} />
+              </ScatterChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
+
+        {/* Top Products */}
+        <div style={{
+          background: T.card, border: `1px solid ${T.border}`,
+          borderRadius: 20, padding: '22px 22px',
+          boxShadow: '0 8px 48px rgba(0,0,0,0.4)', backdropFilter: 'blur(20px)',
+          display: 'flex', flexDirection: 'column',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+            <div style={{ width: 3, height: 18, borderRadius: 3, background: `linear-gradient(to bottom, ${T.rose}, ${T.rose}44)`, flexShrink: 0 }} />
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: T.textPri }}>สินค้าขายดี</h3>
+            <span style={{
+              marginLeft: 'auto', fontSize: 9, fontWeight: 800, letterSpacing: '0.1em',
+              padding: '3px 7px', borderRadius: 20, textTransform: 'uppercase',
+              background: `${T.rose}14`, border: `1px solid ${T.rose}25`, color: T.rose,
+            }}>TOP 6</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
+            {topProducts.map((p: { name: string; sold: number }, idx: number) => {
+              const pct = topSold > 0 ? (p.sold / topSold) * 100 : 0
+              const colors = [T.cyan, T.purple, T.teal, T.amber, T.rose, T.blue]
+              const col = colors[idx] ?? T.textSec
+              return (
+                <div key={p.name}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                      <span style={{
+                        width: 20, height: 20, borderRadius: 7, flexShrink: 0,
+                        background: `${col}18`, border: `1px solid ${col}30`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 9, fontWeight: 800, color: col,
+                      }}>{idx + 1}</span>
+                      <span style={{ fontSize: 11.5, fontWeight: 600, color: T.textPri,
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>
+                        {p.name}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: col, flexShrink: 0, marginLeft: 8 }}>
+                      {p.sold} ขวด
+                    </span>
+                  </div>
+                  <div style={{ height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.04)' }}>
+                    <div style={{
+                      height: '100%', width: `${pct}%`, borderRadius: 3,
+                      background: `linear-gradient(90deg, ${col}aa, ${col})`,
+                      transition: 'width 0.6s ease',
+                    }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
-      </ChartCard>
+      </div>
 
     </div>
   )
