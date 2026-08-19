@@ -52,8 +52,8 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md glass-panel-gold rounded-3xl p-8 shadow-2xl relative z-10 border border-[#d4af37]/40">
         {/* Header Logo */}
         <div className="text-center space-y-3 mb-8">
-          <div className="w-20 h-20 rounded-2xl p-0.5 mx-auto shadow-2xl flex items-center justify-center border border-[#d4af37]/50 overflow-hidden bg-[#0f0e13]">
-            <img src="/logo.jpg" alt="The Bottle Club Logo" className="w-full h-full object-contain rounded-2xl bg-[#e6d0a7] p-1" />
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#8b0000] via-[#5c0000] to-[#3a0000] flex items-center justify-center mx-auto shadow-2xl border border-[#d4af37]/50">
+            <Wine className="w-8 h-8 text-[#d4af37]" />
           </div>
           <div>
             <h1 className="text-2xl font-extrabold text-gold-gradient tracking-tight">
