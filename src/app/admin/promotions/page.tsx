@@ -414,124 +414,139 @@ export default function AdminPromotionsPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
       {/* ── Top Header & Actions ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold uppercase tracking-wider mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] sm:text-xs font-bold uppercase tracking-wider mb-2">
             <Flame size={14} className="text-rose-500" />
             <span>WEB E-COMMERCE • PROMOTION ENGINE</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2 sm:gap-3 flex-wrap">
             <span>จัดการโปรโมชั่น Web Wine</span>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/30 text-rose-300 font-bold">
+            <span className="text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/30 text-rose-300 font-bold">
               {totalCount} แคมเปญ
             </span>
           </h1>
-          <p className="text-slate-400 text-xs sm:text-sm mt-1">
+          <p className="text-slate-400 text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed">
             สร้างและควบคุมแบนเนอร์โปรโมชั่นหลัก และการ์ดย่อยที่จะไปแสดงผลที่หน้าร้าน Web Store แบบเรียลไทม์
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          <Link
-            href="/#promotions"
-            target="_blank"
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700 text-xs font-bold transition-all shadow-sm"
-          >
-            <ExternalLink size={14} className="text-cyan-400" />
-            <span>ดูหน้าร้านจริง (Storefront)</span>
-          </Link>
+        {/* Action Buttons: Responsive Layout for Mobile & Desktop */}
+        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 w-full xl:w-auto">
+          {/* Main Action Buttons */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full sm:w-auto">
+            {/* 👑 ปุ่มจัดการแบนเนอร์ใหญ่หน้าแรก (Hero Banner) */}
+            <button
+              onClick={handleOpenHeroBanner}
+              className="inline-flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-amber-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs sm:text-sm font-extrabold shadow-[0_4px_20px_rgba(245,158,11,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer touch-manipulation min-h-[44px]"
+            >
+              <Sparkles size={16} className="text-amber-200 shrink-0" />
+              <span className="whitespace-nowrap">👑 จัดการแบนเนอร์ใหญ่ (Hero)</span>
+            </button>
 
-          <button
-            onClick={handleRestoreDefaults}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-800/40 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-white/5 text-xs font-semibold transition"
-            title="รีเซ็ตโปรโมชั่นเริ่มต้น"
-          >
-            <RefreshCw size={13} />
-            <span className="hidden sm:inline">คืนค่าเริ่มต้น</span>
-          </button>
+            {/* ➕ ปุ่มเพิ่มการ์ดโปรโมชั่นใหม่ (News & Promotions) */}
+            <button
+              onClick={handleOpenCreateCard}
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 hover:to-pink-600 text-white text-xs sm:text-sm font-extrabold shadow-[0_4px_20px_rgba(225,29,72,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer touch-manipulation min-h-[44px]"
+            >
+              <Plus size={17} className="shrink-0" />
+              <span className="whitespace-nowrap">+ เพิ่มโปรโมชั่นใหม่ (การ์ด)</span>
+            </button>
+          </div>
 
-          {/* 👑 ปุ่มจัดการแบนเนอร์ใหญ่หน้าแรก (Hero Banner) แยกต่างหาก */}
-          <button
-            onClick={handleOpenHeroBanner}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-amber-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs font-extrabold shadow-[0_4px_20px_rgba(245,158,11,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-          >
-            <Sparkles size={15} className="text-amber-200" />
-            <span>👑 จัดการแบนเนอร์ใหญ่ (Hero)</span>
-          </button>
+          {/* Secondary Action Buttons */}
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
+            <Link
+              href="/#promotions"
+              target="_blank"
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700 text-xs font-bold transition-all shadow-sm active:scale-[0.98] min-h-[42px]"
+            >
+              <ExternalLink size={14} className="text-cyan-400 shrink-0" />
+              <span className="truncate">หน้าร้านจริง</span>
+            </Link>
 
-          {/* ➕ ปุ่มเพิ่มการ์ดโปรโมชั่นใหม่ (News & Promotions) แยกต่างหาก */}
-          <button
-            onClick={handleOpenCreateCard}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 hover:to-pink-600 text-white text-xs font-extrabold shadow-[0_4px_20px_rgba(225,29,72,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-          >
-            <Plus size={16} />
-            <span>+ เพิ่มโปรโมชั่นใหม่ (การ์ดข่าวสาร)</span>
-          </button>
+            <button
+              onClick={handleRestoreDefaults}
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800/40 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-white/5 text-xs font-semibold transition active:scale-[0.98] min-h-[42px] cursor-pointer"
+              title="รีเซ็ตโปรโมชั่นเริ่มต้น"
+            >
+              <RefreshCw size={13} className="shrink-0" />
+              <span>คืนค่าเริ่มต้น</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* ── KPI Cards: สรุปสถิติแคมเปญ ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
-        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-xl shadow-lg relative overflow-hidden">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">โปรโมชั่นทั้งหมด</span>
-            <Layers size={16} className="text-indigo-400" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="p-3.5 sm:p-5 rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-xl shadow-lg relative overflow-hidden group hover:border-indigo-500/30 transition-all">
+          <div className="flex items-center justify-between text-slate-400 mb-1.5 sm:mb-2">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider truncate">โปรโมชั่นทั้งหมด</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+              <Layers size={15} />
+            </div>
           </div>
           <div className="text-2xl sm:text-3xl font-black text-white">{totalCount}</div>
-          <p className="text-[11px] text-slate-400 mt-1">แคมเปญทั้งหมดในระบบ</p>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate">แคมเปญทั้งหมดในระบบ</p>
         </div>
 
-        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-xl shadow-lg relative overflow-hidden">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">เปิดแสดงหน้าร้าน</span>
-            <CheckCircle2 size={16} className="text-emerald-400" />
+        <div className="p-3.5 sm:p-5 rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-xl shadow-lg relative overflow-hidden group hover:border-emerald-500/30 transition-all">
+          <div className="flex items-center justify-between text-slate-400 mb-1.5 sm:mb-2">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-emerald-400 truncate">เปิดแสดงหน้าร้าน</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+              <CheckCircle2 size={15} />
+            </div>
           </div>
           <div className="text-2xl sm:text-3xl font-black text-emerald-400">{activeCount}</div>
-          <p className="text-[11px] text-slate-400 mt-1">กำลังแสดงผลใน Storefront</p>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate">กำลังแสดงผลใน Storefront</p>
         </div>
 
-        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-xl shadow-lg relative overflow-hidden">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-rose-400">แบนเนอร์ใหญ่ (Featured)</span>
-            <Flame size={16} className="text-rose-400" />
+        <div className="p-3.5 sm:p-5 rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-xl shadow-lg relative overflow-hidden group hover:border-rose-500/30 transition-all">
+          <div className="flex items-center justify-between text-slate-400 mb-1.5 sm:mb-2">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-rose-400 truncate">แบนเนอร์ใหญ่</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
+              <Flame size={15} />
+            </div>
           </div>
           <div className="text-2xl sm:text-3xl font-black text-rose-400">{featuredCount}</div>
-          <p className="text-[11px] text-slate-400 mt-1">แบนเนอร์หลักขนาดใหญ่</p>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate">แบนเนอร์หลัก (Hero)</p>
         </div>
 
-        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-xl shadow-lg relative overflow-hidden">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-400">ปิดการแสดงผล</span>
-            <AlertCircle size={16} className="text-amber-400" />
+        <div className="p-3.5 sm:p-5 rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-xl shadow-lg relative overflow-hidden group hover:border-amber-500/30 transition-all">
+          <div className="flex items-center justify-between text-slate-400 mb-1.5 sm:mb-2">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-amber-400 truncate">ปิดการแสดงผล</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+              <AlertCircle size={15} />
+            </div>
           </div>
           <div className="text-2xl sm:text-3xl font-black text-amber-400">{inactiveCount}</div>
-          <p className="text-[11px] text-slate-400 mt-1">ฉบับร่าง หรือ ซ่อนไว้</p>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate">ฉบับร่าง หรือ ซ่อนไว้</p>
         </div>
       </div>
 
       {/* ── 👑 ส่วนที่ 1: แบนเนอร์ใหญ่หน้าแรก (Hero Section Banner) ── */}
-      <div className="space-y-3 p-5 sm:p-6 rounded-3xl bg-slate-900/60 border border-white/10 backdrop-blur-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+      <div className="space-y-4 p-4 sm:p-6 rounded-3xl bg-slate-900/60 border border-white/10 backdrop-blur-xl shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-white/10">
           <div>
-            <h2 className="text-lg font-black text-white flex items-center gap-2">
+            <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2 flex-wrap">
               <span className="p-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-rose-600 text-white shadow">
                 <Sparkles size={16} />
               </span>
               <span>แบนเนอร์ใหญ่หน้าแรก (Hero Section Banner)</span>
               {heroBanner?.is_active && (
                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold">
-                  ● กำลังแสดงผลด้านบนสุดของหน้าแรก
+                  ● กำลังแสดงผล
                 </span>
               )}
             </h2>
-            <p className="text-slate-400 text-xs mt-1">
+            <p className="text-slate-400 text-xs mt-1 leading-relaxed">
               แบนเนอร์ขนาดใหญ่เต็มหน้าจอส่วนบนสุดของ The Bottle Club Storefront (ภาพพื้นหลัง, ข้อความต้อนรับ, หัวข้อใหญ่, คำโปรย, และปุ่มกดทั้ง 2 ปุ่ม)
             </p>
           </div>
 
           <button
             onClick={handleOpenHeroBanner}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-amber-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs font-black shadow-lg shadow-amber-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer self-start sm:self-auto shrink-0"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-amber-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs sm:text-sm font-black shadow-lg shadow-amber-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer w-full sm:w-auto shrink-0 min-h-[44px]"
           >
             <Edit3 size={15} />
             <span>{heroBanner ? 'แก้ไขแบนเนอร์ใหญ่หน้าแรก' : '+ ตั้งค่าแบนเนอร์ใหญ่หน้าแรก'}</span>
@@ -539,23 +554,23 @@ export default function AdminPromotionsPage() {
         </div>
 
         {heroBanner ? (
-          <div className="relative rounded-2xl overflow-hidden border border-amber-500/30 bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950/20 shadow-xl p-5 sm:p-7 flex flex-col lg:flex-row items-center justify-between gap-6">
+          <div className="relative rounded-2xl overflow-hidden border border-amber-500/30 bg-gradient-to-b lg:bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950/20 shadow-xl p-4 sm:p-7 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6">
             {/* Background preview effect */}
             <div
               className="absolute inset-0 bg-cover bg-center opacity-30 pointer-events-none"
               style={{ backgroundImage: `url(${heroBanner.image_url || '/images/wine_banner.png'})` }}
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent pointer-events-none" />
 
             {/* Left Content */}
             <div className="relative z-10 space-y-3.5 max-w-2xl">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow">
+                <span className="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[10px] sm:text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow">
                   <Flame size={12} className="text-amber-400" />
                   <span>👑 HERO BANNER หน้าแรก</span>
                 </span>
                 {heroBanner.badge && (
-                  <span className="px-3 py-1 rounded-full bg-white/10 border border-white/15 text-white text-[11px] font-bold backdrop-blur-md">
+                  <span className="px-3 py-1 rounded-full bg-white/10 border border-white/15 text-white text-[10px] sm:text-[11px] font-bold backdrop-blur-md">
                     {heroBanner.badge}
                   </span>
                 )}
@@ -567,7 +582,7 @@ export default function AdminPromotionsPage() {
               </div>
 
               <div>
-                <h3 className="text-xl sm:text-2xl font-black text-white leading-tight">
+                <h3 className="text-lg sm:text-2xl font-black text-white leading-tight">
                   {heroBanner.title}
                 </h3>
                 {heroBanner.subtitle && (
@@ -583,77 +598,80 @@ export default function AdminPromotionsPage() {
               </div>
 
               {/* Action Buttons & Links Preview */}
-              <div className="flex flex-wrap items-center gap-2.5 pt-1">
-                <div className="px-4 py-2 rounded-full bg-white text-stone-950 font-black text-xs shadow flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <div className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white text-stone-950 font-black text-xs shadow flex items-center gap-1.5">
                   <span>{heroBanner.cta_text || 'ดูไวน์ทั้งหมด'}</span>
                   <ArrowRight size={13} />
-                  <span className="text-[10px] font-normal text-slate-500">({heroBanner.link_url || '/#products'})</span>
+                  <span className="text-[10px] font-normal text-slate-500 hidden sm:inline">({heroBanner.link_url || '/#products'})</span>
                 </div>
                 {heroBanner.secondary_cta_text && (
-                  <div className="px-4 py-2 rounded-full border border-white/30 bg-white/10 text-white font-bold text-xs backdrop-blur-md flex items-center gap-1.5">
+                  <div className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full border border-white/30 bg-white/10 text-white font-bold text-xs backdrop-blur-md flex items-center gap-1.5">
                     <span>{heroBanner.secondary_cta_text}</span>
-                    <span className="text-[10px] font-normal text-slate-400">({heroBanner.secondary_link_url || '/#wine-categories'})</span>
+                    <span className="text-[10px] font-normal text-slate-400 hidden sm:inline">({heroBanner.secondary_link_url || '/#wine-categories'})</span>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Right Images Preview */}
-            <div className="relative z-10 shrink-0 flex items-center gap-3 sm:gap-4">
-              {/* Background Thumbnail */}
-              <div className="text-center space-y-1">
-                <div className="w-28 h-20 sm:w-32 sm:h-24 rounded-2xl overflow-hidden border border-white/20 bg-slate-950 shadow-lg relative">
-                  <img
-                    src={heroBanner.image_url || '/images/wine_banner.png'}
-                    alt="Background"
-                    className="w-full h-full object-cover"
-                  />
-                  <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/80 text-[9px] text-white font-bold">
-                    ภาพพื้นหลัง
-                  </span>
+            {/* Right Images Preview & Actions */}
+            <div className="relative z-10 shrink-0 flex flex-col sm:flex-row items-center justify-between sm:justify-end gap-3 sm:gap-4 pt-3 lg:pt-0 border-t border-white/10 lg:border-t-0">
+              {/* Thumbnails Row */}
+              <div className="flex items-center justify-center gap-3">
+                {/* Background Thumbnail */}
+                <div className="text-center space-y-1">
+                  <div className="w-24 h-18 sm:w-32 sm:h-24 rounded-2xl overflow-hidden border border-white/20 bg-slate-950 shadow-lg relative">
+                    <img
+                      src={heroBanner.image_url || '/images/wine_banner.png'}
+                      alt="Background"
+                      className="w-full h-full object-cover"
+                    />
+                    <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/80 text-[8px] sm:text-[9px] text-white font-bold">
+                      ภาพพื้นหลัง
+                    </span>
+                  </div>
+                </div>
+
+                {/* Floating Hero Thumbnail */}
+                <div className="text-center space-y-1">
+                  <div className="w-18 h-18 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border border-amber-500/30 bg-slate-950 shadow-lg relative p-1 flex items-center justify-center">
+                    <img
+                      src={heroBanner.hero_image_url || (heroBanner.images && heroBanner.images.length > 1 ? heroBanner.images[1] : '/images/wine_hero.png')}
+                      alt="Floating Hero"
+                      className="w-full h-full object-contain drop-shadow-md"
+                    />
+                    <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-amber-500 text-[8px] sm:text-[9px] text-slate-950 font-black">
+                      ขวดไวน์ลอย
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Floating Hero Thumbnail */}
-              <div className="text-center space-y-1">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border border-amber-500/30 bg-slate-950 shadow-lg relative p-1 flex items-center justify-center">
-                  <img
-                    src={heroBanner.hero_image_url || (heroBanner.images && heroBanner.images.length > 1 ? heroBanner.images[1] : '/images/wine_hero.png')}
-                    alt="Floating Hero"
-                    className="w-full h-full object-contain drop-shadow-md"
-                  />
-                  <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-amber-500 text-[9px] text-slate-950 font-black">
-                    ขวดไวน์ลอย
-                  </span>
-                </div>
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex flex-col gap-2 pl-2">
+              {/* Action buttons on Mobile & Desktop */}
+              <div className="flex sm:flex-col gap-2 w-full sm:w-auto">
                 <button
                   onClick={() => handleOpenEdit(heroBanner, 'hero')}
-                  className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                  className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 min-h-[40px]"
                 >
-                  <Edit3 size={13} className="text-cyan-400" />
+                  <Edit3 size={14} className="text-cyan-400" />
                   <span>แก้ไข</span>
                 </button>
                 <button
                   onClick={() => handleToggleActive(heroBanner)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                  className={`flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 min-h-[40px] ${
                     heroBanner.is_active
                       ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                       : 'bg-slate-800 text-slate-400 border border-slate-700'
                   }`}
                   title="เปิด/ปิด การแสดงผลแบนเนอร์ใหญ่"
                 >
-                  <span className={`w-1.5 h-1.5 rounded-full ${heroBanner.is_active ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+                  <span className={`w-2 h-2 rounded-full ${heroBanner.is_active ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
                   <span>{heroBanner.is_active ? 'เปิดอยู่' : 'ปิดอยู่'}</span>
                 </button>
               </div>
             </div>
           </div>
         ) : (
-          <div className="p-8 rounded-2xl border border-dashed border-amber-500/30 bg-amber-500/5 text-center flex flex-col items-center justify-center gap-3">
+          <div className="p-6 sm:p-8 rounded-2xl border border-dashed border-amber-500/30 bg-amber-500/5 text-center flex flex-col items-center justify-center gap-3">
             <Sparkles size={32} className="text-amber-400" />
             <div>
               <h3 className="text-base font-bold text-white">ยังไม่มีการตั้งค่าแบนเนอร์ใหญ่หน้าแรก</h3>
@@ -661,9 +679,9 @@ export default function AdminPromotionsPage() {
             </div>
             <button
               onClick={handleOpenHeroBanner}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 text-slate-950 text-xs font-extrabold shadow-lg hover:bg-amber-400 transition cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-amber-500 text-slate-950 text-xs sm:text-sm font-extrabold shadow-lg hover:bg-amber-400 transition cursor-pointer w-full sm:w-auto min-h-[44px]"
             >
-              <Plus size={15} />
+              <Plus size={16} />
               <span>+ ตั้งค่าแบนเนอร์ใหญ่หน้าแรกทันที</span>
             </button>
           </div>
@@ -674,7 +692,7 @@ export default function AdminPromotionsPage() {
       <div className="space-y-4 pt-2">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-black text-white flex items-center gap-2">
+            <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2 flex-wrap">
               <span className="p-1.5 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/30">
                 <Tag size={16} />
               </span>
@@ -683,14 +701,14 @@ export default function AdminPromotionsPage() {
                 {totalCount - featuredCount} แคมเปญ
               </span>
             </h2>
-            <p className="text-slate-400 text-xs">
+            <p className="text-slate-400 text-xs leading-relaxed">
               การ์ดย่อยที่จะไปแสดงผลในแถบสไลด์อัตโนมัติ (Carousel) ส่วน NEWS & SPECIAL PROMOTIONS ด้านล่างของหน้าแรก
             </p>
           </div>
 
           <button
             onClick={handleOpenCreateCard}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 hover:to-pink-600 text-white text-xs font-extrabold shadow-[0_4px_20px_rgba(225,29,72,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer self-start sm:self-auto shrink-0"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 hover:to-pink-600 text-white text-xs sm:text-sm font-extrabold shadow-[0_4px_20px_rgba(225,29,72,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer w-full sm:w-auto shrink-0 min-h-[44px] touch-manipulation"
           >
             <Plus size={16} />
             <span>+ เพิ่มโปรโมชั่นใหม่ (การ์ดข่าวสาร)</span>
@@ -698,9 +716,9 @@ export default function AdminPromotionsPage() {
         </div>
 
         {/* Filter Bar & Search */}
-        <div className="p-3 rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-inner">
+        <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-inner">
           {/* Segmented Filter Pills */}
-          <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto p-1 bg-black/40 rounded-xl">
+          <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto p-1 bg-black/40 rounded-xl no-scrollbar scroll-smooth">
             {[
               { id: 'all', label: 'ทั้งหมด', count: totalCount },
               { id: 'grid', label: 'การ์ดย่อย', count: totalCount - featuredCount },
@@ -711,15 +729,15 @@ export default function AdminPromotionsPage() {
               <button
                 key={tab.id}
                 onClick={() => setFilterType(tab.id as any)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+                className={`px-3.5 py-2 sm:py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[36px] ${
                   filterType === tab.id
-                    ? 'bg-rose-600 text-white shadow-sm'
+                    ? 'bg-rose-600 text-white shadow-md'
                     : 'text-slate-400 hover:text-white hover:bg-white/5'
                 }`}
               >
                 <span>{tab.label}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                  filterType === tab.id ? 'bg-black/30 text-white' : 'bg-white/10 text-slate-400'
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                  filterType === tab.id ? 'bg-black/30 text-white font-black' : 'bg-white/10 text-slate-400'
                 }`}>
                   {tab.count}
                 </span>
@@ -728,21 +746,21 @@ export default function AdminPromotionsPage() {
           </div>
 
           {/* Search input */}
-          <div className="relative w-full sm:w-72">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <div className="relative w-full md:w-72">
+            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               placeholder="ค้นหาชื่อ, ส่วนลด, ป้าย..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 rounded-xl bg-slate-950/60 border border-white/10 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none transition"
+              className="w-full pl-9 pr-9 py-2.5 sm:py-2 rounded-xl bg-slate-950/60 border border-white/10 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none transition min-h-[40px]"
             />
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-white rounded-md cursor-pointer"
               >
-                <X size={13} />
+                <X size={14} />
               </button>
             )}
           </div>
@@ -756,20 +774,20 @@ export default function AdminPromotionsPage() {
           <p className="text-slate-400 text-xs font-medium">กำลังโหลดข้อมูลโปรโมชั่น...</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="p-12 text-center rounded-2xl border border-dashed border-white/10 bg-slate-900/40">
-          <Wine size={40} className="mx-auto text-slate-600 mb-3" />
+        <div className="p-8 sm:p-12 text-center rounded-2xl border border-dashed border-white/10 bg-slate-900/40">
+          <Sparkles size={40} className="mx-auto text-slate-600 mb-3" />
           <h3 className="text-base font-bold text-white mb-1">ไม่พบรายการโปรโมชั่น</h3>
           <p className="text-slate-400 text-xs mb-4">ลองเปลี่ยนคำค้นหา หรือกดสร้างโปรโมชั่นใหม่</p>
           <button
             onClick={handleOpenCreateCard}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-rose-600 text-white text-xs sm:text-sm font-bold shadow-lg hover:bg-rose-500 transition cursor-pointer w-full sm:w-auto min-h-[44px]"
           >
-            <Plus size={14} />
+            <Plus size={16} />
             <span>+ สร้างการ์ดโปรโมชั่นแรก</span>
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {filtered.map(promo => (
             <div
               key={promo.id}
@@ -780,7 +798,7 @@ export default function AdminPromotionsPage() {
               }`}
             >
               {/* Card Image header */}
-              <div className="relative h-44 w-full overflow-hidden bg-slate-950">
+              <div className="relative h-44 sm:h-48 w-full overflow-hidden bg-slate-950">
                 <div
                   className="absolute inset-0 bg-cover bg-center transition-transform duration-500 hover:scale-105"
                   style={{ backgroundImage: `url(${promo.image_url})` }}
@@ -793,7 +811,7 @@ export default function AdminPromotionsPage() {
                     {promo.is_featured && (
                       <span className="px-2.5 py-0.5 rounded-md bg-gradient-to-r from-amber-500 via-rose-600 to-pink-600 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md">
                         <Flame size={11} className="text-amber-200" />
-                        👑 แบนเนอร์ใหญ่หน้าแรก (HERO)
+                        👑 แบนเนอร์ใหญ่ (HERO)
                       </span>
                     )}
                     {promo.badge && (
@@ -821,7 +839,7 @@ export default function AdminPromotionsPage() {
               </div>
 
               {/* Card Body */}
-              <div className="p-5 flex-1 flex flex-col justify-between">
+              <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                 <div>
                   {promo.is_featured && (
                     <div className="mb-2.5 px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] font-bold flex items-center justify-between">
@@ -833,7 +851,7 @@ export default function AdminPromotionsPage() {
                   )}
 
                   <div className="flex items-start justify-between gap-2 mb-1.5">
-                    <h3 className="font-extrabold text-white text-base leading-snug line-clamp-1">
+                    <h3 className="font-extrabold text-white text-sm sm:text-base leading-snug line-clamp-1">
                       {promo.title}
                     </h3>
                   </div>
@@ -850,53 +868,53 @@ export default function AdminPromotionsPage() {
                 {/* Card Meta & Controls */}
                 <div className="pt-3 border-t border-white/10 space-y-3">
                   <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span className="flex items-center gap-1 text-[11px]">
-                      <LinkIcon size={12} className="text-slate-500" />
-                      <span className="truncate max-w-[120px]">{promo.link_url || '/#products'}</span>
+                    <span className="flex items-center gap-1 text-[11px] truncate max-w-[150px]">
+                      <LinkIcon size={12} className="text-slate-500 shrink-0" />
+                      <span className="truncate">{promo.link_url || '/#products'}</span>
                     </span>
 
                     {/* Quick Active Toggle */}
                     <button
                       onClick={() => handleToggleActive(promo)}
-                      className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-95 ${
                         promo.is_active
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-sm'
                           : 'bg-slate-800 text-slate-400 border border-slate-700'
                       }`}
                       title="กดเพื่อสลับ เปิด/ปิด การแสดงผล"
                     >
-                      <span className={`w-1.5 h-1.5 rounded-full ${promo.is_active ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+                      <span className={`w-2 h-2 rounded-full ${promo.is_active ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
                       <span>{promo.is_active ? 'เปิดแสดงผล' : 'ปิดใช้งาน'}</span>
                     </button>
                   </div>
 
                   {/* Actions buttons */}
-                  <div className="flex items-center justify-between gap-2 pt-1">
+                  <div className="flex items-center gap-2 pt-1">
                     {!promo.is_featured && (
                       <button
                         onClick={() => handleSetFeatured(promo)}
-                        className="py-2 px-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[11px] font-bold transition flex items-center gap-1 cursor-pointer"
+                        className="py-2.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer touch-manipulation active:scale-95 min-h-[42px]"
                         title="ตั้งเป็นแบนเนอร์ใหญ่หน้าแรก (Hero Banner)"
                       >
-                        <Flame size={12} className="text-amber-400" />
-                        <span>ตั้งเป็น Hero</span>
+                        <Flame size={13} className="text-amber-400 shrink-0" />
+                        <span className="whitespace-nowrap">ตั้งเป็น Hero</span>
                       </button>
                     )}
 
                     <button
                       onClick={() => handleOpenEdit(promo)}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-xs font-bold transition cursor-pointer"
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-xs font-bold transition cursor-pointer touch-manipulation active:scale-95 min-h-[42px]"
                     >
-                      <Edit3 size={13} className="text-cyan-400" />
+                      <Edit3 size={14} className="text-cyan-400 shrink-0" />
                       <span>แก้ไข</span>
                     </button>
 
                     <button
                       onClick={() => handleDelete(promo.id)}
-                      className="inline-flex items-center justify-center p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-bold transition cursor-pointer"
+                      className="inline-flex items-center justify-center p-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-bold transition cursor-pointer touch-manipulation active:scale-95 min-h-[42px] min-w-[42px]"
                       title="ลบโปรโมชั่น"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={15} />
                     </button>
                   </div>
                 </div>
@@ -909,47 +927,51 @@ export default function AdminPromotionsPage() {
       {/* ── Create / Edit Modal with Real-time Live Preview ── */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-4xl bg-slate-900 border border-white/15 rounded-3xl shadow-2xl overflow-hidden my-6"
+              exit={{ opacity: 0, scale: 0.95, y: 30 }}
+              className="relative w-full max-w-4xl bg-slate-900 border border-white/15 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden my-0 sm:my-6 max-h-[95vh] sm:max-h-[90vh] flex flex-col"
             >
+              {/* Mobile handle indicator */}
+              <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto my-2 sm:hidden shrink-0" />
+
               {/* Modal Header */}
-              <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-slate-950/60">
-                <div className="flex items-center gap-2.5">
-                  <div className={`p-2 rounded-xl border ${
+              <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-white/10 flex items-center justify-between bg-slate-950/80 backdrop-blur-md shrink-0">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className={`p-2 rounded-xl border shrink-0 ${
                     modalMode === 'hero'
                       ? 'bg-amber-500/15 border-amber-500/30 text-amber-400'
                       : 'bg-rose-500/15 border-rose-500/30 text-rose-400'
                   }`}>
                     {modalMode === 'hero' ? <Flame size={18} /> : <Sparkles size={18} />}
                   </div>
-                  <div>
-                    <h2 className="text-lg font-black text-white">
+                  <div className="min-w-0">
+                    <h2 className="text-sm sm:text-lg font-black text-white truncate">
                       {modalMode === 'hero'
-                        ? (editingPromo ? '👑 จัดการ / แก้ไขแบนเนอร์ใหญ่หน้าแรก (Hero Banner)' : '👑 สร้างแบนเนอร์ใหญ่หน้าแรก (Hero Banner)')
+                        ? (editingPromo ? '👑 จัดการแบนเนอร์ใหญ่ (Hero Banner)' : '👑 สร้างแบนเนอร์ใหญ่ (Hero Banner)')
                         : (editingPromo ? '📰 แก้ไขการ์ดโปรโมชั่น / ข่าวสาร' : '➕ เพิ่มการ์ดโปรโมชั่น / ข่าวสารใหม่')}
                     </h2>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-[11px] sm:text-xs text-slate-400 truncate">
                       {modalMode === 'hero'
-                        ? 'กำหนดเนื้อหา รูปภาพแบนเนอร์หลัก ขวดลอย และปุ่ม CTA หน้าแรกของเว็บไซต์'
-                        : 'กำหนดเนื้อหา รูปภาพ และพรีวิวผลการแสดงผลการ์ดย่อยทันทีก่อนบันทึก'}
+                        ? 'กำหนดภาพพื้นหลัง ขวดลอย และปุ่ม CTA หน้าแรก'
+                        : 'กำหนดเนื้อหา รูปภาพ และพรีวิวผลการแสดงผลทันทีก่อนบันทึก'}
                     </p>
                   </div>
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition"
+                  className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition cursor-pointer shrink-0 touch-manipulation"
                 >
                   <X size={18} />
                 </button>
               </div>
 
               {/* Form Content */}
-              <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+              <form onSubmit={handleSubmit} className="flex-1 p-4 sm:p-6 space-y-5 sm:space-y-6 overflow-y-auto">
                 {errorMessage && (
                   <div className="p-3.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 text-xs flex items-center gap-2">
                     <AlertCircle size={15} />
@@ -1055,26 +1077,26 @@ export default function AdminPromotionsPage() {
                   </div>
 
                   {/* URL Input & Multiple Upload */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
-                    <div className="sm:col-span-2 flex gap-1.5">
+                  <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                    <div className="flex-1 flex gap-1.5">
                       <input
                         type="text"
                         placeholder="วาง URL รูปภาพเพิ่มเติม (https://...)"
                         value={newImageUrl}
                         onChange={e => setNewImageUrl(e.target.value)}
-                        className="flex-1 px-3.5 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none"
+                        className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none min-h-[42px]"
                       />
                       <button
                         type="button"
                         onClick={handleAddImageUrl}
-                        className="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition shrink-0 cursor-pointer"
+                        className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition shrink-0 cursor-pointer touch-manipulation active:scale-95 min-h-[42px]"
                       >
                         + เพิ่มรูป
                       </button>
                     </div>
                     <div>
-                      <label className="w-full px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition">
-                        <Upload size={13} />
+                      <label className="w-full px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition touch-manipulation active:scale-95 min-h-[42px]">
+                        <Upload size={14} />
                         <span>+ อัปโหลดหลายรูป</span>
                         <input
                           type="file"
@@ -1412,11 +1434,11 @@ export default function AdminPromotionsPage() {
                 </div>
 
                 {/* Modal Footer Buttons */}
-                <div className="pt-4 border-t border-white/10 flex items-center justify-end gap-3">
+                <div className="pt-4 border-t border-white/10 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 sticky bottom-0 bg-slate-900/95 backdrop-blur-md -mx-4 -mb-4 sm:-mx-6 sm:-mb-6 p-4 sm:p-6 z-20">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold transition cursor-pointer"
+                    className="px-5 py-3 sm:py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs sm:text-sm font-bold transition cursor-pointer touch-manipulation text-center min-h-[44px]"
                   >
                     ยกเลิก
                   </button>
@@ -1424,21 +1446,21 @@ export default function AdminPromotionsPage() {
                   <button
                     type="submit"
                     disabled={saving}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 hover:to-pink-600 text-white text-xs font-extrabold shadow-[0_4px_16px_rgba(225,29,72,0.4)] transition-all cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 hover:to-pink-600 text-white text-xs sm:text-sm font-extrabold shadow-[0_4px_16px_rgba(225,29,72,0.4)] transition-all cursor-pointer disabled:opacity-50 touch-manipulation active:scale-95 min-h-[44px]"
                   >
                     {saving ? (
                       <>
-                        <RefreshCw size={14} className="animate-spin" />
+                        <RefreshCw size={15} className="animate-spin" />
                         <span>กำลังบันทึก...</span>
                       </>
                     ) : saveSuccess ? (
                       <>
-                        <CheckCircle2 size={14} className="text-emerald-300" />
+                        <CheckCircle2 size={15} className="text-emerald-300" />
                         <span>บันทึกสำเร็จ!</span>
                       </>
                     ) : (
                       <>
-                        <Check size={14} />
+                        <Check size={15} />
                         <span>
                           {modalMode === 'hero'
                             ? (editingPromo ? 'บันทึกแบนเนอร์ใหญ่' : 'สร้างแบนเนอร์ใหญ่')
