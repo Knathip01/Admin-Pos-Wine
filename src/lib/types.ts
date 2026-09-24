@@ -239,3 +239,40 @@ export interface QRCodeItem {
   scan_count: number
   created_at: string
 }
+
+// การจับคู่อาหารและไวน์ (Food & Wine Pairing)
+export interface FoodWinePairing {
+  id: string
+  title: string
+  name?: string
+  description?: string
+  pairing_notes?: string
+  food_product_id: string
+  wine_product_id: string
+  discount_type: 'percent' | 'fixed'
+  discount_value: number
+  is_active: boolean
+  created_at?: string
+}
+
+// แคมเปญโปรโมชั่น Web Wine (E-Commerce Promotion)
+export interface Promotion {
+  id: string                    // เช่น 'grand-cru-2026'
+  title: string                 // ชื่อแคมเปญ เช่น 'GRAND CRU & VINTAGE'
+  subtitle?: string             // คำโปรยรอง
+  description: string           // รายละเอียดโปรโมชั่น
+  image_url: string             // URL รูปภาพแบนเนอร์หลัก
+  images?: string[]             // รายการรูปภาพหลายรูปสำหรับแบนเนอร์นี้
+  badge?: string                // ป้ายกำกับ เช่น 'FEATURED', 'NEW MEMBER'
+  discount_tag?: string         // แท็กส่วนลด เช่น 'UP TO 30% OFF', 'ลด 500฿'
+  valid_until?: string          // ระยะเวลา เช่น 'ถึงสิ้นเดือนนี้'
+  link_url?: string             // ลิงก์ปลายทางเมื่อกด เช่น '/#products'
+  cta_text?: string             // ข้อความบนปุ่ม เช่น 'ดูสินค้าโปรโมชั่น'
+  is_featured: boolean          // true = แบนเนอร์ใหญ่, false = การ์ดย่อย 3 ใบ
+  is_active: boolean            // เปิด/ปิดการแสดงผล
+  sort_order: number            // ลำดับการแสดงผล
+  created_at?: string
+  updated_at?: string
+}
+
+
