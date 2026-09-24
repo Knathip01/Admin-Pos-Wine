@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Sparkles, Plus, Edit3, Trash2, CheckCircle2, AlertCircle,
   Tag, Clock, ArrowRight, ExternalLink, Image as ImageIcon,
-  Flame, Layers, Eye, RefreshCw, X, Check, Search, Wine,
+  Flame, Layers, Eye, RefreshCw, X, Check, Search,
   SlidersHorizontal, Upload, Link as LinkIcon
 } from 'lucide-react'
 import Link from 'next/link'
@@ -506,39 +506,6 @@ export default function AdminPromotionsPage() {
           </div>
           <div className="text-2xl sm:text-3xl font-black text-amber-400">{inactiveCount}</div>
           <p className="text-[11px] text-slate-400 mt-1">ฉบับร่าง หรือ ซ่อนไว้</p>
-        </div>
-      </div>
-
-      {/* ── ProjectbottleClub1 Bridge Banner ── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-indigo-500/10 border border-amber-500/20 text-xs">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-300 shrink-0">
-            <Wine size={18} />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-white text-sm">เชื่อมต่อกับ ProjectbottleClub1</span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-bold text-[10px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                ซิงค์ข้อมูลสด (Live Synced)
-              </span>
-            </div>
-            <p className="text-slate-300 mt-0.5">
-              ข้อมูลโปรโมชั่นที่จัดการในหน้านี้จะถูกส่งไปแสดงผลบนแบนเนอร์และการ์ดสินค้าของ <strong className="text-amber-200">The Bottle Club (ProjectbottleClub1)</strong> อัตโนมัติทันที
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-          <a
-            href="http://localhost:3001"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/30 font-bold transition shadow-sm"
-          >
-            <ExternalLink size={13} />
-            <span>เปิดดูหน้าร้าน ProjectbottleClub1</span>
-          </a>
         </div>
       </div>
 
