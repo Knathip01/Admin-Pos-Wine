@@ -4,11 +4,10 @@ import React, { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Sparkles, Plus, Edit3, Trash2, CheckCircle2, AlertCircle,
-  Tag, Clock, ArrowRight, ExternalLink, Image as ImageIcon,
+  Tag, Clock, ArrowRight, Image as ImageIcon,
   Flame, Layers, Eye, RefreshCw, X, Check, Search,
   SlidersHorizontal, Upload, Link as LinkIcon
 } from 'lucide-react'
-import Link from 'next/link'
 import { Promotion } from '@/lib/types'
 import { DEFAULT_PROMOTIONS, PROMOTION_IMAGE_PRESETS } from '@/lib/mock-promotions'
 
@@ -435,45 +434,34 @@ export default function AdminPromotionsPage() {
         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 w-full xl:w-auto">
           {/* Main Action Buttons */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full sm:w-auto">
-            {/* 👑 ปุ่มจัดการแบนเนอร์ใหญ่หน้าแรก (Hero Banner) */}
+            {/* ปุ่มจัดการแบนเนอร์ใหญ่หน้าแรก (Hero Banner) - ไม่มีอิโมจิ */}
             <button
               onClick={handleOpenHeroBanner}
-              className="inline-flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-amber-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs sm:text-sm font-extrabold shadow-[0_4px_20px_rgba(245,158,11,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer touch-manipulation min-h-[44px]"
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-amber-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs sm:text-sm font-extrabold shadow-[0_4px_20px_rgba(245,158,11,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer touch-manipulation min-h-[44px]"
             >
               <Sparkles size={16} className="text-amber-200 shrink-0" />
-              <span className="whitespace-nowrap">👑 จัดการแบนเนอร์ใหญ่ (Hero)</span>
+              <span className="whitespace-nowrap">จัดการแบนเนอร์ใหญ่ (Hero)</span>
             </button>
 
-            {/* ➕ ปุ่มเพิ่มการ์ดโปรโมชั่นใหม่ (News & Promotions) */}
+            {/* ปุ่มเพิ่มโปรโมชั่นใหม่ - มีเฉพาะเครื่องหมาย + ตัวเดียว ไม่มีอิโมจิ */}
             <button
               onClick={handleOpenCreateCard}
               className="inline-flex items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 hover:to-pink-600 text-white text-xs sm:text-sm font-extrabold shadow-[0_4px_20px_rgba(225,29,72,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer touch-manipulation min-h-[44px]"
             >
-              <Plus size={17} className="shrink-0" />
-              <span className="whitespace-nowrap">+ เพิ่มโปรโมชั่นใหม่ (การ์ด)</span>
+              <Plus size={18} className="shrink-0" />
+              <span className="whitespace-nowrap">+ เพิ่มโปรโมชั่นใหม่</span>
             </button>
           </div>
 
-          {/* Secondary Action Buttons */}
-          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
-            <Link
-              href="/#promotions"
-              target="_blank"
-              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700 text-xs font-bold transition-all shadow-sm active:scale-[0.98] min-h-[42px]"
-            >
-              <ExternalLink size={14} className="text-cyan-400 shrink-0" />
-              <span className="truncate">หน้าร้านจริง</span>
-            </Link>
-
-            <button
-              onClick={handleRestoreDefaults}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800/40 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-white/5 text-xs font-semibold transition active:scale-[0.98] min-h-[42px] cursor-pointer"
-              title="รีเซ็ตโปรโมชั่นเริ่มต้น"
-            >
-              <RefreshCw size={13} className="shrink-0" />
-              <span>คืนค่าเริ่มต้น</span>
-            </button>
-          </div>
+          {/* Reset Action Button */}
+          <button
+            onClick={handleRestoreDefaults}
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-white/5 text-xs font-semibold transition active:scale-[0.98] min-h-[42px] cursor-pointer"
+            title="รีเซ็ตโปรโมชั่นเริ่มต้น"
+          >
+            <RefreshCw size={13} className="shrink-0" />
+            <span>คืนค่าเริ่มต้น</span>
+          </button>
         </div>
       </div>
 
@@ -567,7 +555,7 @@ export default function AdminPromotionsPage() {
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[10px] sm:text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow">
                   <Flame size={12} className="text-amber-400" />
-                  <span>👑 HERO BANNER หน้าแรก</span>
+                  <span>HERO BANNER หน้าแรก</span>
                 </span>
                 {heroBanner.badge && (
                   <span className="px-3 py-1 rounded-full bg-white/10 border border-white/15 text-white text-[10px] sm:text-[11px] font-bold backdrop-blur-md">
@@ -710,8 +698,8 @@ export default function AdminPromotionsPage() {
             onClick={handleOpenCreateCard}
             className="inline-flex items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 hover:to-pink-600 text-white text-xs sm:text-sm font-extrabold shadow-[0_4px_20px_rgba(225,29,72,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer w-full sm:w-auto shrink-0 min-h-[44px] touch-manipulation"
           >
-            <Plus size={16} />
-            <span>+ เพิ่มโปรโมชั่นใหม่ (การ์ดข่าวสาร)</span>
+            <Plus size={18} className="shrink-0" />
+            <span>+ เพิ่มโปรโมชั่นใหม่</span>
           </button>
         </div>
 
@@ -811,7 +799,7 @@ export default function AdminPromotionsPage() {
                     {promo.is_featured && (
                       <span className="px-2.5 py-0.5 rounded-md bg-gradient-to-r from-amber-500 via-rose-600 to-pink-600 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md">
                         <Flame size={11} className="text-amber-200" />
-                        👑 แบนเนอร์ใหญ่ (HERO)
+                        แบนเนอร์ใหญ่ (HERO)
                       </span>
                     )}
                     {promo.badge && (
@@ -843,7 +831,7 @@ export default function AdminPromotionsPage() {
                 <div>
                   {promo.is_featured && (
                     <div className="mb-2.5 px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] font-bold flex items-center justify-between">
-                      <span>👑 ควบคุมส่วน Hero Section หน้าแรก</span>
+                      <span>ควบคุมส่วน Hero Section หน้าแรก</span>
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">
                         {promo.images && promo.images.length > 1 ? `${promo.images.length} รูป (พื้นหลัง+ขวด)` : '1 รูป (พื้นหลัง)'}
                       </span>
@@ -950,8 +938,8 @@ export default function AdminPromotionsPage() {
                   <div className="min-w-0">
                     <h2 className="text-sm sm:text-lg font-black text-white truncate">
                       {modalMode === 'hero'
-                        ? (editingPromo ? '👑 จัดการแบนเนอร์ใหญ่ (Hero Banner)' : '👑 สร้างแบนเนอร์ใหญ่ (Hero Banner)')
-                        : (editingPromo ? '📰 แก้ไขการ์ดโปรโมชั่น / ข่าวสาร' : '➕ เพิ่มการ์ดโปรโมชั่น / ข่าวสารใหม่')}
+                        ? (editingPromo ? 'จัดการแบนเนอร์ใหญ่ (Hero Banner)' : 'สร้างแบนเนอร์ใหญ่ (Hero Banner)')
+                        : (editingPromo ? 'แก้ไขการ์ดโปรโมชั่น / ข่าวสาร' : '+ เพิ่มการ์ดโปรโมชั่น / ข่าวสารใหม่')}
                     </h2>
                     <p className="text-[11px] sm:text-xs text-slate-400 truncate">
                       {modalMode === 'hero'
@@ -1243,7 +1231,7 @@ export default function AdminPromotionsPage() {
                   <label className="flex items-center justify-between cursor-pointer p-3 rounded-xl bg-slate-800/30 hover:bg-slate-800/50 border border-white/5 transition">
                     <div>
                       <span className="text-xs font-bold text-white block">
-                        👑 แบนเนอร์หลักหน้าแรก (Hero Banner)
+                        แบนเนอร์หลักหน้าแรก (Hero Banner)
                       </span>
                       <span className="text-[11px] text-slate-400 block mt-0.5">
                         {isFeatured ? 'แสดงด้านบนสุดขนาดใหญ่เต็มหน้าจอ (Hero Section)' : 'แสดงเป็นการ์ดย่อย (Grid Card ข่าวสาร/โปรโมชั่น)'}
@@ -1282,7 +1270,7 @@ export default function AdminPromotionsPage() {
                     <div className="flex items-center gap-2 text-rose-300">
                       <Sparkles size={16} className="text-rose-400" />
                       <span className="text-xs font-black uppercase tracking-wider">
-                        ✨ ตั้งค่าพิเศษสำหรับแบนเนอร์ใหญ่หน้าแรก (Hero Section Controls)
+                        ตั้งค่าพิเศษสำหรับแบนเนอร์ใหญ่หน้าแรก (Hero Section Controls)
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-300 leading-relaxed">
