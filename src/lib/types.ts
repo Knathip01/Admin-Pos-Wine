@@ -268,6 +268,9 @@ export interface Promotion {
   valid_until?: string          // ระยะเวลา เช่น 'ถึงสิ้นเดือนนี้'
   link_url?: string             // ลิงก์ปลายทางเมื่อกด เช่น '/#products'
   cta_text?: string             // ข้อความบนปุ่ม เช่น 'ดูสินค้าโปรโมชั่น'
+  secondary_cta_text?: string   // ข้อความปุ่มรอง (Hero Banner) เช่น 'เรียนรู้เพิ่มเติม'
+  secondary_link_url?: string   // ลิงก์ปุ่มรอง (Hero Banner) เช่น '/#wine-categories'
+  hero_image_url?: string       // รูปภาพขวดไวน์/ตู้ไวน์ลอยด้านขวา (Floating Hero Image)
   is_featured: boolean          // true = แบนเนอร์ใหญ่, false = การ์ดย่อย 3 ใบ
   is_active: boolean            // เปิด/ปิดการแสดงผล
   sort_order: number            // ลำดับการแสดงผล

@@ -38,6 +38,9 @@ export default function AdminPromotionsPage() {
   const [validUntil, setValidUntil] = useState('ถึงสิ้นเดือนนี้')
   const [linkUrl, setLinkUrl] = useState('/#products')
   const [ctaText, setCtaText] = useState('ดูสินค้าโปรโมชั่น')
+  const [secondaryCtaText, setSecondaryCtaText] = useState('เรียนรู้เพิ่มเติม')
+  const [secondaryLinkUrl, setSecondaryLinkUrl] = useState('/#wine-categories')
+  const [heroImageUrl, setHeroImageUrl] = useState('')
   const [isFeatured, setIsFeatured] = useState(false)
   const [isActive, setIsActive] = useState(true)
   const [sortOrder, setSortOrder] = useState(1)
@@ -76,12 +79,15 @@ export default function AdminPromotionsPage() {
     setDescription('')
     setImageUrl(PROMOTION_IMAGE_PRESETS[0].url)
     setImages([PROMOTION_IMAGE_PRESETS[0].url])
+    setHeroImageUrl('')
     setNewImageUrl('')
-    setBadge('FEATURED')
+    setBadge('PROMOTION')
     setDiscountTag('UP TO 20% OFF')
     setValidUntil('ถึงสิ้นเดือนนี้')
     setLinkUrl('/#products')
     setCtaText('ดูสินค้าโปรโมชั่น')
+    setSecondaryCtaText('เรียนรู้เพิ่มเติม')
+    setSecondaryLinkUrl('/#wine-categories')
     setIsFeatured(promotions.filter(p => p.is_featured).length === 0)
     setIsActive(true)
     setSortOrder(promotions.length + 1)
@@ -101,17 +107,40 @@ export default function AdminPromotionsPage() {
       : (p.image_url ? [p.image_url] : [PROMOTION_IMAGE_PRESETS[0].url])
     setImages(initialImgs)
     setImageUrl(initialImgs[0] || p.image_url)
+    setHeroImageUrl(p.hero_image_url || (initialImgs.length > 1 ? initialImgs[1] : ''))
     setNewImageUrl('')
     setBadge(p.badge || 'PROMOTION')
     setDiscountTag(p.discount_tag || '')
     setValidUntil(p.valid_until || '')
     setLinkUrl(p.link_url || '/#products')
-    setCtaText(p.cta_text || 'ดูสินค้าโปรโมชั่น')
+    setCtaText(p.cta_text || (p.is_featured ? 'ดูไวน์ทั้งหมด' : 'ดูสินค้าโปรโมชั่น'))
+    setSecondaryCtaText(p.secondary_cta_text || (p.is_featured ? 'เรียนรู้เพิ่มเติม' : ''))
+    setSecondaryLinkUrl(p.secondary_link_url || (p.is_featured ? '/#wine-categories' : ''))
     setIsFeatured(Boolean(p.is_featured))
     setIsActive(p.is_active !== undefined ? Boolean(p.is_active) : true)
     setSortOrder(Number(p.sort_order) || 1)
     setErrorMessage('')
     setIsModalOpen(true)
+  }
+
+  // Set as Main Hero Banner
+  const handleSetFeatured = async (targetPromo: Promotion) => {
+    const updatedList = promotions.map(p => ({
+      ...p,
+      is_featured: p.id === targetPromo.id,
+    }))
+    setPromotions(updatedList)
+
+    try {
+      await fetch('/api/admin/promotions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedList),
+      })
+    } catch (err) {
+      console.error('Failed to set featured promo:', err)
+      loadPromotions()
+    }
   }
 
   // Quick Toggle Active Status
@@ -252,6 +281,14 @@ export default function AdminPromotionsPage() {
       return
     }
 
+    if (isFeatured && heroImageUrl.trim() && !finalImages.includes(heroImageUrl.trim())) {
+      if (finalImages.length > 1) {
+        finalImages[1] = heroImageUrl.trim()
+      } else {
+        finalImages.push(heroImageUrl.trim())
+      }
+    }
+
     setSaving(true)
     setErrorMessage('')
 
@@ -262,11 +299,14 @@ export default function AdminPromotionsPage() {
       description: description.trim(),
       image_url: finalImages[0],
       images: finalImages,
+      hero_image_url: heroImageUrl.trim() || (finalImages.length > 1 ? finalImages[1] : undefined),
       badge: badge.trim(),
       discount_tag: discountTag.trim(),
       valid_until: validUntil.trim(),
       link_url: linkUrl.trim() || '/#products',
-      cta_text: ctaText.trim() || 'ดูสินค้าโปรโมชั่น',
+      cta_text: ctaText.trim() || (isFeatured ? 'ดูไวน์ทั้งหมด' : 'ดูสินค้าโปรโมชั่น'),
+      secondary_cta_text: secondaryCtaText.trim(),
+      secondary_link_url: secondaryLinkUrl.trim(),
       is_featured: isFeatured,
       is_active: isActive,
       sort_order: Number(sortOrder) || 1,
@@ -543,9 +583,9 @@ export default function AdminPromotionsPage() {
                 <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {promo.is_featured && (
-                      <span className="px-2.5 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md">
-                        <Flame size={11} />
-                        FEATURED BANNER
+                      <span className="px-2.5 py-0.5 rounded-md bg-gradient-to-r from-amber-500 via-rose-600 to-pink-600 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md">
+                        <Flame size={11} className="text-amber-200" />
+                        👑 แบนเนอร์ใหญ่หน้าแรก (HERO)
                       </span>
                     )}
                     {promo.badge && (
@@ -575,6 +615,15 @@ export default function AdminPromotionsPage() {
               {/* Card Body */}
               <div className="p-5 flex-1 flex flex-col justify-between">
                 <div>
+                  {promo.is_featured && (
+                    <div className="mb-2.5 px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] font-bold flex items-center justify-between">
+                      <span>👑 ควบคุมส่วน Hero Section หน้าแรก</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">
+                        {promo.images && promo.images.length > 1 ? `${promo.images.length} รูป (พื้นหลัง+ขวด)` : '1 รูป (พื้นหลัง)'}
+                      </span>
+                    </div>
+                  )}
+
                   <div className="flex items-start justify-between gap-2 mb-1.5">
                     <h3 className="font-extrabold text-white text-base leading-snug line-clamp-1">
                       {promo.title}
@@ -615,6 +664,17 @@ export default function AdminPromotionsPage() {
 
                   {/* Actions buttons */}
                   <div className="flex items-center justify-between gap-2 pt-1">
+                    {!promo.is_featured && (
+                      <button
+                        onClick={() => handleSetFeatured(promo)}
+                        className="py-2 px-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[11px] font-bold transition flex items-center gap-1 cursor-pointer"
+                        title="ตั้งเป็นแบนเนอร์ใหญ่หน้าแรก (Hero Banner)"
+                      >
+                        <Flame size={12} className="text-amber-400" />
+                        <span>ตั้งเป็น Hero</span>
+                      </button>
+                    )}
+
                     <button
                       onClick={() => handleOpenEdit(promo)}
                       className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-xs font-bold transition cursor-pointer"
@@ -902,7 +962,7 @@ export default function AdminPromotionsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                   <div>
                     <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                      ลิงก์ปลายทาง (Link URL)
+                      {isFeatured ? 'ลิงก์ปุ่มหลัก (Primary Link)' : 'ลิงก์ปลายทาง (Link URL)'}
                     </label>
                     <input
                       type="text"
@@ -915,11 +975,11 @@ export default function AdminPromotionsPage() {
 
                   <div>
                     <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                      ข้อความบนปุ่ม (CTA Text)
+                      {isFeatured ? 'ข้อความปุ่มหลัก (Primary CTA)' : 'ข้อความบนปุ่ม (CTA Text)'}
                     </label>
                     <input
                       type="text"
-                      placeholder="เช่น ดูสินค้าโปรโมชั่น"
+                      placeholder={isFeatured ? 'เช่น ดูไวน์ทั้งหมด' : 'เช่น ดูสินค้าโปรโมชั่น'}
                       value={ctaText}
                       onChange={e => setCtaText(e.target.value)}
                       className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
@@ -945,10 +1005,10 @@ export default function AdminPromotionsPage() {
                   <label className="flex items-center justify-between cursor-pointer p-3 rounded-xl bg-slate-800/30 hover:bg-slate-800/50 border border-white/5 transition">
                     <div>
                       <span className="text-xs font-bold text-white block">
-                        แสดงเป็นแบนเนอร์หลักขนาดใหญ่ (Featured Banner)
+                        👑 แบนเนอร์หลักหน้าแรก (Hero Banner)
                       </span>
                       <span className="text-[11px] text-slate-400 block mt-0.5">
-                        {isFeatured ? 'แสดงด้านบนสุดขนาดใหญ่เต็มหน้าจอ' : 'แสดงเป็นการ์ดย่อย (Grid Card 3 ใบ)'}
+                        {isFeatured ? 'แสดงด้านบนสุดขนาดใหญ่เต็มหน้าจอ (Hero Section)' : 'แสดงเป็นการ์ดย่อย (Grid Card ข่าวสาร/โปรโมชั่น)'}
                       </span>
                     </div>
                     <input
@@ -978,6 +1038,68 @@ export default function AdminPromotionsPage() {
                   </label>
                 </div>
 
+                {/* ── Special Settings for Hero Banner Mode ── */}
+                {isFeatured && (
+                  <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-rose-950/30 via-slate-900 to-amber-950/20 border border-rose-500/30 space-y-4">
+                    <div className="flex items-center gap-2 text-rose-300">
+                      <Sparkles size={16} className="text-rose-400" />
+                      <span className="text-xs font-black uppercase tracking-wider">
+                        ✨ ตั้งค่าพิเศษสำหรับแบนเนอร์ใหญ่หน้าแรก (Hero Section Controls)
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      ข้อมูลในส่วนนี้จะถูกส่งไปแสดงผลที่ส่วนบนสุดของหน้าร้าน The Bottle Club (แทนที่ภาพและข้อความเริ่มต้นทั้งหมด) คุณสามารถปรับแต่งรูปพื้นหลัง ภาพขวดไวน์ลอย และปุ่มกดทั้งสองปุ่มได้อิสระ
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Floating Hero Image */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-200 mb-1.5">
+                          รูปขวดไวน์/เชลฟ์สินค้าลอยด้านขวา (Floating Hero Image)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="วาง URL รูปขวดไวน์ หรือ /images/wine_hero.png"
+                          value={heroImageUrl}
+                          onChange={e => setHeroImageUrl(e.target.value)}
+                          className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
+                        />
+                        <span className="text-[10px] text-slate-500 mt-1 block">
+                          หากเว้นว่าง ระบบจะใช้รูปที่ 2 จากแกลเลอรี หรือรูปเริ่มต้น /images/wine_hero.png
+                        </span>
+                      </div>
+
+                      {/* Secondary Button Text & Link */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-200 mb-1.5">
+                            ข้อความปุ่มรอง (Button 2)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="เช่น เรียนรู้เพิ่มเติม"
+                            value={secondaryCtaText}
+                            onChange={e => setSecondaryCtaText(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-200 mb-1.5">
+                            ลิงก์ปุ่มรอง (Link 2)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="เช่น /#wine-categories"
+                            value={secondaryLinkUrl}
+                            onChange={e => setSecondaryLinkUrl(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* ── Live Interactive Preview Stage ── */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -985,43 +1107,69 @@ export default function AdminPromotionsPage() {
                       <Eye size={14} className="text-cyan-400" />
                       <span>พรีวิวการแสดงผลจริง (Live Preview)</span>
                     </span>
-                    <span className="text-[10px] text-slate-500">
-                      {isFeatured ? 'โหมด: แบนเนอร์หลัก (Hero Banner)' : 'โหมด: การ์ดย่อย (Grid Card)'}
+                    <span className="text-[10px] text-slate-400 font-semibold">
+                      {isFeatured ? 'โหมด: แบนเนอร์หลักหน้าแรก (Hero Section Preview)' : 'โหมด: การ์ดย่อย (News/Promotion Card)'}
                     </span>
                   </div>
 
                   {/* Live Card Preview Container */}
-                  <div className="p-4 rounded-2xl bg-black/60 border border-white/10 overflow-hidden">
+                  <div className="p-3 sm:p-4 rounded-2xl bg-black/60 border border-white/10 overflow-hidden">
                     {isFeatured ? (
-                      /* Featured Banner Preview */
-                      <div className="relative rounded-2xl overflow-hidden border border-rose-500/30 min-h-[200px] flex flex-col justify-between p-5 bg-slate-950">
+                      /* Featured Banner (Hero Section) Live Preview */
+                      <div className="relative rounded-2xl overflow-hidden border border-rose-500/40 min-h-[300px] flex flex-col justify-end p-5 sm:p-7 bg-stone-950 text-white shadow-2xl">
+                        {/* Background Banner */}
                         <div
                           className="absolute inset-0 bg-cover bg-center opacity-60"
                           style={{ backgroundImage: `url(${imageUrl || PROMOTION_IMAGE_PRESETS[0].url})` }}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent" />
-                        <div className="relative z-10">
-                          <div className="flex items-center gap-2 mb-2">
-                            {badge && (
-                              <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black">
-                                {badge}
-                              </span>
-                            )}
-                            {discountTag && (
-                              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/30 border border-amber-400/40 text-amber-300 text-[10px] font-bold">
-                                {discountTag}
+                        <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/70 to-stone-950/30" />
+
+                        {/* Floating right image mockup */}
+                        <div className="hidden sm:block absolute bottom-3 right-4 w-32 h-44 pointer-events-none">
+                          <img
+                            src={heroImageUrl || (images.length > 1 ? images[1] : '/images/wine_hero.png')}
+                            alt=""
+                            className="w-full h-full object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.85)]"
+                          />
+                        </div>
+
+                        {/* Content */}
+                        <div className="relative z-10 max-w-lg space-y-3">
+                          {/* Welcome Badge */}
+                          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow backdrop-blur-md">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,1)]" />
+                            <span>{badge || 'ยินดีต้อนรับสู่ THE BOTTLE CLUB'}</span>
+                          </div>
+
+                          {/* Massive Title */}
+                          <h4 className="text-xl sm:text-2xl font-black text-white leading-tight drop-shadow-md">
+                            {title || 'คัดสรรไวน์ ระดับพรีเมียม เพื่อคุณโดยเฉพาะ'}
+                          </h4>
+
+                          {/* Subtitle */}
+                          <p className="text-xs text-stone-200 line-clamp-2 max-w-md leading-relaxed">
+                            {subtitle || description || 'ไวน์นำเข้าคุณภาพเยี่ยมจากทั่วโลก จัดส่งถึงบ้านคุณภายใน 24 ชั่วโมง'}
+                          </p>
+
+                          {/* CTA Buttons */}
+                          <div className="flex flex-wrap items-center gap-2 pt-1">
+                            <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-black text-stone-950 shadow-md">
+                              <span>{ctaText || 'ดูไวน์ทั้งหมด'}</span>
+                              <ArrowRight size={13} />
+                            </span>
+                            {secondaryCtaText && (
+                              <span className="inline-flex items-center rounded-full border border-white/30 bg-white/10 px-4 py-2 text-xs font-bold text-white backdrop-blur-md">
+                                {secondaryCtaText}
                               </span>
                             )}
                           </div>
-                          <h4 className="text-lg font-black text-white">{title || 'ชื่อแคมเปญโปรโมชั่น'}</h4>
-                          {subtitle && <p className="text-xs text-rose-300 font-semibold">{subtitle}</p>}
-                          <p className="text-slate-300 text-xs mt-1 line-clamp-2">{description || 'รายละเอียดโปรโมชั่น'}</p>
-                        </div>
-                        <div className="relative z-10 pt-3">
-                          <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-bold shadow-md">
-                            <span>{ctaText || 'ดูสินค้าโปรโมชั่น'}</span>
-                            <ArrowRight size={12} />
-                          </span>
+
+                          {/* Service badges mini */}
+                          <div className="flex items-center gap-2 pt-1 text-[10px] text-white/80">
+                            <span className="px-2 py-0.5 rounded-md bg-white/10 border border-white/10">🚚 จัดส่งรวดเร็ว</span>
+                            <span className="px-2 py-0.5 rounded-md bg-white/10 border border-white/10">✨ คัดสรรโดยผู้เชี่ยวชาญ</span>
+                            <span className="px-2 py-0.5 rounded-md bg-white/10 border border-white/10">🔒 ชำระเงินปลอดภัย</span>
+                          </div>
                         </div>
                       </div>
                     ) : (
