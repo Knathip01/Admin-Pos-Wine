@@ -434,34 +434,23 @@ export default function AdminPromotionsPage() {
         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 w-full xl:w-auto">
           {/* Main Action Buttons */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full sm:w-auto">
-            {/* ปุ่มจัดการแบนเนอร์ใหญ่หน้าแรก (Hero Banner) - ไม่มีอิโมจิ */}
+            {/* ปุ่มจัดการแบนเนอร์ใหญ่หน้าแรก (Hero Banner) - ไม่มีอิโมจิ/ไอคอนดาว */}
             <button
               onClick={handleOpenHeroBanner}
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-amber-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs sm:text-sm font-extrabold shadow-[0_4px_20px_rgba(245,158,11,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer touch-manipulation min-h-[44px]"
+              className="inline-flex items-center justify-center px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-amber-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs sm:text-sm font-extrabold shadow-[0_4px_20px_rgba(245,158,11,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer touch-manipulation min-h-[44px]"
             >
-              <Sparkles size={16} className="text-amber-200 shrink-0" />
               <span className="whitespace-nowrap">จัดการแบนเนอร์ใหญ่ (Hero)</span>
             </button>
 
-            {/* ปุ่มเพิ่มโปรโมชั่นใหม่ - มีเฉพาะเครื่องหมาย + ตัวเดียว ไม่มีอิโมจิ */}
+            {/* ปุ่มเพิ่มโปรโมชั่นใหม่ - มีเฉพาะเครื่องหมาย + ตัวเดียว */}
             <button
               onClick={handleOpenCreateCard}
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 hover:to-pink-600 text-white text-xs sm:text-sm font-extrabold shadow-[0_4px_20px_rgba(225,29,72,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer touch-manipulation min-h-[44px]"
+              className="inline-flex items-center justify-center gap-1.5 px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 hover:to-pink-600 text-white text-xs sm:text-sm font-extrabold shadow-[0_4px_20px_rgba(225,29,72,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer touch-manipulation min-h-[44px]"
             >
               <Plus size={18} className="shrink-0" />
-              <span className="whitespace-nowrap">+ เพิ่มโปรโมชั่นใหม่</span>
+              <span className="whitespace-nowrap">เพิ่มโปรโมชั่นใหม่</span>
             </button>
           </div>
-
-          {/* Reset Action Button */}
-          <button
-            onClick={handleRestoreDefaults}
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-white/5 text-xs font-semibold transition active:scale-[0.98] min-h-[42px] cursor-pointer"
-            title="รีเซ็ตโปรโมชั่นเริ่มต้น"
-          >
-            <RefreshCw size={13} className="shrink-0" />
-            <span>คืนค่าเริ่มต้น</span>
-          </button>
         </div>
       </div>
 
@@ -537,7 +526,7 @@ export default function AdminPromotionsPage() {
             className="inline-flex items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-amber-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs sm:text-sm font-black shadow-lg shadow-amber-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer w-full sm:w-auto shrink-0 min-h-[44px]"
           >
             <Edit3 size={15} />
-            <span>{heroBanner ? 'แก้ไขแบนเนอร์ใหญ่หน้าแรก' : '+ ตั้งค่าแบนเนอร์ใหญ่หน้าแรก'}</span>
+            <span>{heroBanner ? 'แก้ไขแบนเนอร์ใหญ่หน้าแรก' : 'ตั้งค่าแบนเนอร์ใหญ่หน้าแรก'}</span>
           </button>
         </div>
 
@@ -670,7 +659,7 @@ export default function AdminPromotionsPage() {
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-amber-500 text-slate-950 text-xs sm:text-sm font-extrabold shadow-lg hover:bg-amber-400 transition cursor-pointer w-full sm:w-auto min-h-[44px]"
             >
               <Plus size={16} />
-              <span>+ ตั้งค่าแบนเนอร์ใหญ่หน้าแรกทันที</span>
+              <span>ตั้งค่าแบนเนอร์ใหญ่หน้าแรกทันที</span>
             </button>
           </div>
         )}
@@ -771,7 +760,7 @@ export default function AdminPromotionsPage() {
             className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-rose-600 text-white text-xs sm:text-sm font-bold shadow-lg hover:bg-rose-500 transition cursor-pointer w-full sm:w-auto min-h-[44px]"
           >
             <Plus size={16} />
-            <span>+ สร้างการ์ดโปรโมชั่นแรก</span>
+            <span>สร้างการ์ดโปรโมชั่นแรก</span>
           </button>
         </div>
       ) : (
