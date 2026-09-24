@@ -685,10 +685,10 @@ export default function AdminPromotionsPage() {
 
           <button
             onClick={handleOpenCreateCard}
-            className="inline-flex items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 hover:to-pink-600 text-white text-xs sm:text-sm font-extrabold shadow-[0_4px_20px_rgba(225,29,72,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer w-full sm:w-auto shrink-0 min-h-[44px] touch-manipulation"
+            className="inline-flex items-center justify-center gap-1.5 px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 hover:to-pink-600 text-white text-xs sm:text-sm font-extrabold shadow-[0_4px_20px_rgba(225,29,72,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer w-full sm:w-auto shrink-0 min-h-[44px] touch-manipulation"
           >
             <Plus size={18} className="shrink-0" />
-            <span>+ เพิ่มโปรโมชั่นใหม่</span>
+            <span>เพิ่มโปรโมชั่นใหม่</span>
           </button>
         </div>
 
@@ -928,7 +928,7 @@ export default function AdminPromotionsPage() {
                     <h2 className="text-sm sm:text-lg font-black text-white truncate">
                       {modalMode === 'hero'
                         ? (editingPromo ? 'จัดการแบนเนอร์ใหญ่ (Hero Banner)' : 'สร้างแบนเนอร์ใหญ่ (Hero Banner)')
-                        : (editingPromo ? 'แก้ไขการ์ดโปรโมชั่น / ข่าวสาร' : '+ เพิ่มการ์ดโปรโมชั่น / ข่าวสารใหม่')}
+                        : (editingPromo ? 'แก้ไขการ์ดโปรโมชั่น / ข่าวสาร' : 'เพิ่มการ์ดโปรโมชั่น / ข่าวสารใหม่')}
                     </h2>
                     <p className="text-[11px] sm:text-xs text-slate-400 truncate">
                       {modalMode === 'hero'
@@ -1068,13 +1068,13 @@ export default function AdminPromotionsPage() {
                         onClick={handleAddImageUrl}
                         className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition shrink-0 cursor-pointer touch-manipulation active:scale-95 min-h-[42px]"
                       >
-                        + เพิ่มรูป
+                        เพิ่มรูป
                       </button>
                     </div>
                     <div>
                       <label className="w-full px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition touch-manipulation active:scale-95 min-h-[42px]">
                         <Upload size={14} />
-                        <span>+ อัปโหลดหลายรูป</span>
+                        <span>อัปโหลดหลายรูป</span>
                         <input
                           type="file"
                           accept="image/*"
