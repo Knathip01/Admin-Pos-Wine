@@ -60,11 +60,11 @@ export default function DataTable<T extends { id: any }>({
   const renderSortIcon = (column: Column<T>) => {
     if (!column.sortable) return null;
     const key = column.sortKey || (typeof column.accessor === 'string' ? (column.accessor as string) : '');
-    if (sortKey !== key) return <ChevronsUpDown className="w-3.5 h-3.5 text-stone-400" />;
+    if (sortKey !== key) return <ChevronsUpDown className="w-3.5 h-3.5" style={{ color: '#3d4d6a' }} />;
     return sortDirection === 'asc' ? (
-      <ChevronUp className="w-3.5 h-3.5 text-red-600" />
+      <ChevronUp className="w-3.5 h-3.5" style={{ color: '#22e5ff' }} />
     ) : (
-      <ChevronDown className="w-3.5 h-3.5 text-red-600" />
+      <ChevronDown className="w-3.5 h-3.5" style={{ color: '#22e5ff' }} />
     );
   };
 
@@ -94,21 +94,21 @@ export default function DataTable<T extends { id: any }>({
                 <tr key={rIdx} className="admin-table-row animate-pulse">
                   {columns.map((_, cIdx) => (
                     <td key={cIdx} className="px-5 py-4">
-                      <div className="h-4 rounded-md" style={{ background: 'rgba(0,0,0,0.06)', width: '66%' }} />
+                      <div className="h-4 rounded-md" style={{ background: 'rgba(0,212,255,0.06)', width: '66%' }} />
                     </td>
                   ))}
                 </tr>
               ))
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-6 py-16 text-center text-sm text-stone-500 font-semibold">
+                <td colSpan={columns.length} className="px-6 py-16 text-center text-sm font-semibold" style={{ color: '#3d4d6a' }}>
                   {emptyMessage}
                 </td>
               </tr>
             ) : (
-              data.map((row) => (
+              data.map((row, idx) => (
                 <tr
-                  key={row.id}
+                  key={(row as any).rowKey ?? (row as any).key ?? `${row.id}_${idx}`}
                   onClick={() => onRowClick && onRowClick(row)}
                   className={`admin-table-row text-sm ${onRowClick ? 'cursor-pointer' : ''}`}
                 >
@@ -121,7 +121,7 @@ export default function DataTable<T extends { id: any }>({
                     }
 
                     return (
-                      <td key={cIdx} className={`px-5 py-4 font-medium text-stone-600 ${col.className || ''}`}>
+                      <td key={cIdx} className={`px-5 py-4 font-medium ${col.className || ''}`} style={{ color: '#eef2ff' }}>
                         {cellContent}
                       </td>
                     );
@@ -135,7 +135,7 @@ export default function DataTable<T extends { id: any }>({
 
       {totalPages > 1 && onPageChange && (
         <div className="admin-table-pagination flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-xs text-stone-500 font-semibold">
+          <span className="text-xs font-semibold" style={{ color: '#5a6e90' }}>
             แสดง {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} –{' '}
             {Math.min(currentPage * itemsPerPage, totalItems)} จาก {totalItems} รายการ
           </span>

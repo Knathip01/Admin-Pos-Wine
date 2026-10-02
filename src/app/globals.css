@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════
@@ -11,12 +11,12 @@
   --brand-cobalt:  #1e40af;
   --brand-cobalt-light: #3b82f6;
 
-  /* Dark UI Palette */
-  --bg-primary:    #0a0c10;
-  --bg-secondary:  #111318;
-  --bg-card:       #161920;
-  --bg-card-hover: #1c2028;
-  --bg-elevated:   #1f2330;
+  /* Dark UI Palette — Admin Theme */
+  --bg-primary:    #0f1117;
+  --bg-secondary:  #111827;
+  --bg-card:       #161b27;
+  --bg-card-hover: #1c2232;
+  --bg-elevated:   #222840;
 
   /* Wine/Teal accent kept for compatibility */
   --wine-900: #09111e;
@@ -64,6 +64,29 @@
   --shadow-glow-gold: 0 0 24px rgba(242,198,92,0.2);
 
   color-scheme: dark;
+}
+
+[data-theme='light'],
+.theme-light {
+  --bg-primary:    #f8fafc;
+  --bg-secondary:  #ffffff;
+  --bg-card:       #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --bg-elevated:   #ffffff;
+
+  --border-color:  #e2e8f0;
+  --border-strong: #cbd5e1;
+  --border-glow:   rgba(59,130,246,0.15);
+
+  --text-primary:   #0f172a;
+  --text-secondary: #334155;
+  --text-muted:     #64748b;
+
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md:  0 4px 12px rgba(0,0,0,0.06);
+  --shadow-lg:  0 10px 24px rgba(0,0,0,0.08);
+
+  color-scheme: light;
 }
 
 /* ═══════════════════════════════════════════

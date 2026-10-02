@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { formatCurrency, formatDateShort } from '@/lib/utils'
 import Link from 'next/link'
@@ -45,9 +45,31 @@ export default function StandalonePosConsolePage() {
   const [staffUsers, setStaffUsers] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<'overview' | 'stock' | 'staff'>('overview')
 
+  const loadStaffStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/users', { cache: 'no-store' })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.users && data.users.length > 0) {
+          setStaffUsers(data.users)
+          return
+        }
+      }
+      const { data: staffData } = await supabase.from('profiles').select('*').order('role', { ascending: true })
+      if (staffData && staffData.length > 0) {
+        setStaffUsers(staffData)
+      }
+    } catch {
+      const { data: staffData } = await supabase.from('profiles').select('*').order('role', { ascending: true })
+      if (staffData && staffData.length > 0) setStaffUsers(staffData)
+    }
+  }, [supabase])
+
   useEffect(() => {
     loadDashboard()
-  }, [])
+    const interval = setInterval(loadStaffStatus, 15000)
+    return () => clearInterval(interval)
+  }, [loadStaffStatus])
 
   const loadDashboard = async () => {
     setLoading(true)
@@ -107,8 +129,7 @@ export default function StandalonePosConsolePage() {
       }
       setChartData(days)
 
-      const { data: staffData } = await supabase.from('profiles').select('*').order('role', { ascending: true })
-      setStaffUsers(staffData || [])
+      await loadStaffStatus()
     } catch (err: any) {
       console.error('Error loading dashboard:', err)
       setErrorMsg(err.message || 'เกิดข้อผิดพลาดในการดึงข้อมูล')
@@ -119,10 +140,10 @@ export default function StandalonePosConsolePage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', background: '#080d14' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
         <div style={{ textAlign: 'center' }}>
           <Loader2 size={36} className="animate-spin" style={{ color: '#b02238', margin: '0 auto 12px' }} />
-          <p style={{ color: '#6b7280', fontSize: 14 }}>กำลังโหลดข้อมูลแดชบอร์ด POS Console...</p>
+          <p style={{ color: 'var(--admin-text-muted, #94a3b8)', fontSize: 14 }}>กำลังโหลดข้อมูลแดชบอร์ด POS Console...</p>
         </div>
       </div>
     )
@@ -180,7 +201,7 @@ export default function StandalonePosConsolePage() {
   ]
 
   return (
-    <div style={{ background: '#080d14', minHeight: '100vh', color: '#f3f7fb' }}>
+    <div style={{ minHeight: '100vh', color: 'var(--admin-text, #f3f7fb)' }}>
       <style>{`
         .dash-card {
           background: rgba(13,20,30,0.85);
@@ -208,7 +229,7 @@ export default function StandalonePosConsolePage() {
           border-radius: 8px;
           border: none;
           background: transparent;
-          color: #6b7280;
+          color: var(--admin-text-muted, #94a3b8);
           font-size: 13px;
           font-weight: 600;
           cursor: pointer;
@@ -254,10 +275,10 @@ export default function StandalonePosConsolePage() {
         {/* ── Header ── */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
           <div>
-            <h1 style={{ fontSize: 'clamp(18px, 4vw, 26px)', fontWeight: 800, color: '#fff', margin: 0 }}>
+            <h1 style={{ fontSize: 'clamp(18px, 4vw, 26px)', fontWeight: 800, color: 'var(--admin-text, #fff)', margin: 0 }}>
               📊 ภาพรวม POS Console (Project POS)
             </h1>
-            <p style={{ color: '#6b7280', fontSize: 12, margin: '2px 0 0' }}>
+            <p style={{ color: 'var(--admin-text-muted, #94a3b8)', fontSize: 12, margin: '2px 0 0' }}>
               {new Date().toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
           </div>
@@ -268,7 +289,7 @@ export default function StandalonePosConsolePage() {
               padding: '8px 14px', borderRadius: 10,
               border: '1px solid rgba(255,255,255,0.1)',
               background: 'rgba(255,255,255,0.04)',
-              color: '#9ca3af', fontSize: 13, fontWeight: 600,
+              color: 'var(--admin-text-muted, #9ca3af)', fontSize: 13, fontWeight: 600,
               cursor: 'pointer', whiteSpace: 'nowrap'
             }}
           >
@@ -302,10 +323,10 @@ export default function StandalonePosConsolePage() {
                     {card.trend >= 0 ? `+${card.trend}%` : `${card.trend}%`}
                   </span>
                 </div>
-                <p style={{ fontSize: 'clamp(16px, 3vw, 22px)', fontWeight: 800, color: '#fff', margin: '0 0 2px' }}>
+                <p style={{ fontSize: 'clamp(16px, 3vw, 22px)', fontWeight: 800, color: 'var(--admin-text, #fff)', margin: '0 0 2px' }}>
                   {card.value}
                 </p>
-                <p style={{ fontSize: 11, color: '#6b7280', margin: 0 }}>{card.title}</p>
+                <p style={{ fontSize: 11, color: 'var(--admin-text-muted, #94a3b8)', margin: 0 }}>{card.title}</p>
                 <div style={{ height: 28, marginTop: 10 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={card.spark}>
@@ -328,20 +349,20 @@ export default function StandalonePosConsolePage() {
           <div className="dash-card" style={{ padding: 20 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
               <div>
-                <p style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600, margin: 0 }}>ยอดขาย 7 วันล่าสุด</p>
-                <h3 style={{ fontSize: 'clamp(20px, 4vw, 28px)', fontWeight: 800, color: '#fff', margin: '4px 0 0' }}>
+                <p style={{ color: 'var(--admin-text-muted, #94a3b8)', fontSize: 12, fontWeight: 600, margin: 0 }}>ยอดขาย 7 วันล่าสุด</p>
+                <h3 style={{ fontSize: 'clamp(20px, 4vw, 28px)', fontWeight: 800, color: 'var(--admin-text, #fff)', margin: '4px 0 0' }}>
                   {formatCurrency(stats?.monthSales || 0)}
                   <span style={{ fontSize: 13, color: '#34d399', fontWeight: 600, marginLeft: 8 }}>+12.5% MTD</span>
                 </h3>
               </div>
-              <span style={{ fontSize: 11, color: '#6b7280', background: 'rgba(255,255,255,0.04)', padding: '4px 10px', borderRadius: 6, whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: 11, color: 'var(--admin-text-muted, #94a3b8)', background: 'rgba(255,255,255,0.04)', padding: '4px 10px', borderRadius: 6, whiteSpace: 'nowrap' }}>
                 เรียลไทม์
               </span>
             </div>
 
             {/* Category Bar */}
             <div style={{ marginBottom: 16 }}>
-              <div style={{ display: 'flex', gap: 12, fontSize: 11, color: '#9ca3af', marginBottom: 6, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 12, fontSize: 11, color: 'var(--admin-text-muted, #94a3b8)', marginBottom: 6, flexWrap: 'wrap' }}>
                 {[['#b02238', 'Red Wine', '65%'], ['#06b6d4', 'White Wine', '25%'], ['#a78bfa', 'Sparkling', '10%']].map(([c, l, p]) => (
                   <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     <span style={{ width: 8, height: 8, borderRadius: '50%', background: c, flexShrink: 0 }} />
@@ -366,7 +387,7 @@ export default function StandalonePosConsolePage() {
                       <stop offset="95%" stopColor="#b02238" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <XAxis dataKey="date" tick={{ fill: 'var(--admin-text-muted, #94a3b8)', fontSize: 10 }} axisLine={false} tickLine={false} />
                   <YAxis hide />
                   <Tooltip
                     contentStyle={{ background: '#0d141e', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: '#fff', fontSize: 12 }}
@@ -383,7 +404,7 @@ export default function StandalonePosConsolePage() {
 
             {/* Quick Links */}
             <div className="dash-card" style={{ padding: 16 }}>
-              <p style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af', margin: '0 0 10px', letterSpacing: '0.05em' }}>เมนูด่วน POS</p>
+              <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--admin-text-muted, #94a3b8)', margin: '0 0 10px', letterSpacing: '0.05em' }}>เมนูด่วน POS</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                 {[
                   { label: 'สินค้า', icon: '📦', href: '/admin/products' },
@@ -404,7 +425,7 @@ export default function StandalonePosConsolePage() {
                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)'}
                     >
                       <span style={{ fontSize: 20 }}>{item.icon}</span>
-                      <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600 }}>{item.label}</span>
+                      <span style={{ fontSize: 11, color: 'var(--admin-text-muted, #94a3b8)', fontWeight: 600 }}>{item.label}</span>
                     </div>
                   </Link>
                 ))}
@@ -413,7 +434,7 @@ export default function StandalonePosConsolePage() {
 
             {/* Category Progress */}
             <div className="dash-card" style={{ padding: 16 }}>
-              <p style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af', margin: '0 0 12px', letterSpacing: '0.05em' }}>สัดส่วนหมวดหมู่</p>
+              <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--admin-text-muted, #94a3b8)', margin: '0 0 12px', letterSpacing: '0.05em' }}>สัดส่วนหมวดหมู่</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {[
                   { label: 'Red Wine (ไวน์แดง)', pct: 65, color: '#b02238' },
@@ -421,9 +442,9 @@ export default function StandalonePosConsolePage() {
                   { label: 'Sparkling (สปาร์คกลิ้ง)', pct: 10, color: '#a78bfa' },
                 ].map(item => (
                   <div key={item.label}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--admin-text-muted, #94a3b8)', marginBottom: 4 }}>
                       <span>{item.label}</span>
-                      <span style={{ fontWeight: 700, color: '#f3f7fb' }}>{item.pct}%</span>
+                      <span style={{ fontWeight: 700, color: 'var(--admin-text, #f3f7fb)' }}>{item.pct}%</span>
                     </div>
                     <div style={{ height: 6, background: 'rgba(255,255,255,0.04)', borderRadius: 999, overflow: 'hidden' }}>
                       <div style={{ width: `${item.pct}%`, height: '100%', background: item.color, borderRadius: 999, boxShadow: `0 0 8px ${item.color}` }} />
@@ -456,12 +477,12 @@ export default function StandalonePosConsolePage() {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: '#fff', margin: 0 }}>🏆 สินค้าขายดีสุด</h4>
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--admin-text, #fff)', margin: 0 }}>🏆 สินค้าขายดีสุด</h4>
               <span style={{ fontSize: 11, color: '#d4af37', fontWeight: 600 }}>Top 5</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {topProducts.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '24px 0', color: '#6b7280' }}>
+                <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--admin-text-muted, #94a3b8)' }}>
                   <Wine size={24} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
                   <p style={{ fontSize: 12, margin: 0 }}>ยังไม่มีข้อมูลการขาย</p>
                 </div>
@@ -470,16 +491,16 @@ export default function StandalonePosConsolePage() {
                   const icons = ['🍷', '🥂', '🍾', '🍇', '🍹']
                   return (
                     <div key={idx} className="product-row">
-                      <span style={{ fontSize: 10, fontWeight: 800, color: '#6b7280', width: 14, flexShrink: 0 }}>#{idx + 1}</span>
+                      <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--admin-text-muted, #94a3b8)', width: 14, flexShrink: 0 }}>#{idx + 1}</span>
                       <span style={{ fontSize: 18, flexShrink: 0 }}>{icons[idx % icons.length]}</span>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 13, fontWeight: 700, color: '#fff', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--admin-text, #fff)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {p.name}
                         </p>
-                        <p style={{ fontSize: 11, color: '#6b7280', margin: 0 }}>ขายแล้ว {p.qty} ขวด</p>
+                        <p style={{ fontSize: 11, color: 'var(--admin-text-muted, #94a3b8)', margin: 0 }}>ขายแล้ว {p.qty} ขวด</p>
                       </div>
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <p style={{ fontSize: 13, fontWeight: 800, color: '#f3f7fb', margin: 0 }}>{formatCurrency(p.revenue)}</p>
+                        <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--admin-text, #f3f7fb)', margin: 0 }}>{formatCurrency(p.revenue)}</p>
                         <p style={{ fontSize: 11, color: '#34d399', margin: 0 }}>+{(12 - idx).toFixed(1)}%</p>
                       </div>
                     </div>
@@ -492,13 +513,13 @@ export default function StandalonePosConsolePage() {
           {/* ── Low Stock ── */}
           <div className="dash-card" style={{ padding: 18 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: '#fff', margin: 0 }}>⚠️ สต็อกต่ำ</h4>
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--admin-text, #fff)', margin: 0 }}>⚠️ สต็อกต่ำ</h4>
               <Link href="/admin/inventory" style={{ fontSize: 11, color: '#b02238', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
                 ดูทั้งหมด <ChevronRight size={12} />
               </Link>
             </div>
             {lowStockProducts.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '24px 0', color: '#6b7280' }}>
+              <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--admin-text-muted, #94a3b8)' }}>
                 <Package size={24} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
                 <p style={{ fontSize: 12, margin: 0 }}>สต็อกปกติทุกรายการ ✓</p>
               </div>
@@ -510,7 +531,7 @@ export default function StandalonePosConsolePage() {
                   return (
                     <div key={p.id} style={{ padding: '10px 12px', borderRadius: 10, background: isOut ? 'rgba(239,68,68,0.06)' : 'rgba(251,191,36,0.05)', border: `1px solid ${isOut ? 'rgba(239,68,68,0.15)' : 'rgba(251,191,36,0.15)'}` }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                        <p style={{ fontSize: 12, fontWeight: 700, color: '#f3f7fb', margin: 0, flex: 1, paddingRight: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--admin-text, #f3f7fb)', margin: 0, flex: 1, paddingRight: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {p.name}
                         </p>
                         <span className="stock-chip" style={{ background: isOut ? 'rgba(239,68,68,0.15)' : 'rgba(251,191,36,0.1)', color: isOut ? '#f87171' : '#fbbf24', flexShrink: 0 }}>
@@ -521,7 +542,7 @@ export default function StandalonePosConsolePage() {
                         <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 999 }}>
                           <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', background: isOut ? '#f87171' : '#fbbf24', borderRadius: 999 }} />
                         </div>
-                        <span style={{ fontSize: 10, color: '#6b7280', flexShrink: 0 }}>min {p.min_stock}</span>
+                        <span style={{ fontSize: 10, color: 'var(--admin-text-muted, #94a3b8)', flexShrink: 0 }}>min {p.min_stock}</span>
                       </div>
                     </div>
                   )
@@ -533,29 +554,29 @@ export default function StandalonePosConsolePage() {
           {/* ── Staff Status ── */}
           <div className="dash-card" style={{ padding: 18 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: '#fff', margin: 0 }}>👥 สถานะพนักงาน</h4>
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--admin-text, #fff)', margin: 0 }}>👥 สถานะพนักงาน</h4>
               <Link href="/admin/users" style={{ fontSize: 11, color: '#60a5fa', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
                 จัดการ <ChevronRight size={12} />
               </Link>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {staffUsers.filter(u => u.role !== 'super_admin').length === 0 ? (
-                <p style={{ fontSize: 12, color: '#6b7280', textAlign: 'center', padding: '20px 0', margin: 0 }}>ไม่มีพนักงานในระบบ</p>
+              {staffUsers.length === 0 ? (
+                <p style={{ fontSize: 12, color: 'var(--admin-text-muted, #94a3b8)', textAlign: 'center', padding: '20px 0', margin: 0 }}>ไม่มีพนักงานในระบบ</p>
               ) : (
-                staffUsers.filter(u => u.role !== 'super_admin').map(u => {
-                  const isOnline = u.is_active && (new Date().getTime() - new Date(u.updated_at).getTime() < 45000)
-                  const roleIcons: Record<string, string> = { manager: '🏢', cashier: '💰', stock_staff: '📦', kitchen: '🍳', bar: '🍸' }
-                  const roleLabels: Record<string, string> = { manager: 'Manager', cashier: 'Cashier', stock_staff: 'Stock Staff', kitchen: 'Kitchen', bar: 'Bar' }
+                staffUsers.map(u => {
+                  const isOnline = u.is_active && u.updated_at && (new Date().getTime() - new Date(u.updated_at).getTime() < 60000)
+                  const roleIcons: Record<string, string> = { super_admin: '👑', manager: '🏢', cashier: '💰', stock_staff: '📦', kitchen: '🍳', bar: '🍸' }
+                  const roleLabels: Record<string, string> = { super_admin: 'Super Admin', manager: 'Manager', cashier: 'Cashier', stock_staff: 'Stock Staff', kitchen: 'Kitchen', bar: 'Bar' }
                   return (
                     <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.02)' }}>
                       <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>
                         {roleIcons[u.role] || '👤'}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 12, fontWeight: 700, color: '#f3f7fb', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--admin-text, #f3f7fb)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {u.full_name}
                         </p>
-                        <p style={{ fontSize: 10, color: '#6b7280', margin: 0 }}>{roleLabels[u.role] || u.role}</p>
+                        <p style={{ fontSize: 10, color: 'var(--admin-text-muted, #94a3b8)', margin: 0 }}>{roleLabels[u.role] || u.role}</p>
                       </div>
                       {!u.is_active ? (
                         <span style={{ fontSize: 10, fontWeight: 700, color: '#f87171', background: 'rgba(239,68,68,0.1)', padding: '2px 7px', borderRadius: 999, whiteSpace: 'nowrap' }}>
@@ -567,7 +588,7 @@ export default function StandalonePosConsolePage() {
                           ออนไลน์
                         </span>
                       ) : (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, color: '#4b5563', whiteSpace: 'nowrap' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, color: 'var(--admin-text-muted, #94a3b8)', whiteSpace: 'nowrap' }}>
                           <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4b5563', flexShrink: 0 }} />
                           ออฟไลน์
                         </span>

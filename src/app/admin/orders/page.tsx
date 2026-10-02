@@ -6,6 +6,8 @@ import OrderStatusBadge from '@/components/admin/OrderStatusBadge';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { Search, RotateCcw, AlertCircle, Eye, FileText, ShoppingCart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { ordersApi } from '@/lib/api/orders';
+import { useApiAuth, ensureApiAuth } from '@/lib/store/api-auth';
 
 interface OrderRow {
   id: number;
@@ -20,14 +22,13 @@ interface OrderRow {
 
 export default function AdminOrdersPage() {
   const router = useRouter();
+  const { accessToken } = useApiAuth();
   
-  // State
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filters
   const [status, setStatus] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [orderType, setOrderType] = useState('');
@@ -40,26 +41,35 @@ export default function AdminOrdersPage() {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({
-        status,
-        payment_method: paymentMethod,
-        order_type: orderType,
-        date_from: dateFrom,
-        date_to: dateTo,
-        search,
-        page: page.toString(),
-        limit: '20'
-      });
-      
-      const res = await fetch(`/api/admin/orders?${params.toString()}`, { cache: 'no-store' });
-      if (!res.ok) {
-        throw new Error('ไม่สามารถโหลดรายการออเดอร์ได้');
+      const token = accessToken || await ensureApiAuth();
+      if (!token) throw new Error('ไม่สามารถเชื่อมต่อ API คำสั่งซื้อได้');
+      const result = await ordersApi.list(
+        { page, per_page: 20, status: status || undefined, date_from: dateFrom || undefined, date_to: dateTo || undefined },
+        token
+      );
+      const rawOrders = Array.isArray(result) ? result : (result?.orders || []);
+      let mapped = rawOrders.map((o: any) => ({
+        id: o.id,
+        customer: o.customer_name ?? o.order_number ?? `Order #${o.id}`,
+        total: Number(o.grand_total ?? o.total_amount ?? 0),
+        status: o.status,
+        paymentMethod: o.payment_method ?? 'โอนเงิน/QR',
+        type: o.branch_id ? 'pos' : 'online',
+        date: new Date(o.created_at).toLocaleDateString('th-TH'),
+        taxInvoice: false,
+      }));
+      if (search) {
+        const q = search.toLowerCase();
+        mapped = mapped.filter((o) =>
+          o.customer.toLowerCase().includes(q) || String(o.id).includes(q)
+        );
       }
-      const json = await res.json();
-      setOrders(json.orders);
-      setTotal(json.total);
+      setOrders(mapped);
+      setTotal(result.total ?? mapped.length);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'ไม่สามารถดึงข้อมูลคำสั่งซื้อจาก API จริงได้');
+      setOrders([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
@@ -67,7 +77,7 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     fetchOrders();
-  }, [status, paymentMethod, orderType, dateFrom, dateTo, page]);
+  }, [status, paymentMethod, orderType, dateFrom, dateTo, page, accessToken]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,29 +95,26 @@ export default function AdminOrdersPage() {
     setPage(1);
   };
 
-  // Define Columns for DataTable
   const columns: Column<OrderRow>[] = [
     {
       header: 'หมายเลขออเดอร์',
-      accessor: (row) => <span className="font-bold text-stone-800">#{row.id}</span>,
+      accessor: (row) => <span className="font-extrabold text-[#eef2ff]">#{row.id}</span>,
       sortable: true,
       sortKey: 'id',
     },
     {
       header: 'ลูกค้า',
-      accessor: (row) => <span className="text-stone-600 truncate max-w-[200px] block">{row.customer}</span>,
+      accessor: (row) => <span className="text-[#94a3c4] truncate max-w-[200px] block font-semibold">{row.customer}</span>,
     },
     {
       header: 'ยอดรวมสุทธิ',
-      accessor: (row) => <span className="font-bold text-stone-800">฿{row.total.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>,
+      accessor: (row) => <span className="font-extrabold text-[#22e5ff]">฿{row.total.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>,
     },
     {
       header: 'ประเภทการสั่ง',
       accessor: (row) => (
-        <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
-          row.type === 'pos'
-            ? 'badge-pending'
-            : 'badge-confirmed'
+        <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+          row.type === 'pos' ? 'badge-pending' : 'badge-confirmed'
         }`}>
           {row.type}
         </span>
@@ -115,140 +122,94 @@ export default function AdminOrdersPage() {
     },
     {
       header: 'ชำระเงินโดย',
-      accessor: (row) => <span className="uppercase text-stone-500 font-semibold text-xs">{row.paymentMethod}</span>,
+      accessor: (row) => <span className="uppercase text-[#5a6e90] font-bold text-xs">{row.paymentMethod}</span>,
     },
     {
-      header: 'สถานะออเดอร์',
+      header: 'สถานะ',
       accessor: (row) => <OrderStatusBadge status={row.status} />,
     },
     {
-      header: 'ใบกำกับภาษี',
-      accessor: (row) => row.taxInvoice ? (
-        <span className="inline-flex items-center gap-1 text-[10px] font-bold badge-rejected px-2 py-0.5 rounded">
-          <FileText className="w-3 h-3" /> TAX
-        </span>
-      ) : <span className="text-stone-400 text-xs">-</span>,
+      header: 'วันที่',
+      accessor: (row) => <span className="text-[#5a6e90] font-medium text-xs">{row.date}</span>,
     },
     {
-      header: 'วันที่สั่งซื้อ',
-      accessor: 'date',
-    },
-    {
-      header: 'การจัดการ',
+      header: 'จัดการ',
       accessor: (row) => (
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            router.push(`/admin/orders/${row.id}`);
-          }}
-          className="admin-action-btn"
+          onClick={() => router.push(`/admin/orders/${row.id}`)}
+          className="admin-btn-secondary text-[10px] px-3 py-1.5 flex items-center gap-1.5 font-bold cursor-pointer"
         >
-          <Eye className="w-3.5 h-3.5" /> รายละเอียด
+          <Eye className="w-3.5 h-3.5" /> ดูรายละเอียด
         </button>
       ),
-      className: 'text-right'
-    }
+    },
   ];
 
   return (
-    <div className="space-y-5 sm:space-y-6 select-none font-sans">
+    <div className="animate-in" style={{ padding: '20px', maxWidth: '1500px' }}>
       <AdminPageHeader
-        title="รายการสั่งซื้อสินค้าทั้งหมด"
-        subtitle="ค้นหา กรอง และตรวจสอบสลิปการชำระเงินของลูกค้า"
+        title="คำสั่งซื้อทั้งหมด"
+        subtitle="รายการออเดอร์จาก API จริง"
         icon={ShoppingCart}
       />
 
-      <div className="admin-panel space-y-4">
-        <form onSubmit={handleSearchSubmit} className="flex flex-col md:flex-row gap-3">
-          <div className="relative flex-1">
-            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
-              <Search className="w-4 h-4" />
-            </span>
-            <input
-              type="text"
-              placeholder="ค้นหารหัสออเดอร์ หรือ อีเมลลูกค้า..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="admin-input w-full pl-11 pr-4 py-3 rounded-xl text-xs"
-            />
-          </div>
-          <button type="submit" className="admin-btn-primary px-6 py-3 rounded-xl text-xs font-bold cursor-pointer shrink-0">
-            ค้นหา
-          </button>
-        </form>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
-          <div>
-            <label className="admin-label">สถานะออเดอร์</label>
-            <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="admin-select">
-              <option value="">ทั้งหมด</option>
-              <option value="pending">รอดำเนินการ</option>
-              <option value="confirmed">ยืนยันแล้ว</option>
-              <option value="shipped">จัดส่งแล้ว</option>
-              <option value="delivered">ส่งถึงแล้ว</option>
-              <option value="payment_rejected">ชำระเงินไม่ผ่าน</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="admin-label">ช่องทางการจ่ายเงิน</label>
-            <select value={paymentMethod} onChange={(e) => { setPaymentMethod(e.target.value); setPage(1); }} className="admin-select">
-              <option value="">ทั้งหมด</option>
-              <option value="cash">เงินสด (Cash)</option>
-              <option value="transfer">โอนเงินธนาคาร (Bank Transfer)</option>
-              <option value="promptpay">พร้อมเพย์ (PromptPay)</option>
-              <option value="stripe">บัตรเครดิต (Stripe)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="admin-label">ประเภทช่องทางขาย</label>
-            <select value={orderType} onChange={(e) => { setOrderType(e.target.value); setPage(1); }} className="admin-select">
-              <option value="">ทั้งหมด</option>
-              <option value="online">Online Store</option>
-              <option value="pos">POS Terminal (หน้าร้าน)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="admin-label">จากวันที่</label>
-            <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} className="admin-input admin-select" />
-          </div>
-
-          <div>
-            <label className="admin-label">ถึงวันที่</label>
-            <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} className="admin-input admin-select" />
-          </div>
-        </div>
-
-        {(status || paymentMethod || orderType || dateFrom || dateTo || search) && (
-          <div className="flex justify-end pt-1">
-            <button onClick={handleResetFilters} className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-red-700 font-bold transition cursor-pointer">
-              <RotateCcw className="w-3.5 h-3.5" /> ล้างตัวกรองทั้งหมด
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Error State */}
       {error && (
-        <div className="admin-alert-error flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-          <span>{error}</span>
+        <div className="admin-panel p-4 mb-4 flex items-center gap-3 text-[#fb7185] text-sm font-semibold">
+          <AlertCircle className="w-5 h-5 shrink-0" />
+          {error}
         </div>
       )}
 
-      {/* Data Table */}
+      <div className="admin-panel p-4 mb-6">
+        <form onSubmit={handleSearchSubmit} className="flex flex-wrap gap-3 items-end">
+          <div className="flex-1 min-w-[200px]">
+            <label className="text-[10px] font-bold text-[#5a6e90] uppercase tracking-wider mb-1 block">ค้นหา</label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5a6e90]" />
+              <input
+                className="admin-input pl-9 text-xs w-full py-2.5"
+                placeholder="ค้นหารหัสออเดอร์ หรือ อีเมลลูกค้า..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-[#5a6e90] uppercase tracking-wider mb-1 block">สถานะ</label>
+            <select className="admin-input text-xs py-2.5 px-3" value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="">ทั้งหมด</option>
+              <option value="pending">รอชำระ</option>
+              <option value="confirmed">ยืนยันแล้ว</option>
+              <option value="preparing">กำลังเตรียม</option>
+              <option value="ready">พร้อมส่ง</option>
+              <option value="completed">เสร็จสิ้น</option>
+              <option value="cancelled">ยกเลิก</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-[#5a6e90] uppercase tracking-wider mb-1 block">จากวันที่</label>
+            <input type="date" className="admin-input text-xs py-2.5 px-3" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-[#5a6e90] uppercase tracking-wider mb-1 block">ถึงวันที่</label>
+            <input type="date" className="admin-input text-xs py-2.5 px-3" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+          </div>
+          <button type="submit" className="admin-btn-primary text-xs px-4 py-2.5 font-bold cursor-pointer">ค้นหา</button>
+          <button type="button" onClick={handleResetFilters} className="admin-btn-secondary text-xs px-4 py-2.5 font-bold flex items-center gap-1.5 cursor-pointer">
+            <RotateCcw className="w-3.5 h-3.5" /> รีเซ็ต
+          </button>
+        </form>
+      </div>
+
       <DataTable
         columns={columns}
         data={orders}
         loading={loading}
+        emptyMessage="ไม่พบรายการออเดอร์"
+        currentPage={page}
         totalItems={total}
         itemsPerPage={20}
-        currentPage={page}
         onPageChange={setPage}
-        onRowClick={(row) => router.push(`/admin/orders/${row.id}`)}
-        emptyMessage="ไม่พบคำสั่งซื้อที่ค้นหาหรือตรงตามเงื่อนไขที่กำหนด"
       />
     </div>
   );

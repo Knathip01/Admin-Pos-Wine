@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { createBrowserClient } from '@supabase/ssr'
 import {
   Settings, Save, Loader2, CheckCircle, ToggleLeft, User, Plus,
   AlertCircle, Store, Phone, MapPin, Receipt, Percent, RotateCcw, Bell, QrCode
@@ -64,6 +63,7 @@ export default function SettingsPage() {
     for (const row of (data as Setting[]) || []) {
       map[row.key] = row.value
     }
+
     // Set defaults for any missing keys
     for (const def of SETTING_DEFINITIONS) {
       if (!(def.key in map)) {
@@ -80,10 +80,33 @@ export default function SettingsPage() {
     setSaving(true)
     setSaveError('')
     try {
+      const payload = Object.entries(settings).map(([key, value]) => ({ key, value }))
+
+      // 1. Save via /api/admin/settings
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (res.ok) {
+        setSaveSuccess(true)
+        setTimeout(() => setSaveSuccess(false), 3000)
+        setSaving(false)
+        return
+      }
+
+      // 3. Fallback: update/upsert Supabase
       for (const [key, value] of Object.entries(settings)) {
-        await supabase
+        const { error: updateErr } = await supabase
           .from('settings')
-          .upsert({ key, value }, { onConflict: 'key' })
+          .update({ value })
+          .eq('key', key)
+        if (updateErr) {
+          await supabase
+            .from('settings')
+            .upsert({ key, value }, { onConflict: 'key' })
+        }
       }
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 3000)
@@ -114,39 +137,22 @@ export default function SettingsPage() {
     setCreatingUser(true)
     setUserError('')
     try {
-      // Create a temporary client that doesn't persist auth session
-      const tempSupabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-          auth: {
-            persistSession: false,
-            autoRefreshToken: false,
-            detectSessionInUrl: false
-          }
-        }
-      )
-
-      // Register the auth user
-      const { data: authData, error: signUpErr } = await tempSupabase.auth.signUp({
-        email: newUserEmail.trim(),
-        password: newUserPassword,
-        options: {
-          data: { full_name: newUserName.trim() }
-        }
+      // Create user in Supabase via internal route
+      const res = await fetch('/api/admin/create-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: newUserEmail.trim(),
+          password: newUserPassword,
+          full_name: newUserName.trim(),
+          role: newUserRole,
+        }),
       })
 
-      if (signUpErr) throw new Error(signUpErr.message)
-      if (!authData.user) throw new Error('ไม่สามารถสร้างผู้ใช้ระบบได้')
-
-      // Insert profile record linked to auth user ID
-      const { error: profileErr } = await supabase.from('profiles').upsert({
-        id: authData.user.id,
-        full_name: newUserName.trim(),
-        role: newUserRole,
-        is_active: true,
-      })
-      if (profileErr) throw profileErr
+      const data = await res.json()
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'เกิดข้อผิดพลาดในการสร้างบัญชี')
+      }
 
       setUserSuccess(true)
       setNewUserEmail('')

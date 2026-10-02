@@ -12,6 +12,9 @@ import {
   Sparkles, Hash, RefreshCw, AlertTriangle, Copy, Check,
   Camera, Image as ImageIcon, Clock
 } from 'lucide-react'
+import { ordersApi } from '@/lib/api/orders'
+import { paymentsApi } from '@/lib/api/payments'
+import { ensureApiAuth } from '@/lib/store/api-auth'
 
 // PromptPay config
 const PROMPTPAY_PHONE = '0922809619'
@@ -302,6 +305,36 @@ export default function CheckoutModal({ onClose, onSuccess }: CheckoutModalProps
             }).eq('id', cart.customer.id)
           if (custErr) throw new Error(`ไม่สามารถอัปเดตคะแนนได้: ${custErr.message}`)
         }
+      }
+
+      // Sync order to FastAPI (api.wayneven.uk)
+      try {
+        const token = await ensureApiAuth()
+        if (token) {
+          const apiOrder = await ordersApi.create({
+            customer_id: cart.customer ? Number(cart.customer.id) : undefined,
+            items: cart.items.map(item => ({
+              product_id: Number(item.product.id) || 1,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              discount_amount: item.discount_amount || 0,
+            })),
+            discount_amount: cart.discount_amount || 0,
+            notes: finalNote || undefined,
+          }, token)
+
+          if (apiOrder?.id && !isPending) {
+            await paymentsApi.create({
+              order_id: apiOrder.id,
+              payment_method: paymentMethod,
+              amount: totalAmount,
+              reference_number: referenceNo || undefined,
+              notes: `POS checkout #${receiptNo}`
+            }, token)
+          }
+        }
+      } catch (apiErr) {
+        console.warn('FastAPI checkout sync note:', apiErr)
       }
 
       setReceipt({ receipt_no: receiptNo, total: totalAmount, change, isPending })

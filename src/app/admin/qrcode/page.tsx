@@ -27,11 +27,15 @@ export default function QRCodePage() {
   }
 
   return (
-    <div className="animate-in" style={{ padding: '28px', maxWidth: 1280, margin: '0 auto' }}>
+    <div className="animate-in" style={{ padding: '20px', maxWidth: 1280, margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: 'white', marginBottom: 6 }}>QR Code ประจำโต๊ะลูกค้า (โต๊ะ 1 - 10)</h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>สร้างบาร์โค้ดเฉพาะสำหรับแต่ละโต๊ะ เพื่อให้ลูกค้าระบุโต๊ะและสั่งซื้อสินค้าได้อย่างถูกต้อง</p>
+        <h1 style={{ fontFamily: "'Outfit', sans-serif", fontSize: '1.4rem', fontWeight: 900, color: '#eef2ff', letterSpacing: '-0.025em', margin: 0 }}>
+          📱 QR Code ประจำโต๊ะลูกค้า (โต๊ะ 1 - 10)
+        </h1>
+        <p style={{ color: '#3d4d6a', fontSize: 13, fontWeight: 600, marginTop: 4 }}>
+          สร้างบาร์โค้ดเฉพาะสำหรับแต่ละโต๊ะ เพื่อให้ลูกค้าระบุโต๊ะและสั่งซื้อสินค้าได้อย่างถูกต้อง
+        </p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 24, maxWidth: 800, margin: '0 auto' }} className="qr-layout-grid">
@@ -40,9 +44,9 @@ export default function QRCodePage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           
           {/* Table Select Grid */}
-          <div className="glass-card" style={{ padding: 20 }}>
-            <h3 style={{ color: 'white', fontWeight: 600, fontSize: 15, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Grid size={16} style={{ color: 'var(--wine-400)' }} />
+          <div className="admin-panel" style={{ padding: 20 }}>
+            <h3 style={{ color: '#eef2ff', fontWeight: 800, fontSize: 13, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <Grid size={16} style={{ color: '#22e5ff' }} />
               เลือกโต๊ะที่ต้องการจัดการ
             </h3>
             
@@ -51,19 +55,18 @@ export default function QRCodePage() {
                 <button
                   key={num}
                   onClick={() => setSelectedTable(num)}
+                  className="cursor-pointer transition-all"
                   style={{
-                    padding: '16px 10px',
+                    padding: '14px 10px',
                     borderRadius: 12,
-                    fontSize: 14,
-                    fontWeight: 700,
-                    cursor: 'pointer',
+                    fontSize: 13,
+                    fontWeight: 800,
                     border: '1px solid',
                     textAlign: 'center',
-                    transition: 'all 0.2s',
-                    background: selectedTable === num ? 'linear-gradient(135deg, var(--wine-600), var(--wine-400))' : 'var(--bg-card)',
-                    borderColor: selectedTable === num ? 'transparent' : 'var(--border-color)',
-                    color: selectedTable === num ? 'white' : 'var(--text-secondary)',
-                    boxShadow: selectedTable === num ? '0 4px 15px rgba(139,26,44,0.3)' : 'none'
+                    background: selectedTable === num ? 'linear-gradient(135deg, rgba(0,212,255,0.22), rgba(0,196,180,0.15))' : 'rgba(255,255,255,0.02)',
+                    borderColor: selectedTable === num ? 'rgba(0,212,255,0.40)' : 'rgba(255,255,255,0.07)',
+                    color: selectedTable === num ? '#22e5ff' : '#5a6e90',
+                    boxShadow: selectedTable === num ? '0 0 15px rgba(0,212,255,0.20)' : 'none'
                   }}
                 >
                   โต๊ะ {num}
@@ -73,43 +76,42 @@ export default function QRCodePage() {
           </div>
 
           {/* QR Card Preview for Selected Table */}
-          <div className="glass-card" style={{ padding: 32, textAlign: 'center', border: '1px solid rgba(212,175,55,0.2)' }}>
-            <span style={{ background: 'var(--gold-500)', color: '#000', padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 700, display: 'inline-block', marginBottom: 16 }}>
+          <div className="admin-panel" style={{ padding: 32, textAlign: 'center' }}>
+            <span style={{ background: 'rgba(0,212,255,0.12)', border: '1px solid rgba(0,212,255,0.30)', color: '#22e5ff', padding: '4px 14px', borderRadius: 99, fontSize: 11, fontWeight: 800, display: 'inline-block', marginBottom: 16, letterSpacing: '0.05em' }}>
               ACTIVE: โต๊ะ {selectedTable}
             </span>
 
             {/* QR Print Target Wrapper */}
-            <div id="qr-print-area" style={{ display: 'inline-block', background: 'white', borderRadius: 20, padding: 24, marginBottom: 20, boxShadow: '0 20px 60px rgba(139,26,44,0.3)' }}>
+            <div id="qr-print-area" style={{ display: 'inline-block', background: 'white', borderRadius: 20, padding: 24, marginBottom: 20, boxShadow: '0 0 35px rgba(0,212,255,0.25)' }}>
               <QRCodeSVG
                 value={getMenuUrl(selectedTable)}
                 size={220}
                 level="H"
               />
               <div style={{ marginTop: 12, color: 'black', fontFamily: 'sans-serif' }}>
-                <p style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>โต๊ะ {selectedTable}</p>
-                <p style={{ fontSize: 10, color: '#555', margin: '4px 0 0' }}>สแกนเพื่อสั่งสินค้า</p>
+                <p style={{ fontSize: 18, fontWeight: 900, margin: 0 }}>โต๊ะ {selectedTable}</p>
+                <p style={{ fontSize: 11, color: '#666', margin: '4px 0 0', fontWeight: 600 }}>สแกนเพื่อสั่งสินค้า</p>
               </div>
             </div>
 
             {/* URL Display */}
-            <div style={{ background: 'var(--bg-card)', borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, border: '1px solid var(--border-color)', maxWidth: 440, margin: '0 auto 16px' }}>
-              <span style={{ flex: 1, fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left' }}>
+            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, border: '1px solid rgba(255,255,255,0.08)', maxWidth: 440, margin: '0 auto 16px' }}>
+              <span style={{ flex: 1, fontSize: 12, color: '#94a3c4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left', fontWeight: 600 }}>
                 {getMenuUrl(selectedTable)}
               </span>
-              <button onClick={() => copyUrl(selectedTable)} style={{ color: copiedTable === selectedTable ? '#4ade80' : 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>
+              <button onClick={() => copyUrl(selectedTable)} style={{ color: copiedTable === selectedTable ? '#34d399' : '#3d4d6a', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>
                 {copiedTable === selectedTable ? <Check size={16} /> : <Copy size={16} />}
               </button>
             </div>
 
             {/* Print and Open buttons */}
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-              <button onClick={handlePrint} className="btn-wine" style={{ padding: '10px 24px', fontSize: 14, borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Printer size={16} />
+              <button onClick={handlePrint} className="admin-btn-primary px-5 py-2.5 text-xs font-bold flex items-center gap-2 cursor-pointer">
+                <Printer size={15} />
                 พิมพ์รหัส QR โต๊ะ {selectedTable}
               </button>
-              <a href={getMenuUrl(selectedTable)} target="_blank" rel="noreferrer"
-                style={{ padding: '10px 24px', fontSize: 14, borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', textDecoration: 'none' }}>
-                <ExternalLink size={16} />
+              <a href={getMenuUrl(selectedTable)} target="_blank" rel="noreferrer" className="admin-btn-secondary px-5 py-2.5 text-xs font-bold flex items-center gap-2 cursor-pointer" style={{ textDecoration: 'none' }}>
+                <ExternalLink size={15} />
                 ทดสอบสั่ง
               </a>
             </div>
@@ -123,12 +125,13 @@ export default function QRCodePage() {
         @media print {
           body { background: white !important; }
           .qr-layout-grid { display: block !important; }
-          .glass-card, #qr-print-area { background: white !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
+          .admin-panel, #qr-print-area { background: white !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
           .qr-layout-grid > div:last-child { display: none !important; }
-          .glass-card > button, .glass-card > div:first-child, .glass-card > div:last-child, h1, p, span { display: none !important; }
+          .admin-panel > button, .admin-panel > div:first-child, .admin-panel > div:last-child, h1, p, span { display: none !important; }
           #qr-print-area { display: block !important; margin: 40px auto !important; text-align: center !important; }
         }
       `}</style>
     </div>
   )
 }
+

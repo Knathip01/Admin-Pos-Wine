@@ -10,8 +10,11 @@ import {
 } from 'lucide-react'
 import { Promotion } from '@/lib/types'
 import { DEFAULT_PROMOTIONS, PROMOTION_IMAGE_PRESETS } from '@/lib/mock-promotions'
+import { promotionsApi } from '@/lib/api/promotions'
+import { useApiAuth, ensureApiAuth } from '@/lib/store/api-auth'
 
 export default function AdminPromotionsPage() {
+  const { accessToken } = useApiAuth()
   const [promotions, setPromotions] = useState<Promotion[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -48,6 +51,37 @@ export default function AdminPromotionsPage() {
   const loadPromotions = async () => {
     setLoading(true)
     try {
+      // 1. Attempt fetch from FastAPI Backend
+      try {
+        const token = (accessToken || (await ensureApiAuth())) ?? undefined
+        const apiRes = await promotionsApi.list(undefined, token)
+        if (apiRes?.promotions && Array.isArray(apiRes.promotions) && apiRes.promotions.length > 0) {
+          setPromotions(apiRes.promotions.map((p: any) => ({
+            id: p.id,
+            title: p.title,
+            subtitle: p.subtitle ?? '',
+            description: p.description,
+            image_url: p.imageUrl || p.image_url,
+            images: p.images || (p.imageUrl ? [p.imageUrl] : []),
+            hero_image_url: p.heroImageUrl || p.hero_image_url,
+            badge: p.badge,
+            discount_tag: p.discountTag || p.discount_tag,
+            valid_until: p.validUntil || p.valid_until,
+            link_url: p.linkUrl || p.link_url || '/#products',
+            cta_text: p.ctaText || p.cta_text,
+            secondary_cta_text: p.secondaryCtaText || p.secondary_cta_text,
+            secondary_link_url: p.secondaryLinkUrl || p.secondary_link_url,
+            is_featured: Boolean(p.isFeatured ?? p.is_featured),
+            is_active: Boolean(p.isActive ?? p.is_active ?? true),
+            sort_order: Number(p.sortOrder ?? p.sort_order ?? 1),
+          })))
+          return
+        }
+      } catch (fastApiErr) {
+        // Fallback to local API
+      }
+
+      // 2. Fallback to local / Supabase API
       const res = await fetch('/api/admin/promotions', { cache: 'no-store' })
       if (res.ok) {
         const data = await res.json()
@@ -174,6 +208,29 @@ export default function AdminPromotionsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedList),
       })
+
+      const token = accessToken || await ensureApiAuth()
+      if (token) {
+        promotionsApi.bulk(updatedList.map(p => ({
+          id: p.id,
+          title: p.title,
+          subtitle: p.subtitle || null,
+          description: p.description,
+          imageUrl: p.image_url,
+          images: p.images,
+          heroImageUrl: p.hero_image_url || null,
+          badge: p.badge || null,
+          discountTag: p.discount_tag || null,
+          validUntil: p.valid_until || null,
+          linkUrl: p.link_url || null,
+          ctaText: p.cta_text || null,
+          secondaryCtaText: p.secondary_cta_text || null,
+          secondaryLinkUrl: p.secondary_link_url || null,
+          isFeatured: p.is_featured,
+          isActive: p.is_active,
+          sortOrder: p.sort_order,
+        })), token).catch(() => {})
+      }
     } catch (err) {
       console.error('Failed to set featured promo:', err)
       loadPromotions()
@@ -195,6 +252,14 @@ export default function AdminPromotionsPage() {
       if (!res.ok) {
         // Rollback if failed
         setPromotions(prev => prev.map(p => p.id === promo.id ? promo : p))
+      } else {
+        const token = accessToken || await ensureApiAuth()
+        if (token) {
+          promotionsApi.update({
+            id: updated.id,
+            isActive: updated.is_active,
+          }, token).catch(() => {})
+        }
       }
     } catch {
       setPromotions(prev => prev.map(p => p.id === promo.id ? promo : p))
@@ -209,6 +274,10 @@ export default function AdminPromotionsPage() {
     setPromotions(prev => prev.filter(p => p.id !== promoId))
 
     try {
+      const token = accessToken || await ensureApiAuth()
+      if (token) {
+        promotionsApi.delete(promoId, token).catch(() => {})
+      }
       await fetch(`/api/admin/promotions?id=${promoId}`, { method: 'DELETE' })
     } catch (err) {
       console.error('Delete failed:', err)
@@ -374,6 +443,32 @@ export default function AdminPromotionsPage() {
         }
         return [payload, ...prev]
       })
+
+      // Sync to FastAPI Backend
+      try {
+        const token = accessToken || await ensureApiAuth()
+        if (token) {
+          await promotionsApi.create({
+            id: payload.id,
+            title: payload.title,
+            subtitle: payload.subtitle || null,
+            description: payload.description,
+            imageUrl: payload.image_url,
+            images: payload.images,
+            heroImageUrl: payload.hero_image_url || null,
+            badge: payload.badge || null,
+            discountTag: payload.discount_tag || null,
+            validUntil: payload.valid_until || null,
+            linkUrl: payload.link_url || null,
+            ctaText: payload.cta_text || null,
+            secondaryCtaText: payload.secondary_cta_text || null,
+            secondaryLinkUrl: payload.secondary_link_url || null,
+            isFeatured: payload.is_featured,
+            isActive: payload.is_active,
+            sortOrder: payload.sort_order,
+          }, token).catch((e) => console.warn('FastAPI promotions sync notice:', e))
+        }
+      } catch {}
 
       setIsModalOpen(false)
     } catch (err: any) {

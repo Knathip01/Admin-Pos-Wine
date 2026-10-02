@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   X, Send, User, ChevronDown, Sparkles,
   TrendingUp, Package, AlertTriangle, BarChart3,
-  Loader2, RefreshCw, Wifi, WifiOff, Database,
+  Loader2, RefreshCw, Wifi, WifiOff, Database, ShoppingCart,
 } from 'lucide-react';
 import CartoonBottleIcon from '@/components/icons/CartoonBottleIcon';
 
@@ -25,13 +25,14 @@ const ERROR_MESSAGES: Record<string, string> = {
   internal_error: '⚠️ เกิดข้อผิดพลาดภายในระบบ กรุณา refresh หน้าแล้วลองใหม่',
 };
 
-/* ─── Quick actions ─── */
+/* ─── Quick actions (Super Admin Executive Suite) ─── */
 const QUICK = [
-  { icon: Package,       label: 'ดูสินค้าทั้งหมด',      text: 'ขอทราบรายการสินค้าทั้งหมดในระบบพร้อมราคาและสต็อกครับ' },
-  { icon: BarChart3,     label: 'คำนวณรายรับ-รายจ่าย', text: 'ช่วยคำนวณรายรับ รายจ่าย และสรุปกำไรสุทธิให้หน่อยครับ' },
-  { icon: TrendingUp,    label: 'ยอดขายวันนี้',        text: 'สรุปรายได้และยอดขายวันนี้ให้หน่อยครับ' },
-  { icon: BarChart3,     label: 'รายรับ 7 วัน',          text: 'วิเคราะห์ยอดขาย 7 วันล่าสุด มีแนวโน้มอย่างไร?' },
-  { icon: AlertTriangle, label: 'สินค้าใกล้หมด',        text: 'มีสินค้าไหนใกล้หมดต้องรีบสั่งเพิ่มบ้าง?' },
+  { icon: BarChart3,     label: '💰 สรุปยอดขาย & การเงิน',     text: 'สรุปภาพรวมยอดขายทั้ง 2 ช่องทาง ทั้ง POS (Supabase) และ Web Wine (API) ให้หน่อยครับ' },
+  { icon: User,          label: '👤 รายงาน & ยอดแคชเชียร์',    text: 'ขอรายงานการปฏิบัติงานและผลงานยอดขายของแคชเชียร์ทั้งหมดครับ' },
+  { icon: TrendingUp,    label: '📋 ตรวจสอบ 4 แผนก',           text: 'ขอดูรายงานความเรียบร้อยของทั้ง 4 แผนก (Cashier, Stock, Kitchen, Bar) ครับ' },
+  { icon: Package,       label: '📦 สต็อก & สินค้าขายดี',        text: 'ขอวิเคราะห์สต็อกสินค้าหน้าร้าน สินค้าขายดี และสินค้าที่ต้องเติมสต็อกครับ' },
+  { icon: ShoppingCart,  label: '🍷 สินค้า & ออเดอร์ออนไลน์',    text: 'ขอทราบข้อมูลสินค้าออนไลน์และคำสั่งซื้อในระบบ Web Wine API ครับ' },
+  { icon: Sparkles,      label: '💡 คำแนะนำกลยุทธ์ร้าน',        text: 'ในฐานะผู้ช่วย Super Admin มีคำแนะนำกลยุทธ์เพิ่มยอดขายหรือปรับปรุงการดำเนินงานอย่างไรบ้างครับ' },
 ];
 
 /* ─── Simple markdown-lite renderer ─── */
@@ -135,7 +136,7 @@ export default function AdminAIChat() {
       setMsgs([{
         id: 'g0',
         role: 'model',
-        text: 'สวัสดีครับ! ผม **Bottle AI** 🍷\n\nพร้อมช่วยวิเคราะห์ยอดขาย รายรับ-รายจ่าย สินค้า และข้อมูลร้านค้าได้เลยครับ\nกดปุ่มด้านล่าง หรือพิมพ์คำถามได้เลย!',
+        text: 'สวัสดีครับ! ผม **Bottle Club AI** 🍷✨\n\nระบบเชื่อมต่อดึงข้อมูลสดพร้อมกันจาก 2 แหล่ง:\n• 🖥️ **POS Store:** ข้อมูลสินค้า, ยอดขาย 16 บิล, พนักงาน, รายงานความเรียบร้อย (จาก **Supabase**)\n• 🍷 **Web Wine:** หมวดหมู่สินค้า 5 หมวด, คำสั่งซื้อออนไลน์, สมาชิก (จาก **Wayneven API**)\n\nกดปุ่มคำถามด่วนด้านล่าง หรือพิมพ์คำถามที่ต้องการได้เลยครับ!',
         ts: new Date(),
       }]);
     }
@@ -230,68 +231,63 @@ export default function AdminAIChat() {
             id="admin-ai-chat-window"
             className="pointer-events-auto flex flex-col rounded-2xl overflow-hidden"
             style={{
-              width: 'min(400px, calc(100vw - 48px))', height: 'min(580px, calc(100dvh - 120px))',
+              width: 'min(420px, calc(100vw - 32px))', height: 'min(580px, calc(100dvh - 120px))',
               background: '#ffffff',
               boxShadow: '0 32px 80px rgba(0,0,0,0.2), 0 8px 24px rgba(196,30,58,0.1)',
               border: '1px solid rgba(0,0,0,0.08)',
               transform: `translate(${position.x}px, ${position.y}px)`,
             }}
           >
-          {/* ── Header ── */}
+          {/* ── Header (จัดเรียงข้อความให้เป็นระเบียบ ไม่ตัดบรรทัด) ── */}
           <div
             style={{
-              background: 'linear-gradient(135deg,#c41e3a 0%,#9b1c2c 100%)',
+              background: 'linear-gradient(135deg, #b91c1c 0%, #881337 100%)',
               touchAction: 'none',
             }}
-            className="flex items-center justify-between px-4 py-3 shrink-0 cursor-grab active:cursor-grabbing select-none"
+            className="px-4 py-3 shrink-0 cursor-grab active:cursor-grabbing select-none"
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden bg-white/95 border border-white/20">
-                <CartoonBottleIcon size={30} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-white font-bold text-sm leading-none">Bottle AI</p>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide"
-                        style={{ background: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.9)' }}>
-                    Gemini 2.5
-                  </span>
+            {/* Row 1: Logo + Title + Super Admin Badge + Close Button */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center overflow-hidden bg-white/95 border border-white/20 shrink-0 shadow-sm">
+                  <CartoonBottleIcon size={26} />
                 </div>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  {connectionStatus === 'connecting' && (
-                    <span className="w-1.5 h-1.5 bg-amber-300 rounded-full animate-pulse" />
-                  )}
-                  {connectionStatus === 'connected' && (
-                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                  )}
-                  {connectionStatus === 'live' && (
-                    <Wifi size={10} className="text-emerald-300" />
-                  )}
-                  {connectionStatus === 'sample' && (
-                    <Database size={10} className="text-amber-300" />
-                  )}
-                  <span className="text-white/60 text-[10px]">
-                    {connectionStatus === 'connecting' ? 'กำลังเชื่อมต่อ...'
-                      : connectionStatus === 'connected' ? 'เชื่อมต่อแล้ว'
-                      : connectionStatus === 'live' ? 'ข้อมูลสด'
-                      : 'ข้อมูลตัวอย่าง'}
+                <div className="flex items-center gap-2 min-w-0">
+                  <p className="text-white font-extrabold text-sm leading-none whitespace-nowrap tracking-tight">Bottle Club AI</p>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap bg-amber-400/20 text-amber-200 border border-amber-300/40 shadow-sm">
+                    <Sparkles size={10} className="text-amber-300 shrink-0" />
+                    ผู้ช่วย Super Admin
                   </span>
                 </div>
               </div>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="flex items-center gap-1 px-2 py-1 rounded-full"
-                   style={{ background: 'rgba(255,255,255,0.15)' }}>
-                <Sparkles size={10} className="text-amber-300" />
-                <span className="text-white text-[10px] font-semibold">AI วิเคราะห์ธุรกิจ</span>
-              </div>
-              <button onClick={() => setOpen(false)}
-                      className="p-1.5 rounded-full hover:bg-white/10 transition-colors text-white ml-1">
+
+              <button
+                onClick={() => setOpen(false)}
+                className="p-1 rounded-full hover:bg-white/15 transition-colors text-white shrink-0 cursor-pointer ml-1"
+                title="ย่อหน้าต่างแชท"
+              >
                 <ChevronDown size={18} />
               </button>
+            </div>
+
+            {/* Row 2: Status Badges (Gemini 2.5 Flash • Supabase POS • Wayneven API) */}
+            <div className="flex items-center gap-2 mt-2 ml-10.5 text-[10px]">
+              <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider bg-white/12 text-amber-200 border border-amber-300/30 whitespace-nowrap shadow-sm">
+                Gemini 2.5 Flash
+              </span>
+              <span className="text-white/30 text-[9px]">•</span>
+              <span className="inline-flex items-center gap-1.5 text-emerald-200 font-semibold whitespace-nowrap">
+                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse shrink-0" />
+                Supabase POS
+              </span>
+              <span className="text-white/30 text-[9px]">•</span>
+              <span className="inline-flex items-center gap-1.5 text-indigo-200 font-semibold whitespace-nowrap">
+                <span className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-pulse shrink-0" />
+                Wayneven API
+              </span>
             </div>
           </div>
 
@@ -390,7 +386,7 @@ export default function AdminAIChat() {
               value={input}
               onChange={e => setInput(e.target.value)}
               disabled={busy}
-              placeholder={busy ? 'AI กำลังตอบ...' : 'ถามเรื่องยอดขาย, สินค้า, ออเดอร์...'}
+              placeholder={busy ? 'AI กำลังประมวลผลข้อมูล...' : 'ถามได้ทุกเรื่อง: ยอดขาย, แคชเชียร์, สต็อก, กลยุทธ์บริหาร...'}
               className="flex-1 text-xs px-4 py-2.5 rounded-full outline-none transition-all disabled:opacity-50"
               style={{ background: '#f5f3f0', border: '1.5px solid transparent', color: '#1c1917' }}
               onFocus={e  => (e.target.style.borderColor = 'rgba(196,30,58,0.4)')}

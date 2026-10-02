@@ -1,0 +1,29 @@
+// =============================================================
+// The Bottle Club — Central API Client & Domain Modules
+// Backend Base URL: https://api.wayneven.uk/api/v1
+// =============================================================
+
+export * from './types'
+export * from './client'
+export * from './auth'
+export * from './users'
+export * from './branches'
+export * from './roles'
+export * from './catalog'
+export * from './inventory'
+export * from './orders'
+export * from './payments'
+export * from './purchases'
+export * from './transfers'
+export * from './returns'
+export * from './refunds'
+export * from './promotions'
+export * from './coupons'
+export * from './customers'
+export * from './loyalty'
+export * from './shifts'
+export * from './settings'
+export * from './reports'
+export * from './audit'
+export * from './slip-verify'
+export * from './reviews'

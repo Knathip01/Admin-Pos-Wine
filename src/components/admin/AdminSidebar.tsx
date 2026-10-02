@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ShoppingCart, Wine, Users, Star,
   Monitor, BarChart3, Settings, LogOut,
-  ChevronLeft, ChevronRight, Menu, X, CreditCard, Zap,
+  ChevronLeft, ChevronRight, Menu, X, CreditCard, Zap, Utensils, Sparkles,
 } from 'lucide-react';
 import CartoonBottleIcon from '@/components/icons/CartoonBottleIcon';
 
@@ -25,11 +25,13 @@ const menuSections = [
   {
     label: 'COMMERCE',
     items: [
-      { title: 'ออเดอร์ทั้งหมด',      icon: ShoppingCart, href: '/admin/orders',   badge: null },
-      { title: 'ตรวจสอบการชำระเงิน', icon: CreditCard,   href: '/admin/payments', badge: null },
-      { title: 'จัดการสินค้า POS',     icon: Wine,         href: '/admin/products', badge: null },
-      { title: 'จัดการสมาชิก',         icon: Users,        href: '/admin/members',  badge: null },
-      { title: 'รีวิวสินค้า',           icon: Star,         href: '/admin/reviews',  badge: null },
+      { title: 'ออเดอร์ทั้งหมด',      icon: ShoppingCart, href: '/admin/orders',      badge: null },
+      { title: 'ตรวจสอบการชำระเงิน', icon: CreditCard,   href: '/admin/payments',    badge: null },
+      { title: 'จัดการสินค้า POS',     icon: Wine,         href: '/admin/products',    badge: null },
+      { title: 'จัดการโปรโมชั่น',     icon: Sparkles,     href: '/admin/promotions',  badge: 'WEB' },
+      { title: 'จับคู่อาหาร & ไวน์',   icon: Utensils,     href: '/admin/pairings',    badge: 'PROMO' },
+      { title: 'จัดการสมาชิก',         icon: Users,        href: '/admin/members',     badge: null },
+      { title: 'รีวิวสินค้า',           icon: Star,         href: '/admin/reviews',     badge: null },
     ],
   },
   {
@@ -115,20 +117,26 @@ export default function AdminSidebar({ admin = { name: 'Super Admin', email: 'ad
 
       {/* Logo */}
       <div className={`flex items-center gap-3 px-5 py-4 border-b shrink-0 ${collapsed && !isMobile ? 'justify-center px-3' : ''}`}
-        style={{ borderColor: 'rgba(0,212,255,0.08)' }}>
+        style={{ borderColor: 'rgba(0,212,255,0.09)' }}>
         <div className="relative shrink-0">
-          <div className="absolute -inset-1.5 rounded-xl opacity-40"
-            style={{ background: 'radial-gradient(circle, rgba(0,212,255,0.35) 0%, transparent 70%)' }} />
+          <div className="absolute -inset-1.5 rounded-xl opacity-50"
+            style={{ background: 'radial-gradient(circle, rgba(0,212,255,0.42) 0%, transparent 70%)' }} />
+          {/* Gradient border ring */}
+          <div className="absolute -inset-0.5 rounded-xl"
+            style={{ background: 'linear-gradient(135deg, rgba(0,212,255,0.55), rgba(0,196,180,0.25), rgba(168,85,247,0.30))' }} />
           <img src="/thebottleclub.jpg" alt="The Bottle Club"
             className="relative w-10 h-10 rounded-xl object-contain bg-[#e6d0a7] p-0.5"
-            style={{ border: '1px solid rgba(0,212,255,0.25)' }} />
+            style={{
+              border: '1px solid rgba(0,212,255,0.30)',
+              boxShadow: '0 4px 16px rgba(0,212,255,0.22)',
+            }} />
           <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full"
-            style={{ border: '2px solid #060a14', boxShadow: '0 0 8px rgba(0,230,118,0.8)' }} />
+            style={{ border: '2px solid #05080f', boxShadow: '0 0 10px rgba(16,185,129,0.90)' }} />
         </div>
         {(!collapsed || isMobile) && (
           <div className="min-w-0 flex-1">
             <p className="font-black text-sm tracking-tight leading-none truncate"
-              style={{ fontFamily: "'Outfit', sans-serif", color: '#e8f0ff' }}>
+              style={{ fontFamily: "'Outfit', sans-serif", color: '#eef2ff', letterSpacing: '-0.02em' }}>
               THE BOTTLE CLUB
             </p>
             <div className="flex items-center gap-1.5 mt-1.5">
@@ -138,11 +146,11 @@ export default function AdminSidebar({ admin = { name: 'Super Admin', email: 'ad
                   : 'text-cyan-300'
               }`} style={{
                 background: admin?.role === 'superadmin'
-                  ? 'rgba(245,158,11,0.12)'
+                  ? 'rgba(245,158,11,0.14)'
                   : 'rgba(0,212,255,0.12)',
                 border: admin?.role === 'superadmin'
-                  ? '1px solid rgba(245,158,11,0.3)'
-                  : '1px solid rgba(0,212,255,0.3)',
+                  ? '1px solid rgba(245,158,11,0.35)'
+                  : '1px solid rgba(0,212,255,0.30)',
               }}>
                 {admin?.role === 'superadmin' ? '⚡ Super Admin' : '● Staff'}
               </span>
@@ -181,45 +189,42 @@ export default function AdminSidebar({ admin = { name: 'Super Admin', email: 'ad
                     {isActive && (
                       <motion.span
                         className="absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-r-full"
-                        style={{ background: 'linear-gradient(to bottom, #00d4ff, #00bfa5)' }}
+                        style={{ background: 'linear-gradient(to bottom, #22e5ff, #00c4b4)' }}
                         layoutId={isMobile ? 'mobile-active-bar' : 'desktop-active-bar'}
                         transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                       />
                     )}
 
-                    <div className={`flex items-center justify-center w-8 h-8 rounded-xl shrink-0 transition-all duration-200 ${
-                      isActive
-                        ? 'bg-cyan-950'
-                        : 'group-hover:bg-cyan-950/50'
-                    }`}
+                    <div className={`flex items-center justify-center w-8 h-8 rounded-xl shrink-0 transition-all duration-200`}
                       style={isActive ? {
-                        boxShadow: '0 2px 12px rgba(0,212,255,0.20)',
-                        border: '1px solid rgba(0,212,255,0.25)',
-                        background: 'rgba(0,212,255,0.10)',
+                        boxShadow: '0 2px 16px rgba(0,212,255,0.25)',
+                        border: '1px solid rgba(0,212,255,0.30)',
+                        background: 'rgba(0,212,255,0.12)',
                       } : {}}>
                       <Icon className={`w-4 h-4 transition-colors ${isActive ? '' : 'opacity-50 group-hover:opacity-80'}`}
-                        style={{ color: isActive ? '#00d4ff' : '#4a5a78' }} />
+                        style={{ color: isActive ? '#22e5ff' : '#3d4d6a' }} />
                     </div>
 
                     {(!collapsed || isMobile) && (
                       <>
-                        <span className={`flex-1 truncate text-sm ${isActive ? '' : ''}`}
-                          style={{ color: isActive ? '#00d4ff' : '#4a5a78' }}>
+                        <span className={`flex-1 truncate text-sm`}
+                          style={{ color: isActive ? '#22e5ff' : '#3d4d6a' }}>
                           {item.title}
                         </span>
                         {item.badge && (
                           <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase"
                             style={{
-                              background: 'rgba(0,230,118,0.10)',
-                              border: '1px solid rgba(0,230,118,0.25)',
-                              color: '#00e676',
-                              boxShadow: '0 0 8px rgba(0,230,118,0.15)'
+                              background: 'rgba(16,185,129,0.12)',
+                              border: '1px solid rgba(16,185,129,0.28)',
+                              color: '#34d399',
+                              boxShadow: '0 0 10px rgba(16,185,129,0.18)'
                             }}>
                             {item.badge}
                           </span>
                         )}
                       </>
                     )}
+
                   </>
                 );
 
@@ -263,7 +268,7 @@ export default function AdminSidebar({ admin = { name: 'Super Admin', email: 'ad
 
       {/* Divider */}
       <div className="mx-4 mb-3 h-px" style={{
-        background: 'linear-gradient(to right, transparent, rgba(0,212,255,0.10) 30%, rgba(0,212,255,0.10) 70%, transparent)'
+        background: 'linear-gradient(to right, transparent, rgba(0,212,255,0.12) 30%, rgba(0,212,255,0.12) 70%, transparent)'
       }} />
 
       {/* User Footer */}
@@ -271,36 +276,36 @@ export default function AdminSidebar({ admin = { name: 'Super Admin', email: 'ad
         {collapsed && !isMobile ? (
           <button onClick={handleLogout} title="ออกจากระบบ"
             className="w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200 cursor-pointer"
-            style={{ color: '#2a3a58' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#00d4ff'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,212,255,0.08)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#2a3a58'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
+            style={{ color: '#3d4d6a' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#22e5ff'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,212,255,0.09)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#3d4d6a'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
             <LogOut className="w-4 h-4" />
           </button>
         ) : (
           <div className="flex items-center gap-3 p-2.5 rounded-xl transition-colors"
-            style={{ background: 'rgba(0,212,255,0.04)', border: '1px solid rgba(0,212,255,0.08)' }}>
+            style={{ background: 'rgba(0,212,255,0.05)', border: '1px solid rgba(0,212,255,0.10)' }}>
             <div className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-[11px] font-black text-white"
               style={{
-                background: 'linear-gradient(135deg, #00d4ff22, #9d4edd22)',
-                border: '1px solid rgba(0,212,255,0.35)',
-                color: '#00d4ff',
-                boxShadow: '0 0 12px rgba(0,212,255,0.20)'
+                background: 'linear-gradient(135deg, rgba(0,212,255,0.20), rgba(168,85,247,0.20))',
+                border: '1px solid rgba(0,212,255,0.38)',
+                color: '#22e5ff',
+                boxShadow: '0 0 14px rgba(0,212,255,0.22)'
               }}>
               {getInitials(admin?.name, admin?.email)}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold truncate leading-none" style={{ color: '#e8f0ff' }}>
+              <p className="text-xs font-bold truncate leading-none" style={{ color: '#eef2ff' }}>
                 {admin?.name || 'Admin'}
               </p>
-              <p className="text-[10px] truncate mt-0.5" style={{ color: '#2a3a58' }}>
+              <p className="text-[10px] truncate mt-0.5" style={{ color: '#3d4d6a' }}>
                 {admin?.email || 'admin@bottleclub.com'}
               </p>
             </div>
             <button onClick={handleLogout} title="ออกจากระบบ"
               className="p-1.5 rounded-lg transition-all duration-200 cursor-pointer shrink-0"
-              style={{ color: '#2a3a58' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#00d4ff'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,212,255,0.08)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#2a3a58'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
+              style={{ color: '#3d4d6a' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#fb7185'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(244,63,94,0.10)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#3d4d6a'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
               <LogOut className="w-4 h-4" />
             </button>
           </div>
@@ -370,11 +375,11 @@ export default function AdminSidebar({ admin = { name: 'Super Admin', email: 'ad
       {/* Desktop Sidebar */}
       <div className={`hidden lg:block shrink-0 h-screen sticky top-0 z-30 transition-all duration-300 ease-out ${collapsed ? 'w-[68px]' : 'w-[256px]'}`}
         style={{
-          background: 'rgba(6, 10, 20, 0.97)',
-          backdropFilter: 'blur(28px) saturate(1.8)',
-          WebkitBackdropFilter: 'blur(28px) saturate(1.8)',
-          borderRight: '1px solid rgba(0,212,255,0.08)',
-          boxShadow: '4px 0 40px rgba(0,0,0,0.7), 1px 0 0 rgba(0,212,255,0.04)',
+          background: 'rgba(5, 8, 15, 0.98)',
+          backdropFilter: 'blur(36px) saturate(2.2)',
+          WebkitBackdropFilter: 'blur(36px) saturate(2.2)',
+          borderRight: '1px solid rgba(0,212,255,0.10)',
+          boxShadow: '6px 0 48px rgba(0,0,0,0.75), 1px 0 0 rgba(0,212,255,0.05)',
         }}
       >
         <NavContent isMobile={false} />

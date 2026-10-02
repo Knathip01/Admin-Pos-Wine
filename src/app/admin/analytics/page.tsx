@@ -19,33 +19,33 @@ import {
 } from 'lucide-react'
 
 /* ══════════════════════════════════════════
-   DESIGN TOKENS
+   DESIGN TOKENS — Premium Dark Tech 2027
 ══════════════════════════════════════════ */
 const T = {
-  bg:      '#060a14',
-  card:    'rgba(10,16,30,0.92)',
-  border:  'rgba(255,255,255,0.055)',
-  textPri: '#e8f4ff',
-  textSec: '#4a5a78',
-  textMut: '#2a3a58',
+  bg:      '#05080f',
+  card:    'rgba(10,14,26,0.92)',
+  border:  'rgba(255,255,255,0.07)',
+  textPri: '#eef2ff',
+  textSec: '#5a6e90',
+  textMut: '#1e2d48',
 
-  cyan:    '#00d4ff',
-  red:     '#ff1744',
-  amber:   '#f59e0b',
-  green:   '#00e676',
-  purple:  '#9d4edd',
-  teal:    '#00bfa5',
-  blue:    '#3b82f6',
+  cyan:    '#22e5ff',
+  red:     '#f43f5e',
+  amber:   '#fbbf24',
+  green:   '#34d399',
+  purple:  '#c084fc',
+  teal:    '#2dd4bf',
+  blue:    '#7aacff',
   rose:    '#fb7185',
 }
 
 const PAY_COLORS: Record<string, string> = {
-  cash:     '#ff7043',   // ส้มแดงสด — เงินสด
-  transfer: '#42a5f5',   // ฟ้าสด — โอนเงิน
-  qr:       '#ab47bc',   // ม่วงสด — QR Code
-  card:     '#26c6da',   // เขียวฟ้า — บัตรเครดิต
-  mixed:    '#ec407a',   // ชมพูบานเย็น — หลายช่องทาง
-  other:    '#78909c',   // เทา — อื่นๆ
+  cash:     '#fbbf24',   // amber — เงินสด
+  transfer: '#22e5ff',   // cyan — โอนเงิน
+  qr:       '#2dd4bf',   // teal — QR Code
+  card:     '#c084fc',   // purple — บัตรเครดิต
+  mixed:    '#fb7185',   // rose — หลายช่องทาง
+  other:    '#5a6e90',   // muted — อื่นๆ
 }
 
 /* ══════════════════════════════════════════
@@ -59,11 +59,12 @@ function ChartTip({ active, payload, label }: {
   if (!active || !payload?.length) return null
   return (
     <div style={{
-      background: 'rgba(4,8,18,0.97)',
-      border: '1px solid rgba(0,212,255,0.2)',
+      background: 'rgba(5,8,15,0.97)',
+      border: '1px solid rgba(0,212,255,0.22)',
+      borderTop: '1px solid rgba(0,212,255,0.32)',
       borderRadius: 14, padding: '12px 16px',
-      boxShadow: '0 16px 48px rgba(0,0,0,0.7)',
-      backdropFilter: 'blur(20px)',
+      boxShadow: '0 16px 48px rgba(0,0,0,0.75), 0 0 24px rgba(0,212,255,0.06)',
+      backdropFilter: 'blur(28px) saturate(2)',
       minWidth: 160,
     }}>
       {label && (

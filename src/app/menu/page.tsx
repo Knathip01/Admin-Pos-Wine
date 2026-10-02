@@ -3,18 +3,18 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Product, Category, Customer } from '@/lib/types'
+import { Product, Category, Customer, FoodWinePairing } from '@/lib/types'
 import { formatCurrency } from '@/lib/utils'
 import {
   Search, ShoppingBag, Plus, Minus, Trash2,
   X, ArrowLeft, Loader2, CheckCircle2, ChevronRight,
   Upload, Star, Key, Sparkles, Package, Shield, QrCode,
-  UtensilsCrossed, Wine
+  UtensilsCrossed, Wine, Tag, Percent, Flame, Utensils
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 
 type Step = 'menu' | 'cart' | 'checkout' | 'success' | 'member_only'
-type MenuTab = 'food' | 'drinks'
+type MenuTab = 'food' | 'drinks' | 'pairings'
 
 interface CartItem { product: Product; quantity: number }
 interface OrderResult {
@@ -22,7 +22,7 @@ interface OrderResult {
   points_earned: number; member?: Customer | null
 }
 
-// ── EMVCo PromptPay Generator ──
+
 function generatePromptPayPayload(target: string, amount: number) {
   let cleanTarget = target.replace(/[^0-9]/g, '')
   const isMobile = cleanTarget.startsWith('0') || cleanTarget.startsWith('0066')
@@ -44,7 +44,7 @@ function generatePromptPayPayload(target: string, amount: number) {
   return payload + ('0000' + crc.toString(16).toUpperCase()).slice(-4)
 }
 
-// ── Category classifier ──
+
 function isFoodCategory(catName?: string): boolean {
   if (!catName) return false
   const n = catName.toLowerCase()
@@ -56,11 +56,16 @@ export default function CustomerMenuPage() {
   return (
     <Suspense fallback={
       <div style={{
-        minHeight: '100dvh', background: '#07080a',
+        minHeight: '100dvh',
+        backgroundImage: "url('/menu-bg.jpg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16
       }}>
-        <img src="/thebottleclub.jpg" alt="Logo" style={{ width: 64, height: 64, borderRadius: 16, objectFit: 'cover' }} className="animate-pulse" />
-        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>กำลังโหลดเมนู...</p>
+        <div style={{ background: 'rgba(10,15,40,0.75)', backdropFilter: 'blur(12px)', borderRadius: 20, padding: '28px 36px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+          <img src="/thebottleclub.jpg" alt="Logo" style={{ width: 64, height: 64, borderRadius: 16, objectFit: 'cover' }} className="animate-pulse" />
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14 }}>กำลังโหลดเมนู...</p>
+        </div>
       </div>
     }>
       <CustomerMenuContent />
@@ -74,29 +79,66 @@ function CustomerMenuContent() {
   const searchParams = useSearchParams()
   const tableParam = searchParams.get('table') || ''
 
-  const NAV_BG = 'rgba(8,9,13,0.95)'
+  const HEADER_BG = 'rgba(10, 15, 35, 0.22)'
+  const NAV_BG = 'rgba(10, 15, 38, 0.88)'
   const bottomBar: React.CSSProperties = {
     position: 'fixed', bottom: 0, left: 0, right: 0,
     padding: '14px 16px calc(14px + env(safe-area-inset-bottom))',
-    background: NAV_BG, backdropFilter: 'blur(24px)',
+    background: 'rgba(10, 15, 40, 0.92)', backdropFilter: 'blur(24px)',
     WebkitBackdropFilter: 'blur(24px)',
-    borderTop: '1px solid rgba(255,255,255,0.07)', zIndex: 50
+    borderTop: '1px solid rgba(255,255,255,0.14)', zIndex: 50
   }
   const customStyles = `
+    .menu-fullscreen-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      background-image: url('/menu-bg.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .menu-fullscreen-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at 50% 10%, rgba(244, 63, 94, 0.08) 0%, rgba(8, 12, 28, 0.45) 80%);
+      z-index: 0;
+      pointer-events: none;
+    }
     .menu-gradient-bg {
-      background: radial-gradient(circle at 10% 20%, rgba(30, 64, 175, 0.15) 0%, transparent 40%),
-                  radial-gradient(circle at 90% 80%, rgba(216, 169, 60, 0.08) 0%, transparent 45%),
-                  #07080a;
+      position: relative;
+      z-index: 1;
+      min-height: 100dvh;
+      background: transparent;
     }
     .pos-btn-gradient-blue {
       background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
       box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       color: white;
     }
     .pos-btn-gradient-blue:active {
       transform: scale(0.98);
       opacity: 0.95;
+    }
+    .pos-btn-gradient-rose {
+      background: linear-gradient(135deg, #e11d48 0%, #f43f5e 50%, #be123c 100%);
+      box-shadow: 0 4px 20px rgba(244, 63, 94, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: white;
+    }
+    .pos-btn-gradient-rose:active {
+      transform: scale(0.98);
     }
     .pos-btn-gradient-gold {
       background: linear-gradient(135deg, #d8a93c 0%, #f2c65c 100%);
@@ -108,36 +150,45 @@ function CustomerMenuContent() {
       transform: scale(0.98);
     }
     .glass-menu-card {
-      background: rgba(22, 25, 32, 0.65);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(10, 15, 40, 0.85);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
       border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+    }
+    .glass-pairing-card {
+      background: linear-gradient(145deg, rgba(20, 24, 52, 0.92) 0%, rgba(12, 16, 38, 0.94) 100%);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid rgba(244, 63, 94, 0.32);
+      border-radius: 20px;
+      box-shadow: 0 14px 44px rgba(0, 0, 0, 0.45), 0 0 24px rgba(244, 63, 94, 0.15);
     }
     .premium-input {
       width: 100%;
       padding: 12px 14px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
       border-radius: 14px;
       color: white;
       outline: none;
       transition: all 180ms ease;
     }
+    .premium-input::placeholder { color: rgba(255,255,255,0.35); }
     .premium-input:focus {
-      background: rgba(255,255,255,0.08);
-      border-color: rgba(59,130,246,0.5);
-      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(59,130,246,0.6);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.18);
     }
     .tag-badge {
       font-size: 10px;
       font-weight: 600;
-      color: rgba(255,255,255,0.5);
-      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.65);
+      background: rgba(255,255,255,0.10);
       padding: 3px 8px;
       border-radius: 6px;
-      border: 1px solid rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.10);
     }
     .menu-tab-btn {
       flex: 1;
@@ -159,13 +210,18 @@ function CustomerMenuContent() {
       box-shadow: 0 4px 16px rgba(249,115,22,0.35);
     }
     .menu-tab-btn.active-drinks {
-      background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
       color: white;
-      box-shadow: 0 4px 16px rgba(168,85,247,0.35);
+      box-shadow: 0 4px 16px rgba(37,99,235,0.35);
     }
     .menu-tab-btn.inactive {
-      background: rgba(255,255,255,0.04);
-      color: rgba(255,255,255,0.4);
+      background: rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.55);
+    }
+    .menu-tab-btn.active-pairings {
+      background: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%);
+      color: white;
+      box-shadow: 0 4px 18px rgba(244,63,94,0.45);
     }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     @keyframes slideIn {
@@ -175,8 +231,11 @@ function CustomerMenuContent() {
     .animate-in { animation: slideIn 0.25s ease both; }
   `
 
+
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [pairings, setPairings] = useState<FoodWinePairing[]>([])
+  const [appliedPairings, setAppliedPairings] = useState<{ [pairingId: string]: number }>({})
   const [loading, setLoading] = useState(true)
   const [shopName, setShopName] = useState('The Bottle Club')
   const [promptPayId, setPromptPayId] = useState('0922809619')
@@ -217,7 +276,7 @@ function CustomerMenuContent() {
     const [{ data: cats }, { data: prods }, { data: settings }] = await Promise.all([
       supabase.from('categories').select('*').eq('is_active', true).order('sort_order'),
       supabase.from('products').select('*, categories(name, icon)').eq('is_active', true).gt('stock', 0).order('name'),
-      supabase.from('settings').select('key, value').in('key', ['shop_name', 'promptpay_id', 'bank_account_name'])
+      supabase.from('settings').select('key, value').in('key', ['shop_name', 'promptpay_id', 'bank_account_name', 'food_wine_pairings'])
     ])
     setCategories(cats || [])
     setProducts(prods || [])
@@ -226,6 +285,17 @@ function CustomerMenuContent() {
       if (s('shop_name')) setShopName(s('shop_name')!)
       if (s('promptpay_id')) setPromptPayId(s('promptpay_id')!)
       if (s('bank_account_name')) setPromptPayName(s('bank_account_name')!)
+      const pairingRaw = s('food_wine_pairings')
+      if (pairingRaw) {
+        try {
+          const parsed = JSON.parse(pairingRaw)
+          if (Array.isArray(parsed)) {
+            setPairings(parsed.filter((p: FoodWinePairing) => p.is_active))
+          }
+        } catch (e) {
+          console.error('Failed to parse pairings:', e)
+        }
+      }
     }
     setLoading(false)
   }
@@ -249,6 +319,105 @@ function CustomerMenuContent() {
   const foodCount = products.filter(p => isFoodCategory((p.categories as any)?.name || '')).length
   const drinksCount = products.filter(p => !isFoodCategory((p.categories as any)?.name || '')).length
 
+  // Available pairings where both items exist in products list
+  const availablePairings = pairings.filter(p => {
+    const food = products.find(pr => pr.id === p.food_product_id)
+    const wine = products.find(pr => pr.id === p.wine_product_id)
+    return Boolean(food && wine)
+  })
+
+  const filteredPairings = availablePairings.filter(p => {
+    const food = products.find(pr => pr.id === p.food_product_id)
+    const wine = products.find(pr => pr.id === p.wine_product_id)
+    const q = searchQuery.toLowerCase().trim()
+    if (!q) return true
+    const note = p.description || p.pairing_notes || ''
+    return (
+      Boolean(p.title && p.title.toLowerCase().includes(q)) ||
+      Boolean(note && note.toLowerCase().includes(q)) ||
+      Boolean(food && food.name.toLowerCase().includes(q)) ||
+      Boolean(wine && wine.name.toLowerCase().includes(q))
+    )
+  })
+
+  // Dynamic promotion discount text based on configured pairings
+  const percentPairings = availablePairings.filter(p => p.discount_type === 'percent' && p.discount_value > 0)
+  const fixedPairings = availablePairings.filter(p => p.discount_type === 'fixed' && p.discount_value > 0)
+
+  let pairingPromoText = 'โปรโมชั่นพิเศษ'
+  let pairingDiscountBadge = 'HOT'
+
+  if (percentPairings.length > 0) {
+    const maxPercent = Math.max(...percentPairings.map(p => p.discount_value))
+    const minPercent = Math.min(...percentPairings.map(p => p.discount_value))
+    if (maxPercent === minPercent) {
+      pairingPromoText = `โปรโมชั่นลด ${maxPercent}%`
+      pairingDiscountBadge = `ลด ${maxPercent}%`
+    } else {
+      pairingPromoText = `โปรโมชั่นลดสูงสุด ${maxPercent}%`
+      pairingDiscountBadge = `ลด ${maxPercent}%`
+    }
+  } else if (fixedPairings.length > 0) {
+    const maxFixed = Math.max(...fixedPairings.map(p => p.discount_value))
+    pairingPromoText = `โปรโมชั่นลด ฿${maxFixed}`
+    pairingDiscountBadge = `ลด ฿${maxFixed}`
+  } else if (availablePairings.length > 0) {
+    pairingPromoText = `ชุดคู่สุดคุ้ม (${availablePairings.length})`
+    pairingDiscountBadge = `${availablePairings.length}`
+  }
+
+  // Pairing Discounts Calculation based on cart contents
+  const activePairingDiscounts = pairings.map(p => {
+    const count = appliedPairings[p.id] || 0
+    if (count <= 0) return null
+    const foodInCart = cart.find(i => i.product.id === p.food_product_id)?.quantity || 0
+    const wineInCart = cart.find(i => i.product.id === p.wine_product_id)?.quantity || 0
+    const validSets = Math.min(count, foodInCart, wineInCart)
+    if (validSets <= 0) return null
+
+    const foodProd = products.find(pr => pr.id === p.food_product_id)
+    const wineProd = products.find(pr => pr.id === p.wine_product_id)
+    if (!foodProd || !wineProd) return null
+
+    const baseSum = foodProd.price + wineProd.price
+    const discountPerSet = p.discount_type === 'percent'
+      ? Math.round(baseSum * (p.discount_value / 100))
+      : p.discount_value
+
+    return {
+      pairing: p,
+      sets: validSets,
+      foodName: foodProd.name,
+      wineName: wineProd.name,
+      title: p.title || `${foodProd.name} + ${wineProd.name}`,
+      discountPerSet,
+      totalDiscount: discountPerSet * validSets
+    }
+  }).filter(Boolean) as {
+    pairing: FoodWinePairing
+    sets: number
+    foodName: string
+    wineName: string
+    title: string
+    discountPerSet: number
+    totalDiscount: number
+  }[]
+
+  const pairingDiscountTotal = activePairingDiscounts.reduce((sum, d) => sum + d.totalDiscount, 0)
+  const cartSubtotal = cart.reduce((s, i) => s + i.product.price * i.quantity, 0)
+  const cartTotal = Math.max(0, cartSubtotal - pairingDiscountTotal)
+  const cartCount = cart.reduce((s, i) => s + i.quantity, 0)
+  const getQty = (id: string) => cart.find(i => i.product.id === id)?.quantity || 0
+
+  const getPairingQty = (pairingId: string) => {
+    const p = pairings.find(item => item.id === pairingId)
+    if (!p) return 0
+    const count = appliedPairings[pairingId] || 0
+    const foodInCart = cart.find(i => i.product.id === p.food_product_id)?.quantity || 0
+    const wineInCart = cart.find(i => i.product.id === p.wine_product_id)?.quantity || 0
+    return Math.min(count, foodInCart, wineInCart)
+  }
+
   const addToCart = (product: Product) => {
     setCart(prev => {
       const ex = prev.find(i => i.product.id === product.id)
@@ -262,9 +431,63 @@ function CustomerMenuContent() {
     else setCart(prev => prev.map(i => i.product.id === id ? { ...i, quantity: qty } : i))
   }
 
-  const cartTotal = cart.reduce((s, i) => s + i.product.price * i.quantity, 0)
-  const cartCount = cart.reduce((s, i) => s + i.quantity, 0)
-  const getQty = (id: string) => cart.find(i => i.product.id === id)?.quantity || 0
+  const addPairingToCart = (pairing: FoodWinePairing) => {
+    const food = products.find(p => p.id === pairing.food_product_id)
+    const wine = products.find(p => p.id === pairing.wine_product_id)
+    if (!food || !wine) {
+      alert('ขออภัย รายการสินค้าในชุดนี้ไม่พร้อมจำหน่าย')
+      return
+    }
+
+    setCart(prev => {
+      let next = [...prev]
+      const fEx = next.find(i => i.product.id === food.id)
+      if (fEx) next = next.map(i => i.product.id === food.id ? { ...i, quantity: i.quantity + 1 } : i)
+      else next.push({ product: food, quantity: 1 })
+
+      const wEx = next.find(i => i.product.id === wine.id)
+      if (wEx) next = next.map(i => i.product.id === wine.id ? { ...i, quantity: i.quantity + 1 } : i)
+      else next.push({ product: wine, quantity: 1 })
+
+      return next
+    })
+
+    setAppliedPairings(prev => ({
+      ...prev,
+      [pairing.id]: (prev[pairing.id] || 0) + 1
+    }))
+  }
+
+  const removePairingFromCart = (pairing: FoodWinePairing) => {
+    setCart(prev => {
+      let next = [...prev]
+      const fEx = next.find(i => i.product.id === pairing.food_product_id)
+      if (fEx && fEx.quantity > 1) {
+        next = next.map(i => i.product.id === pairing.food_product_id ? { ...i, quantity: i.quantity - 1 } : i)
+      } else {
+        next = next.filter(i => i.product.id !== pairing.food_product_id)
+      }
+
+      const wEx = next.find(i => i.product.id === pairing.wine_product_id)
+      if (wEx && wEx.quantity > 1) {
+        next = next.map(i => i.product.id === pairing.wine_product_id ? { ...i, quantity: i.quantity - 1 } : i)
+      } else {
+        next = next.filter(i => i.product.id !== pairing.wine_product_id)
+      }
+
+      return next
+    })
+
+    setAppliedPairings(prev => {
+      const cur = prev[pairing.id] || 0
+      if (cur <= 1) {
+        const copy = { ...prev }
+        delete copy[pairing.id]
+        return copy
+      }
+      return { ...prev, [pairing.id]: cur - 1 }
+    })
+  }
 
   const handleTabSwitch = (tab: MenuTab) => {
     setMenuTab(tab)
@@ -298,17 +521,22 @@ function CustomerMenuContent() {
         if (!memberErr) customer = newMember
       }
       const receiptNo = `WC${Date.now().toString().slice(-10)}`
+      const subtotalAmount = cartSubtotal
+      const discountAmount = pairingDiscountTotal
       const totalAmount = cartTotal
       const pointsEarned = Math.floor(totalAmount / 100)
 
-      // Build note with kitchen classification
+      // Build note with kitchen classification and pairings
       const hasFoodItems = cart.some(item => isFoodCategory((item.product.categories as any)?.name || ''))
       const baseNote = tableParam ? `สั่งจาก QR Code โต๊ะ ${tableParam}` : 'สั่งจาก QR Code'
-      const kitchenNote = hasFoodItems ? `${baseNote} [KITCHEN:pending]` : baseNote
+      const pairingNote = activePairingDiscounts.length > 0
+        ? ` [PAIRING: ${activePairingDiscounts.map(d => `${d.title} x${d.sets}`).join(', ')}]`
+        : ''
+      const kitchenNote = hasFoodItems ? `${baseNote}${pairingNote} [KITCHEN:pending]` : `${baseNote}${pairingNote}`
 
       const { data: sale, error: saleErr } = await supabase.from('sales').insert({
         receipt_no: receiptNo, customer_id: customer?.id || null, cashier_id: null,
-        status: 'pending', subtotal: cartTotal, discount_amount: 0, tax_amount: 0,
+        status: 'pending', subtotal: subtotalAmount, discount_amount: discountAmount, tax_amount: 0,
         service_charge: 0, total_amount: totalAmount, payment_method: 'qr',
         points_earned: pointsEarned,
         note: kitchenNote,
@@ -371,30 +599,32 @@ function CustomerMenuContent() {
     const hasFoodInOrder = cart.some(item => isFoodCategory((item.product.categories as any)?.name || ''))
     return (
       <div className="menu-gradient-bg" style={{ minHeight: '100dvh', overflowY: 'auto' }}>
+        <div className="menu-fullscreen-bg" />
+        <div className="menu-fullscreen-overlay" />
         <style>{customStyles}</style>
-        <div style={{ maxWidth: 480, margin: '0 auto', padding: '32px 16px 48px' }}>
+        <div style={{ maxWidth: 480, margin: '0 auto', padding: '32px 16px 48px', position: 'relative', zIndex: 1 }}>
 
-          {/* Success Title */}
-          <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          {/* Success Title Frame */}
+          <div className="glass-menu-card" style={{ textAlign: 'center', marginBottom: 20, padding: '24px 20px' }}>
             {tableParam && (
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
-                background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)',
+                background: 'rgba(59,130,246,0.18)', border: '1px solid rgba(59,130,246,0.35)',
                 color: '#93c5fd', padding: '6px 18px', borderRadius: 999, fontSize: 13,
-                fontWeight: 800, marginBottom: 20
+                fontWeight: 800, marginBottom: 18
               }}>
                 🍽️ โต๊ะ {tableParam}
               </div>
             )}
             <div style={{
-              width: 76, height: 76, borderRadius: '50%',
+              width: 72, height: 72, borderRadius: '50%',
               background: 'linear-gradient(135deg,#16a34a,#22c55e)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 16px', boxShadow: '0 0 30px rgba(34,197,94,0.3)'
+              margin: '0 auto 14px', boxShadow: '0 0 30px rgba(34,197,94,0.3)'
             }}>
-              <CheckCircle2 size={38} color="white" />
+              <CheckCircle2 size={36} color="white" />
             </div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, color: 'white', margin: '0 0 6px', letterSpacing: '-0.5px' }}>สั่งสินค้าสำเร็จ!</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: 'white', margin: '0 0 6px', letterSpacing: '-0.5px' }}>สั่งสินค้าสำเร็จ!</h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0 }}>
               เลขที่คำสั่งซื้อ: <span style={{ color: '#fbbf24', fontWeight: 700 }}>#{orderResult.receipt_no}</span>
             </p>
@@ -488,6 +718,8 @@ function CustomerMenuContent() {
   if (step === 'checkout') {
     return (
       <div className="menu-gradient-bg" style={{ minHeight: '100dvh', paddingBottom: 120 }}>
+        <div className="menu-fullscreen-bg" />
+        <div className="menu-fullscreen-overlay" />
         <style>{customStyles}</style>
         {/* Header */}
         <div style={{
@@ -509,6 +741,18 @@ function CustomerMenuContent() {
         <div style={{ maxWidth: 480, margin: '0 auto', padding: '20px 16px' }}>
           {/* Order Summary */}
           <div className="glass-menu-card" style={{ padding: 20, marginBottom: 16 }}>
+            {/* Table Badge */}
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 7,
+              background: 'linear-gradient(135deg, rgba(30,64,175,0.4), rgba(59,130,246,0.3))',
+              border: '1px solid rgba(147,197,253,0.3)',
+              color: '#93c5fd', padding: '5px 14px', borderRadius: 999,
+              fontSize: 13, fontWeight: 800, marginBottom: 16
+            }}>
+              <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 6px #4ade80' }} />
+              🍽️ เสิร์ฟที่ โต๊ะ {tableParam || '1'}
+            </div>
+
             <p style={{ margin: '0 0 14px', fontWeight: 700, color: 'white', fontSize: 14 }}>รายการสั่ง ({cartCount} รายการ)</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {cart.map(item => {
@@ -527,9 +771,49 @@ function CustomerMenuContent() {
                 )
               })}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 14, marginTop: 14, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-              <span style={{ fontWeight: 700, color: 'white', fontSize: 15 }}>ยอดรวมสุทธิ</span>
-              <span style={{ fontWeight: 900, color: 'var(--gold-400)', fontSize: 24 }}>{formatCurrency(cartTotal)}</span>
+
+            {/* Active Pairing Promotion Summary */}
+            {activePairingDiscounts.length > 0 && (
+              <div style={{
+                marginTop: 14, paddingTop: 14, borderTop: '1px dashed rgba(244,63,94,0.35)',
+                display: 'flex', flexDirection: 'column', gap: 8
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#fda4af', fontSize: 12, fontWeight: 700 }}>
+                  <Sparkles size={14} style={{ color: '#fb7185' }} />
+                  <span>สิทธิพิเศษเซ็ตคู่ Food & Wine</span>
+                </div>
+                {activePairingDiscounts.map(d => (
+                  <div key={d.pairing.id} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    fontSize: 13, color: '#fecdd3', background: 'rgba(244,63,94,0.1)', padding: '6px 10px', borderRadius: 8
+                  }}>
+                    <span>🍷 {d.title} {d.sets > 1 ? `(×${d.sets} เซ็ต)` : ''}</span>
+                    <span style={{ fontWeight: 800, color: '#fda4af' }}>-{formatCurrency(d.totalDiscount)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div style={{
+              display: 'flex', flexDirection: 'column', gap: 6,
+              paddingTop: 14, marginTop: 14, borderTop: '1px solid rgba(255,255,255,0.08)'
+            }}>
+              {pairingDiscountTotal > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>ยอดรวมก่อนส่วนลด</span>
+                  <span style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'line-through' }}>{formatCurrency(cartSubtotal)}</span>
+                </div>
+              )}
+              {pairingDiscountTotal > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
+                  <span style={{ color: '#fb7185', fontWeight: 700 }}>🍷 ส่วนลดเซ็ตคู่พิเศษ</span>
+                  <span style={{ color: '#fb7185', fontWeight: 800 }}>-{formatCurrency(pairingDiscountTotal)}</span>
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                <span style={{ fontWeight: 700, color: 'white', fontSize: 15 }}>ยอดรวมสุทธิ</span>
+                <span style={{ fontWeight: 900, color: 'var(--gold-400)', fontSize: 24 }}>{formatCurrency(cartTotal)}</span>
+              </div>
             </div>
           </div>
 
@@ -566,6 +850,8 @@ function CustomerMenuContent() {
   if (step === 'cart') {
     return (
       <div className="menu-gradient-bg" style={{ minHeight: '100dvh', paddingBottom: 120 }}>
+        <div className="menu-fullscreen-bg" />
+        <div className="menu-fullscreen-overlay" />
         <style>{customStyles}</style>
         {/* Header */}
         <div style={{
@@ -588,12 +874,56 @@ function CustomerMenuContent() {
         </div>
 
         <div style={{ maxWidth: 480, margin: '0 auto', padding: '16px' }}>
+          {/* Table Pill Banner */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            background: 'linear-gradient(135deg, rgba(30,64,175,0.25), rgba(59,130,246,0.18))',
+            border: '1px solid rgba(147,197,253,0.25)',
+            borderRadius: 14, padding: '10px 14px', marginBottom: 14
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 6px #4ade80' }} />
+              <span style={{ fontSize: 13, fontWeight: 800, color: '#93c5fd' }}>🍽️ เสิร์ฟที่ โต๊ะ {tableParam || '1'}</span>
+            </div>
+            <button
+              onClick={() => setStep('menu')}
+              style={{
+                background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+                color: 'white', padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              + เลือกเมนูเพิ่ม
+            </button>
+          </div>
+
+          {/* Active Pairing Promotion notification */}
+          {activePairingDiscounts.length > 0 && (
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(244,63,94,0.16), rgba(168,85,247,0.12))',
+              border: '1px solid rgba(244,63,94,0.35)',
+              borderRadius: 16, padding: '12px 16px', marginBottom: 14,
+              boxShadow: '0 4px 16px rgba(244,63,94,0.15)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, color: '#fb7185', fontWeight: 800, fontSize: 13 }}>
+                <Sparkles size={16} /> <span>คุณได้รับส่วนลดจับคู่อาหาร & ไวน์!</span>
+              </div>
+              {activePairingDiscounts.map(d => (
+                <div key={d.pairing.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, color: '#fecdd3', margin: '4px 0' }}>
+                  <span>🍷 {d.title} {d.sets > 1 ? `(${d.sets} เซ็ต)` : ''}</span>
+                  <span style={{ fontWeight: 800, color: '#fda4af' }}>-{formatCurrency(d.totalDiscount)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
           {cart.length === 0 ? (
-            <div style={{ textAlign: 'center', paddingTop: 100 }}>
-              <ShoppingBag size={60} style={{ color: 'var(--brand-cobalt-light)', opacity: 0.2, margin: '0 auto 16px' }} />
-              <p style={{ color: 'var(--text-secondary)', fontSize: 15 }}>ไม่มีสินค้าในตะกร้า</p>
+            <div className="glass-menu-card" style={{ textAlign: 'center', padding: '60px 24px' }}>
+              <ShoppingBag size={56} style={{ color: '#93c5fd', opacity: 0.35, margin: '0 auto 16px' }} />
+              <p style={{ color: 'white', fontSize: 16, fontWeight: 700, margin: '0 0 6px' }}>ไม่มีสินค้าในตะกร้า</p>
+              <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: '0 0 20px' }}>เลือกอาหารหรือเครื่องดื่มเพื่อสั่งได้เลยครับ</p>
               <button onClick={() => setStep('menu')} className="pos-btn-gradient-blue" style={{
-                marginTop: 20, padding: '12px 28px', borderRadius: 12, border: 'none',
+                padding: '12px 28px', borderRadius: 14, border: 'none',
                 fontSize: 14, fontWeight: 700, cursor: 'pointer'
               }}>
                 กลับไปเลือกเมนู
@@ -655,13 +985,27 @@ function CustomerMenuContent() {
         {cart.length > 0 && (
           <div style={bottomBar}>
             <div style={{ maxWidth: 480, margin: '0 auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                <span style={{ color: 'var(--text-secondary)', fontSize: 14 }}>รวม {cartCount} รายการ</span>
-                <span style={{ color: 'var(--gold-400)', fontWeight: 800, fontSize: 20 }}>{formatCurrency(cartTotal)}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <div>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: 13, display: 'block' }}>รวม {cartCount} รายการ</span>
+                  {pairingDiscountTotal > 0 && (
+                    <span style={{ color: '#fb7185', fontSize: 12, fontWeight: 700 }}>
+                      ประหยัดทันที {formatCurrency(pairingDiscountTotal)}
+                    </span>
+                  )}
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  {pairingDiscountTotal > 0 && (
+                    <span style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'line-through', fontSize: 12, marginRight: 6 }}>
+                      {formatCurrency(cartSubtotal)}
+                    </span>
+                  )}
+                  <span style={{ color: 'var(--gold-400)', fontWeight: 800, fontSize: 22 }}>{formatCurrency(cartTotal)}</span>
+                </div>
               </div>
               <button onClick={() => setStep('checkout')} className="pos-btn-gradient-blue" style={{
                 width: '100%', padding: '16px', borderRadius: 16, fontSize: 16, fontWeight: 800,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, border: 'none'
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, border: 'none', cursor: 'pointer'
               }}>
                 สั่งสินค้าและชำระเงิน <ChevronRight size={20} />
               </button>
@@ -691,6 +1035,8 @@ function CustomerMenuContent() {
 
     return (
       <div className="menu-gradient-bg" style={{ minHeight: '100dvh' }}>
+        <div className="menu-fullscreen-bg" />
+        <div className="menu-fullscreen-overlay" />
         <style>{customStyles}</style>
         <div style={{
           position: 'sticky', top: 0, zIndex: 30, height: 56,
@@ -774,6 +1120,8 @@ function CustomerMenuContent() {
   // MAIN MENU STEP
   return (
     <div className="menu-gradient-bg" style={{ minHeight: '100dvh', paddingBottom: cartCount > 0 ? 94 : 40 }}>
+      <div className="menu-fullscreen-bg" />
+      <div className="menu-fullscreen-overlay" />
       <style>{customStyles}</style>
 
       {/* ── Brand Wine Hero Banner ── */}
@@ -781,7 +1129,7 @@ function CustomerMenuContent() {
         <div style={{
           position: 'relative', width: '100%', aspectRatio: '21/9',
           borderRadius: 20, overflow: 'hidden',
-          border: '1px solid rgba(255,255,255,0.08)',
+          border: '1px solid rgba(255,255,255,0.12)',
           boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
         }}>
           <img
@@ -792,61 +1140,94 @@ function CustomerMenuContent() {
           {/* Subtle overlay */}
           <div style={{
             position: 'absolute', inset: 0,
-            background: 'linear-gradient(to top, rgba(7,8,10,0.85) 0%, rgba(7,8,10,0.2) 60%, transparent 100%)'
+            background: 'linear-gradient(to top, rgba(7,8,10,0.92) 0%, rgba(7,8,10,0.2) 60%, transparent 100%)'
           }} />
           {/* Hero text overlay */}
-          <div style={{ position: 'absolute', bottom: 12, left: 16, right: 16 }}>
-            {tableParam && (
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                background: 'rgba(30,64,175,0.85)', backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(59,130,246,0.4)',
-                color: 'white', padding: '5px 14px', borderRadius: 999,
-                fontSize: 13, fontWeight: 800
-              }}>
-                🍽️ โต๊ะ {tableParam}
-              </div>
+          <div style={{
+            position: 'absolute', bottom: 12, left: 14, right: 14,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8
+          }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 7,
+              background: 'linear-gradient(135deg, rgba(15,23,42,0.92), rgba(30,58,138,0.92))',
+              backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+              border: '1px solid rgba(147,197,253,0.35)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.5), 0 0 16px rgba(59,130,246,0.3)',
+              color: 'white', padding: '6px 14px', borderRadius: 999,
+              fontSize: 13, fontWeight: 800
+            }}>
+              <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 8px #4ade80' }} />
+              <span>🍽️ โต๊ะ {tableParam || '1'}</span>
+            </div>
+
+            {availablePairings.length > 0 && (
+              <button
+                onClick={() => handleTabSwitch('pairings')}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'linear-gradient(135deg, rgba(225,29,72,0.92), rgba(159,18,57,0.92))',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(253,164,175,0.4)',
+                  boxShadow: '0 4px 16px rgba(225,29,72,0.45)',
+                  color: 'white', padding: '6px 14px', borderRadius: 999,
+                  fontSize: 12, fontWeight: 800, cursor: 'pointer'
+                }}
+              >
+                <span>{pairingPromoText}</span>
+              </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* ── Sticky Header ── */}
+      {/* ── Sticky Header (โปร่งแสงมองเห็นภาพพื้นหลังชัดเจน) ── */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 30,
-        background: NAV_BG, borderBottom: '1px solid rgba(255,255,255,0.07)',
-        backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)'
+        background: HEADER_BG,
+        borderBottom: '1px solid rgba(255,255,255,0.08)',
+        backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)'
       }}>
         {/* Logo and shop info */}
-        <div style={{
-          background: 'linear-gradient(180deg, rgba(30,64,175,0.18) 0%, transparent 100%)',
-          padding: '12px 16px 8px', textAlign: 'center'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 2 }}>
-            <img src="/thebottleclub.jpg" alt="Logo" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover' }} />
-            <span style={{ fontSize: 15, fontWeight: 800, color: 'white', letterSpacing: '-0.3px' }}>{shopName}</span>
+        <div style={{ padding: '10px 16px 4px', textAlign: 'center' }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            background: 'rgba(10, 15, 40, 0.72)', backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255, 255, 255, 0.16)',
+            padding: '6px 18px', borderRadius: 999, marginBottom: 4,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.3)'
+          }}>
+            <img src="/thebottleclub.jpg" alt="Logo" style={{ width: 22, height: 22, borderRadius: 6, objectFit: 'cover' }} />
+            <span style={{ fontSize: 14, fontWeight: 800, color: 'white', letterSpacing: '-0.3px' }}>{shopName}</span>
           </div>
-          <p style={{ margin: 0, fontSize: 11, color: 'var(--text-secondary)' }}>
+          <p style={{ margin: 0, fontSize: 11, color: 'white', textShadow: '0 1px 4px rgba(0,0,0,0.9)', fontWeight: 600 }}>
             {tableParam ? `สั่งอาหารและเครื่องดื่มตรงถึงโต๊ะ ${tableParam}` : 'สั่งสินค้าพรีเมียมง่ายๆ จากสมาร์ตโฟนของคุณ'}
           </p>
         </div>
 
-        {/* ── Food / Drinks Tab Switch ── */}
-        <div style={{ padding: '8px 14px 0', maxWidth: 480, margin: '0 auto' }}>
-          <div style={{ display: 'flex', gap: 8, background: 'rgba(255,255,255,0.03)', borderRadius: 14, padding: 4 }}>
+        {/* ── Food / Drinks / Pairings Tab Switch ── */}
+        <div style={{ padding: '6px 14px 0', maxWidth: 480, margin: '0 auto' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr 1.25fr',
+            gap: 6,
+            background: 'rgba(10, 15, 40, 0.72)', backdropFilter: 'blur(14px)',
+            border: '1px solid rgba(255, 255, 255, 0.16)',
+            borderRadius: 14, padding: 4,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.25)'
+          }}>
             <button
               className={`menu-tab-btn ${menuTab === 'food' ? 'active-food' : 'inactive'}`}
               onClick={() => handleTabSwitch('food')}
               id="menu-tab-food"
             >
-              <UtensilsCrossed size={15} />
-              อาหาร
+              <UtensilsCrossed size={14} />
+              <span>อาหาร</span>
               {foodCount > 0 && (
                 <span style={{
                   background: menuTab === 'food' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)',
                   color: menuTab === 'food' ? 'white' : 'rgba(255,255,255,0.4)',
                   fontSize: 10, fontWeight: 900,
-                  padding: '1px 6px', borderRadius: 999, minWidth: 18
+                  padding: '1px 5px', borderRadius: 999
                 }}>{foodCount}</span>
               )}
             </button>
@@ -855,35 +1236,63 @@ function CustomerMenuContent() {
               onClick={() => handleTabSwitch('drinks')}
               id="menu-tab-drinks"
             >
-              <Wine size={15} />
-              เครื่องดื่ม
+              <Wine size={14} />
+              <span>เครื่องดื่ม</span>
               {drinksCount > 0 && (
                 <span style={{
                   background: menuTab === 'drinks' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)',
                   color: menuTab === 'drinks' ? 'white' : 'rgba(255,255,255,0.4)',
                   fontSize: 10, fontWeight: 900,
-                  padding: '1px 6px', borderRadius: 999, minWidth: 18
+                  padding: '1px 5px', borderRadius: 999
                 }}>{drinksCount}</span>
               )}
+            </button>
+            <button
+              className={`menu-tab-btn ${menuTab === 'pairings' ? 'active-pairings' : 'inactive'}`}
+              onClick={() => handleTabSwitch('pairings')}
+              id="menu-tab-pairings"
+            >
+              <Sparkles size={14} style={{ color: menuTab === 'pairings' ? '#ffe4e6' : '#fda4af' }} />
+              <span>จับคู่ไวน์</span>
+              <span style={{
+                background: menuTab === 'pairings' ? 'rgba(255,255,255,0.3)' : 'rgba(244,63,94,0.3)',
+                color: 'white',
+                fontSize: 9, fontWeight: 900,
+                padding: '1px 5px', borderRadius: 999
+              }}>
+                {pairingDiscountBadge}
+              </span>
             </button>
           </div>
         </div>
 
         {/* Search */}
-        <div style={{ padding: '8px 14px 6px' }}>
+        <div style={{ padding: '6px 14px 4px' }}>
           <div style={{ position: 'relative', maxWidth: 480, margin: '0 auto' }}>
-            <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.7)' }} />
             <input
               className="premium-input"
-              style={{ paddingLeft: 38, fontSize: 14 }}
-              placeholder={menuTab === 'food' ? 'ค้นหาอาหาร...' : 'ค้นหาชื่อสินค้า / แบรนด์ / สายพันธุ์...'}
+              style={{
+                paddingLeft: 38, fontSize: 14,
+                background: 'rgba(10, 15, 40, 0.70)',
+                border: '1px solid rgba(255, 255, 255, 0.16)',
+                backdropFilter: 'blur(14px)',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.25)'
+              }}
+              placeholder={
+                menuTab === 'food'
+                  ? 'ค้นหาอาหาร...'
+                  : menuTab === 'drinks'
+                  ? 'ค้นหาชื่อสินค้า / แบรนด์ / ไวน์...'
+                  : 'ค้นหาชุดจับคู่อาหาร & ไวน์...'
+              }
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
             {searchQuery && (
               <button onClick={() => setSearchQuery('')} style={{
                 position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer'
+                background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer'
               }}>
                 <X size={14} />
               </button>
@@ -891,21 +1300,21 @@ function CustomerMenuContent() {
           </div>
         </div>
 
-        {/* Horizontal Category pills */}
-        {currentTabCategories.length > 0 && (
+        {/* Horizontal Category pills (for food and drinks) */}
+        {menuTab !== 'pairings' && currentTabCategories.length > 0 && (
           <div className="no-scrollbar" style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '6px 14px 12px', maxWidth: 480, margin: '0 auto' }}>
             <button
               onClick={() => setSelectedCategory('all')}
               style={{
                 flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
-                padding: '7px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600,
-                border: `1px solid ${selectedCategory === 'all' ? (menuTab === 'food' ? 'rgba(249,115,22,0.4)' : 'rgba(168,85,247,0.4)') : 'rgba(255,255,255,0.06)'}`,
-                background: selectedCategory === 'all' ? (menuTab === 'food' ? 'rgba(249,115,22,0.15)' : 'rgba(168,85,247,0.15)') : 'rgba(255,255,255,0.04)',
-                color: selectedCategory === 'all' ? (menuTab === 'food' ? '#fb923c' : '#c084fc') : 'var(--text-secondary)',
-                cursor: 'pointer', transition: 'all 150ms'
+                padding: '7px 14px', borderRadius: 999, fontSize: 12, fontWeight: 700,
+                border: `1px solid ${selectedCategory === 'all' ? (menuTab === 'food' ? 'rgba(249,115,22,0.6)' : 'rgba(59,130,246,0.6)') : 'rgba(255,255,255,0.15)'}`,
+                background: selectedCategory === 'all' ? (menuTab === 'food' ? 'rgba(249,115,22,0.25)' : 'rgba(37,99,235,0.25)') : 'rgba(255,255,255,0.08)',
+                color: selectedCategory === 'all' ? (menuTab === 'food' ? '#fdba74' : '#93c5fd') : 'rgba(255,255,255,0.8)',
+                cursor: 'pointer', transition: 'all 150ms', backdropFilter: 'blur(8px)'
               }}
             >
-              ✨ ทั้งหมด
+              ทั้งหมด
             </button>
             {currentTabCategories.map(cat => {
               const active = selectedCategory === cat.id
@@ -915,11 +1324,11 @@ function CustomerMenuContent() {
                   onClick={() => setSelectedCategory(cat.id)}
                   style={{
                     flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
-                    padding: '7px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600,
-                    border: `1px solid ${active ? (menuTab === 'food' ? 'rgba(249,115,22,0.4)' : 'rgba(168,85,247,0.4)') : 'rgba(255,255,255,0.06)'}`,
-                    background: active ? (menuTab === 'food' ? 'rgba(249,115,22,0.15)' : 'rgba(168,85,247,0.15)') : 'rgba(255,255,255,0.04)',
-                    color: active ? (menuTab === 'food' ? '#fb923c' : '#c084fc') : 'var(--text-secondary)',
-                    cursor: 'pointer', transition: 'all 150ms'
+                    padding: '7px 14px', borderRadius: 999, fontSize: 12, fontWeight: 700,
+                    border: `1px solid ${active ? (menuTab === 'food' ? 'rgba(249,115,22,0.6)' : 'rgba(59,130,246,0.6)') : 'rgba(255,255,255,0.15)'}`,
+                    background: active ? (menuTab === 'food' ? 'rgba(249,115,22,0.25)' : 'rgba(37,99,235,0.25)') : 'rgba(255,255,255,0.08)',
+                    color: active ? (menuTab === 'food' ? '#fdba74' : '#93c5fd') : 'rgba(255,255,255,0.8)',
+                    cursor: 'pointer', transition: 'all 150ms', backdropFilter: 'blur(8px)'
                   }}
                 >
                   <span>{cat.icon || (menuTab === 'food' ? '🍽️' : '🍷')}</span> {cat.name}
@@ -930,141 +1339,434 @@ function CustomerMenuContent() {
         )}
       </div>
 
-      {/* ── Product List ── */}
+      {/* ── Product & Pairing List ── */}
       <div style={{ maxWidth: 480, margin: '0 auto', padding: '14px 14px 0' }}>
 
-        {/* Section header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-          <span style={{ fontSize: 20 }}>{menuTab === 'food' ? '🍽️' : '🍷'}</span>
-          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'white' }}>
-            {menuTab === 'food' ? 'อาหาร' : 'เครื่องดื่ม & ไวน์'}
-          </h2>
+        {/* Featured Pairing Promo Banner (only show if pairings exist and browsing food/drinks) */}
+        {menuTab !== 'pairings' && availablePairings.length > 0 && (
+          <div
+            onClick={() => handleTabSwitch('pairings')}
+            style={{
+              cursor: 'pointer',
+              marginBottom: 14,
+              padding: '12px 16px',
+              borderRadius: 16,
+              background: 'linear-gradient(135deg, rgba(225,29,72,0.22) 0%, rgba(168,85,247,0.16) 100%)',
+              border: '1px solid rgba(244,63,94,0.38)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+              boxShadow: '0 8px 24px rgba(225,29,72,0.18)',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{
+                width: 38, height: 38, borderRadius: 10,
+                background: 'linear-gradient(135deg, #e11d48, #f43f5e)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(225,29,72,0.4)', flexShrink: 0
+              }}>
+                <Sparkles size={18} color="white" />
+              </div>
+              <div>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: 'white', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>{pairingPromoText}</span>
+                  <span style={{ background: 'rgba(244,63,94,0.35)', color: '#fecdd3', fontSize: 10, padding: '1px 6px', borderRadius: 999, fontWeight: 800 }}>{pairingDiscountBadge}</span>
+                </p>
+                <p style={{ margin: '2px 0 0', fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>
+                  สั่งเซ็ตคู่รับส่วนลดพิเศษ เสิร์ฟรสชาติสมบูรณ์แบบถึงโต๊ะ
+                </p>
+              </div>
+            </div>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 4,
+              color: '#fda4af', fontSize: 12, fontWeight: 800, flexShrink: 0
+            }}>
+              <span>ดูเซ็ตคู่</span>
+              <ChevronRight size={16} />
+            </div>
+          </div>
+        )}
+
+        {/* Section header frame (กรอบครอบข้อความ) */}
+        <div className="glass-menu-card" style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '12px 18px', marginBottom: 14, borderRadius: 16,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+          border: menuTab === 'pairings' ? '1px solid rgba(244,63,94,0.35)' : undefined
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 22 }}>{menuTab === 'food' ? '🍽️' : menuTab === 'drinks' ? '🍷' : '✨'}</span>
+            <div>
+              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'white', letterSpacing: '-0.2px' }}>
+                {menuTab === 'food' ? 'รายการอาหาร' : menuTab === 'drinks' ? 'รายการเครื่องดื่ม & ไวน์' : 'ชุดจับคู่อาหาร & ไวน์พรีเมียม'}
+              </h2>
+              <p style={{ margin: '2px 0 0', fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>
+                {menuTab === 'food' ? 'คัดสรรสดใหม่ปรุงตามสั่ง' : menuTab === 'drinks' ? 'ไวน์และเครื่องดื่มพรีเมียม' : 'จับคู่รสชาติอย่างลงตัว พร้อมส่วนลดพิเศษ'}
+              </p>
+            </div>
+          </div>
           <span style={{
-            fontSize: 11, fontWeight: 700, color: menuTab === 'food' ? '#fb923c' : '#c084fc',
-            background: menuTab === 'food' ? 'rgba(249,115,22,0.1)' : 'rgba(168,85,247,0.1)',
-            padding: '2px 8px', borderRadius: 999,
-            border: `1px solid ${menuTab === 'food' ? 'rgba(249,115,22,0.2)' : 'rgba(168,85,247,0.2)'}`
+            fontSize: 12, fontWeight: 800,
+            color: menuTab === 'food' ? '#fb923c' : menuTab === 'drinks' ? '#c084fc' : '#fda4af',
+            background: menuTab === 'food' ? 'rgba(249,115,22,0.18)' : menuTab === 'drinks' ? 'rgba(168,85,247,0.18)' : 'rgba(244,63,94,0.18)',
+            padding: '4px 12px', borderRadius: 999,
+            border: `1px solid ${menuTab === 'food' ? 'rgba(249,115,22,0.35)' : menuTab === 'drinks' ? 'rgba(168,85,247,0.35)' : 'rgba(244,63,94,0.35)'}`
           }}>
-            {activeProducts.length} รายการ
+            {menuTab === 'pairings' ? `${filteredPairings.length} ชุด` : `${activeProducts.length} รายการ`}
           </span>
         </div>
 
-        {loading ? (
-          <div style={{ textAlign: 'center', paddingTop: 60 }}>
-            <Loader2 size={32} className="animate-spin" style={{ color: menuTab === 'food' ? '#f97316' : '#a855f7', margin: '0 auto' }} />
-            <p style={{ color: 'var(--text-muted)', marginTop: 12 }}>กำลังโหลด...</p>
-          </div>
-        ) : activeProducts.length === 0 ? (
-          <div style={{ textAlign: 'center', paddingTop: 80, color: 'var(--text-muted)' }}>
-            {menuTab === 'food' ? (
-              <UtensilsCrossed size={52} style={{ margin: '0 auto 14px', opacity: 0.15 }} />
-            ) : (
-              <Package size={52} style={{ margin: '0 auto 14px', opacity: 0.15 }} />
-            )}
-            <p style={{ fontSize: 15 }}>
-              {searchQuery ? `ไม่พบ "${searchQuery}"` : menuTab === 'food' ? 'ไม่มีอาหารในขณะนี้' : 'ไม่พบเครื่องดื่มในหมวดหมู่นี้'}
-            </p>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {activeProducts.map((product, idx) => {
-              const qty = getQty(product.id)
-              const isFood = isFoodCategory((product.categories as any)?.name || '')
-              const accentColor = isFood ? '#f97316' : '#a855f7'
-              const accentBg = isFood ? 'rgba(249,115,22,0.08)' : 'rgba(168,85,247,0.08)'
-              const accentBorder = isFood ? 'rgba(249,115,22,0.2)' : 'rgba(168,85,247,0.2)'
-              return (
-                <div
-                  key={product.id}
-                  className="glass-menu-card animate-in"
-                  style={{
-                    animationDelay: `${Math.min(idx * 20, 250)}ms`,
-                    background: qty > 0 ? (isFood ? 'rgba(249,115,22,0.04)' : 'rgba(168,85,247,0.04)') : undefined,
-                    borderColor: qty > 0 ? (isFood ? 'rgba(249,115,22,0.3)' : 'rgba(168,85,247,0.3)') : undefined,
-                    padding: '14px', transition: 'all 200ms'
-                  }}
-                >
-                  <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-                    {/* Product Image */}
-                    <div style={{
-                      width: 70, height: 70, borderRadius: 12, flexShrink: 0, overflow: 'hidden',
-                      background: accentBg, border: `1px solid ${accentBorder}`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center'
-                    }}>
-                      {product.image_url
-                        ? <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        : <span style={{ fontSize: 28 }}>{isFood ? '🍽️' : '🍷'}</span>}
-                    </div>
+        {/* Content switch: Pairings vs Products */}
+        {menuTab === 'pairings' ? (
+          loading ? (
+            <div className="glass-menu-card" style={{ textAlign: 'center', padding: '48px 20px', marginBottom: 16 }}>
+              <Loader2 size={32} className="animate-spin" style={{ color: '#f43f5e', margin: '0 auto' }} />
+              <p style={{ color: 'rgba(255,255,255,0.6)', marginTop: 12, fontSize: 14 }}>กำลังโหลดชุดจับคู่...</p>
+            </div>
+          ) : filteredPairings.length === 0 ? (
+            <div className="glass-menu-card" style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)' }}>
+              <Sparkles size={48} style={{ margin: '0 auto 14px', opacity: 0.3, color: '#f43f5e' }} />
+              <p style={{ fontSize: 15, margin: 0, color: 'white', fontWeight: 600 }}>
+                {searchQuery ? `ไม่พบชุดจับคู่ที่ตรงกับ "${searchQuery}"` : 'ยังไม่มีชุดจับคู่อาหาร & ไวน์ในขณะนี้'}
+              </p>
+              <p style={{ fontSize: 12, margin: '6px 0 16px', color: 'var(--text-secondary)' }}>
+                คุณสามารถเลือกสั่งอาหารและเครื่องดื่มแยกรายการได้จากเมนูด้านบน
+              </p>
+              <button
+                onClick={() => handleTabSwitch('food')}
+                className="pos-btn-gradient-blue"
+                style={{ padding: '10px 20px', borderRadius: 12, border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+              >
+                ดูเมนูอาหารทั้งหมด
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {filteredPairings.map((p, idx) => {
+                const food = products.find(pr => pr.id === p.food_product_id)
+                const wine = products.find(pr => pr.id === p.wine_product_id)
+                if (!food || !wine) return null
 
-                    {/* Info */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ margin: 0, color: 'white', fontWeight: 600, fontSize: 14, lineHeight: 1.35 }}>{product.name}</p>
+                const baseSum = food.price + wine.price
+                const discountAmount = p.discount_type === 'percent'
+                  ? Math.round(baseSum * (p.discount_value / 100))
+                  : p.discount_value
+                const netPrice = Math.max(0, baseSum - discountAmount)
+                const setQty = getPairingQty(p.id)
 
-                      {/* Dynamic tags */}
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, margin: '5px 0' }}>
-                        {isFood ? (
-                          <>
-                            {product.description && <span className="tag-badge" style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.description}</span>}
-                            {(product.categories as any)?.name && <span className="tag-badge">{(product.categories as any).name}</span>}
-                          </>
-                        ) : (
-                          <>
-                            {product.vintage && <span className="tag-badge">{product.vintage}</span>}
-                            {product.grape && <span className="tag-badge">{product.grape}</span>}
-                            {product.country && <span className="tag-badge">{product.country}</span>}
-                            {product.alcohol_percent && <span className="tag-badge">{product.alcohol_percent}%</span>}
-                          </>
-                        )}
+                return (
+                  <div
+                    key={p.id}
+                    className="glass-pairing-card animate-in"
+                    style={{
+                      animationDelay: `${Math.min(idx * 40, 250)}ms`,
+                      padding: 16,
+                      border: setQty > 0 ? '1px solid rgba(244,63,94,0.6)' : undefined,
+                      boxShadow: setQty > 0 ? '0 12px 36px rgba(244,63,94,0.25)' : undefined
+                    }}
+                  >
+                    {/* Top row: Badge & Discount pill */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        background: 'rgba(244,63,94,0.18)', border: '1px solid rgba(244,63,94,0.3)',
+                        borderRadius: 999, padding: '3px 10px', color: '#fda4af', fontSize: 11, fontWeight: 800
+                      }}>
+                        <Sparkles size={12} />
+                        <span>{p.title || 'Chef & Sommelier Pairing'}</span>
                       </div>
 
-                      <p style={{ margin: 0, color: 'var(--gold-400)', fontWeight: 800, fontSize: 16 }}>{formatCurrency(product.price)}</p>
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                        background: 'linear-gradient(135deg, #e11d48, #f43f5e)',
+                        color: 'white', padding: '3px 10px', borderRadius: 999,
+                        fontSize: 11, fontWeight: 900,
+                        boxShadow: '0 2px 10px rgba(225,29,72,0.4)'
+                      }}>
+                        <Flame size={12} />
+                        <span>ลด {p.discount_type === 'percent' ? `${p.discount_value}%` : `฿${p.discount_value}`}</span>
+                      </div>
                     </div>
 
-                    {/* Qty edit buttons */}
-                    <div style={{ flexShrink: 0 }}>
-                      {qty === 0 ? (
+                    {/* Dual Visual Showcase: Food + Wine */}
+                    <div style={{
+                      position: 'relative',
+                      display: 'grid',
+                      gridTemplateColumns: '1fr auto 1fr',
+                      alignItems: 'center',
+                      gap: 8,
+                      marginBottom: 14,
+                      background: 'rgba(0,0,0,0.25)',
+                      borderRadius: 16,
+                      padding: 10,
+                      border: '1px solid rgba(255,255,255,0.06)'
+                    }}>
+                      {/* Food Side */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                        <div style={{
+                          width: '100%', aspectRatio: '1/1', maxHeight: 110, borderRadius: 12, overflow: 'hidden',
+                          background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.25)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative'
+                        }}>
+                          {food.image_url ? (
+                            <img src={food.image_url} alt={food.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <span style={{ fontSize: 36 }}>🍽️</span>
+                          )}
+                          <span style={{
+                            position: 'absolute', bottom: 4, left: 4,
+                            background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+                            color: '#fdba74', fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 6
+                          }}>
+                            อาหาร
+                          </span>
+                        </div>
+                        <p style={{ margin: '6px 0 0', fontSize: 12, fontWeight: 700, color: 'white', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {food.name}
+                        </p>
+                        <p style={{ margin: '2px 0 0', fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
+                          {formatCurrency(food.price)}
+                        </p>
+                      </div>
+
+                      {/* Center Plus Connector */}
+                      <div style={{
+                        width: 32, height: 32, borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #e11d48, #f43f5e)',
+                        boxShadow: '0 0 14px rgba(244,63,94,0.6)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: 'white', fontWeight: 900, fontSize: 16, zIndex: 2
+                      }}>
+                        +
+                      </div>
+
+                      {/* Wine Side */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                        <div style={{
+                          width: '100%', aspectRatio: '1/1', maxHeight: 110, borderRadius: 12, overflow: 'hidden',
+                          background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.25)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative'
+                        }}>
+                          {wine.image_url ? (
+                            <img src={wine.image_url} alt={wine.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <span style={{ fontSize: 36 }}>🍷</span>
+                          )}
+                          <span style={{
+                            position: 'absolute', bottom: 4, left: 4,
+                            background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+                            color: '#d8b4fe', fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 6
+                          }}>
+                            ไวน์
+                          </span>
+                        </div>
+                        <p style={{ margin: '6px 0 0', fontSize: 12, fontWeight: 700, color: 'white', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {wine.name}
+                        </p>
+                        <p style={{ margin: '2px 0 0', fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
+                          {formatCurrency(wine.price)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Sommelier Tasting Note */}
+                    {(p.description || p.pairing_notes) && (
+                      <div style={{
+                        background: 'rgba(216,169,60,0.08)',
+                        border: '1px solid rgba(216,169,60,0.2)',
+                        borderRadius: 12, padding: '8px 12px', marginBottom: 14
+                      }}>
+                        <p style={{ margin: 0, fontSize: 11, color: '#fef08a', fontStyle: 'italic', lineHeight: 1.4 }}>
+                          💡 “{p.description || p.pairing_notes}”
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Price and Cart Action */}
+                    <div style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.08)'
+                    }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', textDecoration: 'line-through' }}>
+                            {formatCurrency(baseSum)}
+                          </span>
+                          <span style={{ fontSize: 11, color: '#fb7185', fontWeight: 700 }}>
+                            ประหยัด {formatCurrency(discountAmount)}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--gold-400)' }}>
+                          {formatCurrency(netPrice)}
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500, marginLeft: 4 }}>/ เซ็ต</span>
+                        </div>
+                      </div>
+
+                      {setQty === 0 ? (
                         <button
-                          onClick={() => addToCart(product)}
+                          onClick={() => addPairingToCart(p)}
+                          className="pos-btn-gradient-rose"
                           style={{
-                            width: 38, height: 38, borderRadius: 10, border: 'none',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            background: isFood
-                              ? 'linear-gradient(135deg,#ea580c,#f97316)'
-                              : 'linear-gradient(135deg,#7c3aed,#a855f7)',
-                            boxShadow: isFood ? '0 4px 14px rgba(249,115,22,0.35)' : '0 4px 14px rgba(168,85,247,0.35)',
-                            cursor: 'pointer', transition: 'all 150ms'
+                            padding: '10px 18px', borderRadius: 14, border: 'none',
+                            fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: 6
                           }}
                         >
-                          <Plus size={18} color="white" />
+                          <Plus size={15} /> สั่งเซ็ตคู่นี้ 🍷
                         </button>
                       ) : (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <button onClick={() => updateQty(product.id, qty - 1)} style={{
-                            width: 32, height: 32, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)',
-                            background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center',
-                            justifyContent: 'center', color: 'rgba(255,255,255,0.7)', cursor: 'pointer'
-                          }}>
-                            <Minus size={13} />
+                          <button
+                            onClick={() => removePairingFromCart(p)}
+                            style={{
+                              width: 34, height: 34, borderRadius: 10,
+                              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              color: 'white', cursor: 'pointer'
+                            }}
+                          >
+                            <Minus size={14} />
                           </button>
-                          <span style={{ color: 'white', fontWeight: 800, minWidth: 18, textAlign: 'center', fontSize: 16 }}>{qty}</span>
-                          <button onClick={() => addToCart(product)} style={{
-                            width: 32, height: 32, borderRadius: 8, border: 'none',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            background: isFood
-                              ? 'linear-gradient(135deg,#ea580c,#f97316)'
-                              : 'linear-gradient(135deg,#7c3aed,#a855f7)',
-                            cursor: 'pointer'
-                          }}>
-                            <Plus size={13} color="white" />
+                          <span style={{ minWidth: 28, textAlign: 'center', color: 'white', fontWeight: 900, fontSize: 16 }}>
+                            {setQty}
+                          </span>
+                          <button
+                            onClick={() => addPairingToCart(p)}
+                            className="pos-btn-gradient-rose"
+                            style={{
+                              width: 34, height: 34, borderRadius: 10, border: 'none',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <Plus size={14} />
                           </button>
                         </div>
                       )}
                     </div>
                   </div>
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+          )
+        ) : (
+          loading ? (
+            <div className="glass-menu-card" style={{ textAlign: 'center', padding: '48px 20px', marginBottom: 16 }}>
+              <Loader2 size={32} className="animate-spin" style={{ color: menuTab === 'food' ? '#f97316' : '#a855f7', margin: '0 auto' }} />
+              <p style={{ color: 'rgba(255,255,255,0.6)', marginTop: 12, fontSize: 14 }}>กำลังโหลดเมนู...</p>
+            </div>
+          ) : activeProducts.length === 0 ? (
+            <div className="glass-menu-card" style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)' }}>
+              {menuTab === 'food' ? (
+                <UtensilsCrossed size={48} style={{ margin: '0 auto 14px', opacity: 0.25 }} />
+              ) : (
+                <Package size={48} style={{ margin: '0 auto 14px', opacity: 0.25 }} />
+              )}
+              <p style={{ fontSize: 15, margin: 0, color: 'white', fontWeight: 600 }}>
+                {searchQuery ? `ไม่พบ "${searchQuery}"` : menuTab === 'food' ? 'ไม่มีอาหารในขณะนี้' : 'ไม่พบเครื่องดื่มในหมวดหมู่นี้'}
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {activeProducts.map((product, idx) => {
+                const qty = getQty(product.id)
+                const isFood = isFoodCategory((product.categories as any)?.name || '')
+                const accentColor = isFood ? '#f97316' : '#a855f7'
+                const accentBg = isFood ? 'rgba(249,115,22,0.08)' : 'rgba(168,85,247,0.08)'
+                const accentBorder = isFood ? 'rgba(249,115,22,0.2)' : 'rgba(168,85,247,0.2)'
+                return (
+                  <div
+                    key={product.id}
+                    className="glass-menu-card animate-in"
+                    style={{
+                      animationDelay: `${Math.min(idx * 20, 250)}ms`,
+                      background: qty > 0 ? (isFood ? 'rgba(249,115,22,0.04)' : 'rgba(168,85,247,0.04)') : undefined,
+                      borderColor: qty > 0 ? (isFood ? 'rgba(249,115,22,0.3)' : 'rgba(168,85,247,0.3)') : undefined,
+                      padding: '14px', transition: 'all 200ms'
+                    }}
+                  >
+                    <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+                      {/* Product Image */}
+                      <div style={{
+                        width: 70, height: 70, borderRadius: 12, flexShrink: 0, overflow: 'hidden',
+                        background: accentBg, border: `1px solid ${accentBorder}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}>
+                        {product.image_url
+                          ? <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : <span style={{ fontSize: 28 }}>{isFood ? '🍽️' : '🍷'}</span>}
+                      </div>
+
+                      {/* Info */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ margin: 0, color: 'white', fontWeight: 600, fontSize: 14, lineHeight: 1.35 }}>{product.name}</p>
+
+                        {/* Dynamic tags */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, margin: '5px 0' }}>
+                          {isFood ? (
+                            <>
+                              {product.description && <span className="tag-badge" style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.description}</span>}
+                              {(product.categories as any)?.name && <span className="tag-badge">{(product.categories as any).name}</span>}
+                            </>
+                          ) : (
+                            <>
+                              {product.vintage && <span className="tag-badge">{product.vintage}</span>}
+                              {product.grape && <span className="tag-badge">{product.grape}</span>}
+                              {product.country && <span className="tag-badge">{product.country}</span>}
+                              {product.alcohol_percent && <span className="tag-badge">{product.alcohol_percent}%</span>}
+                            </>
+                          )}
+                        </div>
+
+                        <p style={{ margin: 0, color: 'var(--gold-400)', fontWeight: 800, fontSize: 16 }}>{formatCurrency(product.price)}</p>
+                      </div>
+
+                      {/* Qty edit buttons */}
+                      <div style={{ flexShrink: 0 }}>
+                        {qty === 0 ? (
+                          <button
+                            onClick={() => addToCart(product)}
+                            style={{
+                              width: 38, height: 38, borderRadius: 10, border: 'none',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              background: isFood
+                                ? 'linear-gradient(135deg,#ea580c,#f97316)'
+                                : 'linear-gradient(135deg,#7c3aed,#a855f7)',
+                              boxShadow: isFood ? '0 4px 14px rgba(249,115,22,0.35)' : '0 4px 14px rgba(168,85,247,0.35)',
+                              cursor: 'pointer', transition: 'all 150ms'
+                            }}
+                          >
+                            <Plus size={18} color="white" />
+                          </button>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <button onClick={() => updateQty(product.id, qty - 1)} style={{
+                              width: 32, height: 32, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)',
+                              background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center',
+                              justifyContent: 'center', color: 'rgba(255,255,255,0.7)', cursor: 'pointer'
+                            }}>
+                              <Minus size={13} />
+                            </button>
+                            <span style={{ color: 'white', fontWeight: 800, minWidth: 18, textAlign: 'center', fontSize: 16 }}>{qty}</span>
+                            <button onClick={() => addToCart(product)} style={{
+                              width: 32, height: 32, borderRadius: 8, border: 'none',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              background: isFood
+                                ? 'linear-gradient(135deg,#ea580c,#f97316)'
+                                : 'linear-gradient(135deg,#7c3aed,#a855f7)',
+                              cursor: 'pointer'
+                            }}>
+                              <Plus size={13} color="white" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )
         )}
       </div>
 
@@ -1083,10 +1785,24 @@ function CustomerMenuContent() {
               }}>
                 {cartCount}
               </div>
-              <span style={{ flex: 1, textAlign: 'left', fontSize: 15, fontWeight: 700, color: 'white' }}>ดูรายการที่เลือก</span>
-              <span style={{ background: 'rgba(0,0,0,0.2)', padding: '5px 12px', borderRadius: 9, fontSize: 14, fontWeight: 800, color: 'var(--gold-400)', flexShrink: 0 }}>
-                {formatCurrency(cartTotal)}
-              </span>
+              <div style={{ flex: 1, textAlign: 'left' }}>
+                <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: 'white' }}>ดูรายการที่เลือก</span>
+                {pairingDiscountTotal > 0 && (
+                  <span style={{ display: 'block', fontSize: 11, color: '#fecdd3', fontWeight: 600 }}>
+                    ✨ ส่วนลดโปรคู่ -{formatCurrency(pairingDiscountTotal)}
+                  </span>
+                )}
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                {pairingDiscountTotal > 0 && (
+                  <span style={{ display: 'block', fontSize: 11, color: 'rgba(255,255,255,0.6)', textDecoration: 'line-through' }}>
+                    {formatCurrency(cartSubtotal)}
+                  </span>
+                )}
+                <span style={{ background: 'rgba(0,0,0,0.25)', padding: '5px 12px', borderRadius: 9, fontSize: 14, fontWeight: 800, color: 'var(--gold-400)', display: 'inline-block' }}>
+                  {formatCurrency(cartTotal)}
+                </span>
+              </div>
               <ChevronRight size={18} color="white" />
             </button>
           </div>
