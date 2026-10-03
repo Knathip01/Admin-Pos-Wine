@@ -394,7 +394,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}
 
       {/* ══ MAIN CONTENT AREA ══ */}
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1, overflowX: 'hidden' }}>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1, overflowX: 'clip', maxWidth: '100%' }}>
 
         {/* Top Header — Clean Premium style */}
         <header style={{
@@ -529,7 +529,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </header>
 
-        <main style={{ flex: 1, minWidth: 0, padding: 'clamp(8px, 3vw, 20px)', overflowX: 'hidden' }}>
+        <main style={{ flex: 1, minWidth: 0, padding: 'clamp(8px, 3vw, 20px)', overflowX: 'clip', maxWidth: '100%' }}>
           <Heartbeat />
           {children}
           <AdminAIChat />
