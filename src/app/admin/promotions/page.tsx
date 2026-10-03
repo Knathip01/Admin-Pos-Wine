@@ -402,7 +402,7 @@ export default function AdminPromotionsPage() {
       id: id.trim() || `promo-${Date.now()}`,
       title: title.trim(),
       subtitle: subtitle.trim(),
-      description: description.trim(),
+      description: description.trim() || subtitle.trim() || title.trim(),
       image_url: finalImages[0],
       images: finalImages,
       hero_image_url: heroImageUrl.trim() || (finalImages.length > 1 ? finalImages[1] : undefined),
@@ -1150,21 +1150,20 @@ export default function AdminPromotionsPage() {
 
                   {/* URL Input & Multiple Upload */}
                   <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                    <div className="flex-1 flex gap-1.5">
+                    <div className="flex-1">
                       <input
                         type="text"
-                        placeholder="วาง URL รูปภาพเพิ่มเติม (https://...)"
+                        placeholder="วาง URL รูปภาพเพิ่มเติม (https://... กด Enter เพื่อเพิ่ม)"
                         value={newImageUrl}
                         onChange={e => setNewImageUrl(e.target.value)}
-                        className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none min-h-[42px]"
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            handleAddImageUrl()
+                          }
+                        }}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none min-h-[42px]"
                       />
-                      <button
-                        type="button"
-                        onClick={handleAddImageUrl}
-                        className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition shrink-0 cursor-pointer touch-manipulation active:scale-95 min-h-[42px]"
-                      >
-                        เพิ่มรูป
-                      </button>
                     </div>
                     <div>
                       <label className="w-full px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition touch-manipulation active:scale-95 min-h-[42px]">
@@ -1212,60 +1211,18 @@ export default function AdminPromotionsPage() {
                   </div>
                 </div>
 
+                {/* Badge */}
                 <div>
                   <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                    รายละเอียดโปรโมชั่น (Description) *
+                    ป้ายกำกับ (Badge)
                   </label>
-                  <textarea
-                    rows={3}
-                    placeholder="ระบุเงื่อนไข สิทธิพิเศษ และรายละเอียดโปรโมชั่น..."
-                    value={description}
-                    onChange={e => setDescription(e.target.value)}
-                    required
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-xs sm:text-sm text-white focus:border-rose-500 focus:outline-none resize-none"
+                  <input
+                    type="text"
+                    placeholder="เช่น FEATURED, NEW MEMBER หรือ ยินดีต้อนรับสู่ The Bottle Club"
+                    value={badge}
+                    onChange={e => setBadge(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-xs sm:text-sm text-white focus:border-rose-500 focus:outline-none"
                   />
-                </div>
-
-                {/* Badges, Discounts & Validity */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                      ป้ายกำกับ (Badge)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="เช่น FEATURED, NEW MEMBER"
-                      value={badge}
-                      onChange={e => setBadge(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                      แท็กส่วนลด (Discount Tag)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="เช่น UP TO 30% OFF, ลด 500฿"
-                      value={discountTag}
-                      onChange={e => setDiscountTag(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                      ระยะเวลา (Valid Until)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="เช่น ถึงสิ้นเดือนนี้, สิทธิ์จำกัด"
-                      value={validUntil}
-                      onChange={e => setValidUntil(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
-                    />
-                  </div>
                 </div>
 
                 {/* Links & CTA */}
@@ -1348,37 +1305,6 @@ export default function AdminPromotionsPage() {
                   </label>
                 </div>
 
-                {/* ── Special Settings for Hero Banner Mode ── */}
-                {isFeatured && (
-                  <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-rose-950/30 via-slate-900 to-amber-950/20 border border-rose-500/30 space-y-4">
-                    <div className="flex items-center gap-2 text-rose-300">
-                      <Sparkles size={16} className="text-rose-400" />
-                      <span className="text-xs font-black uppercase tracking-wider">
-                        ตั้งค่าพิเศษสำหรับแบนเนอร์ใหญ่หน้าแรก (Hero Section Controls)
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">
-                      ข้อมูลในส่วนนี้จะถูกส่งไปแสดงผลที่ส่วนบนสุดของหน้าร้าน The Bottle Club (แทนที่ภาพและข้อความเริ่มต้นทั้งหมด) คุณสามารถปรับแต่งรูปพื้นหลัง และภาพขวดไวน์ลอยได้อิสระ
-                    </p>
-
-                    <div>
-                      {/* Floating Hero Image */}
-                      <label className="block text-xs font-bold text-slate-200 mb-1.5">
-                        รูปขวดไวน์/เชลฟ์สินค้าลอยด้านขวา (Floating Hero Image)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="วาง URL รูปขวดไวน์ หรือ /images/wine_hero.png"
-                        value={heroImageUrl}
-                        onChange={e => setHeroImageUrl(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none font-mono"
-                      />
-                      <span className="text-[10px] text-slate-500 mt-1 block">
-                        หากเว้นว่าง ระบบจะใช้รูปที่ 2 จากแกลเลอรี หรือรูปเริ่มต้น /images/wine_hero.png
-                      </span>
-                    </div>
-                  </div>
-                )}
 
                 {/* ── Live Interactive Preview Stage ── */}
                 <div className="space-y-2">
