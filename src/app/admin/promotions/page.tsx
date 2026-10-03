@@ -3,148 +3,419 @@
 import React, { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Sparkles, CheckCircle2, AlertCircle, ArrowRight,
-  Image as ImageIcon, Upload, Link as LinkIcon, RefreshCw,
-  ExternalLink, Layers, Eye, Check
+  Sparkles, Plus, Edit3, Trash2, CheckCircle2, AlertCircle,
+  Tag, Clock, ArrowRight, Image as ImageIcon,
+  Flame, Layers, Eye, RefreshCw, X, Check, Search,
+  SlidersHorizontal, Upload, Link as LinkIcon
 } from 'lucide-react'
 import { Promotion } from '@/lib/types'
-
-// Default Banner Presets from Projectbottleclub1
-const BANNER_PRESETS = [
-  {
-    name: 'Doodle Mascot วงกลมตรงกลาง (ใหม่ล่าสุด)',
-    url: '/images/footer-pattern.jpg',
-    desc: 'ลายเส้นการ์ตูนปารีเซียง พร้อมตราสัญลักษณ์มาสคอต The Bottle Club ตรงกลาง',
-  },
-  {
-    name: 'Doodle Mascot แบบไร้กรอบ (Seamless)',
-    url: '/images/footer-pattern-seamless.jpg',
-    desc: 'ลายเส้นการ์ตูนพร้อมมาสคอตกลืนไปกับลวดลาย ไร้กรอบวงกลม',
-  },
-  {
-    name: 'ห้องเก็บไวน์พรีเมียม (Wine Cellar Banner)',
-    url: '/images/wine_banner.png',
-    desc: 'ภาพบรรยากาศห้องเก็บบ่มไวน์คลาสสิก แสงวอร์มไวท์หรูหรา',
-  },
-]
-
-const BOTTLE_PRESETS = [
-  {
-    name: 'ขวดไวน์พรีเมียมคลาสสิก (ค่าเริ่มต้น)',
-    url: '/images/wine_hero.png',
-  },
-  {
-    name: 'ไม่แสดงรูปขวดลอย (ซ่อนขวด)',
-    url: '',
-  },
-]
+import { DEFAULT_PROMOTIONS, PROMOTION_IMAGE_PRESETS } from '@/lib/mock-promotions'
+import { promotionsApi } from '@/lib/api/promotions'
+import { useApiAuth, ensureApiAuth } from '@/lib/store/api-auth'
 
 export default function AdminPromotionsPage() {
+  const { accessToken } = useApiAuth()
+  const [promotions, setPromotions] = useState<Promotion[]>([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [filterType, setFilterType] = useState<'all' | 'featured' | 'grid' | 'active' | 'inactive'>('all')
+
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingPromo, setEditingPromo] = useState<Promotion | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 
-  // Banner State (Mapped directly to Projectbottleclub1 Hero Banner)
-  const [bannerImageUrl, setBannerImageUrl] = useState('/images/footer-pattern.jpg')
-  const [floatingBottleUrl, setFloatingBottleUrl] = useState('/images/wine_hero.png')
-  const [badgeText, setBadgeText] = useState('ยินดีต้อนรับสู่ The Bottle Club')
+  // Form fields
+  const [id, setId] = useState('')
+  const [title, setTitle] = useState('')
+  const [subtitle, setSubtitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
+  const [images, setImages] = useState<string[]>([])
+  const [newImageUrl, setNewImageUrl] = useState('')
+  const [badge, setBadge] = useState('PROMOTION')
+  const [discountTag, setDiscountTag] = useState('')
+  const [validUntil, setValidUntil] = useState('ถึงสิ้นเดือนนี้')
+  const [linkUrl, setLinkUrl] = useState('/#products')
+  const [ctaText, setCtaText] = useState('ดูสินค้าโปรโมชั่น')
+  const [secondaryCtaText, setSecondaryCtaText] = useState('เรียนรู้เพิ่มเติม')
+  const [secondaryLinkUrl, setSecondaryLinkUrl] = useState('/#wine-categories')
+  const [heroImageUrl, setHeroImageUrl] = useState('')
+  const [isFeatured, setIsFeatured] = useState(false)
   const [isActive, setIsActive] = useState(true)
+  const [sortOrder, setSortOrder] = useState(1)
 
-  // Standard Projectbottleclub1 texts
-  const standardTitle = 'We are your essential partner for hospitality success.'
-  const standardSubtitle = 'We provide bars and restaurants with a premier selection of beverages, expert consultancy, and bespoke solutions designed to elevate your brand and operations.'
-
-  // Fetch current banner settings from API
-  const loadBannerData = async () => {
+  // Fetch promotions from API
+  const loadPromotions = async () => {
     setLoading(true)
-    setErrorMessage('')
     try {
+      // 1. Attempt fetch from FastAPI Backend
+      try {
+        const token = (accessToken || (await ensureApiAuth())) ?? undefined
+        const apiRes = await promotionsApi.list(undefined, token)
+        if (apiRes?.promotions && Array.isArray(apiRes.promotions) && apiRes.promotions.length > 0) {
+          setPromotions(apiRes.promotions.map((p: any) => ({
+            id: p.id,
+            title: p.title,
+            subtitle: p.subtitle ?? '',
+            description: p.description,
+            image_url: p.imageUrl || p.image_url,
+            images: p.images || (p.imageUrl ? [p.imageUrl] : []),
+            hero_image_url: p.heroImageUrl || p.hero_image_url,
+            badge: p.badge,
+            discount_tag: p.discountTag || p.discount_tag,
+            valid_until: p.validUntil || p.valid_until,
+            link_url: p.linkUrl || p.link_url || '/#products',
+            cta_text: p.ctaText || p.cta_text,
+            secondary_cta_text: p.secondaryCtaText || p.secondary_cta_text,
+            secondary_link_url: p.secondaryLinkUrl || p.secondary_link_url,
+            is_featured: Boolean(p.isFeatured ?? p.is_featured),
+            is_active: Boolean(p.isActive ?? p.is_active ?? true),
+            sort_order: Number(p.sortOrder ?? p.sort_order ?? 1),
+          })))
+          return
+        }
+      } catch (fastApiErr) {
+        // Fallback to local API
+      }
+
+      // 2. Fallback to local / Supabase API
       const res = await fetch('/api/admin/promotions', { cache: 'no-store' })
       if (res.ok) {
-        const json = await res.json()
-        const list: Promotion[] = json.promotions || []
-        const hero = list.find(p => p.is_featured || p.id === 'hero-featured-banner') || list[0]
-        if (hero) {
-          if (hero.image_url) setBannerImageUrl(hero.image_url)
-          if (hero.hero_image_url !== undefined) setFloatingBottleUrl(hero.hero_image_url || '')
-          if (hero.badge) setBadgeText(hero.badge)
-          if (hero.is_active !== undefined) setIsActive(Boolean(hero.is_active))
+        const data = await res.json()
+        if (data.promotions && Array.isArray(data.promotions)) {
+          setPromotions(data.promotions)
+          return
         }
       }
-    } catch (err: any) {
-      console.error('Failed to load banner data:', err)
-      setErrorMessage('ไม่สามารถโหลดข้อมูลล่าสุดได้ กำลังใช้ข้อมูลจากระบบ')
+      setPromotions(DEFAULT_PROMOTIONS)
+    } catch (err) {
+      console.error('Error loading promotions:', err)
+      setPromotions(DEFAULT_PROMOTIONS)
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    loadBannerData()
+    loadPromotions()
   }, [])
 
-  // Handle Main Banner File Upload (converted to Data URL)
-  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        if (reader.result) {
-          setBannerImageUrl(reader.result as string)
-        }
-      }
-      reader.readAsDataURL(file)
-    }
-  }
+  const [modalMode, setModalMode] = useState<'hero' | 'card'>('card')
 
-  // Handle Floating Bottle Upload
-  const handleBottleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        if (reader.result) {
-          setFloatingBottleUrl(reader.result as string)
-        }
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  // Save Banner Changes & Sync to ProjectbottleClub1
-  const handleSaveBanner = async () => {
-    if (!bannerImageUrl.trim()) {
-      setErrorMessage('กรุณาเลือกหรือระบุ URL รูปภาพแบนเนอร์พื้นหลัง')
+  // Open Hero Banner Modal (Edit existing or create new)
+  const handleOpenHeroBanner = () => {
+    const existingHero = promotions.find(p => p.is_featured)
+    if (existingHero) {
+      handleOpenEdit(existingHero, 'hero')
       return
+    }
+
+    // Default template for new Hero Banner
+    setEditingPromo(null)
+    setModalMode('hero')
+    setId('hero-featured-banner')
+    setTitle('คัดสรรไวน์ ระดับพรีเมียม เพื่อคุณโดยเฉพาะ')
+    setSubtitle('ไวน์นำเข้าคุณภาพเยี่ยมจากทั่วโลก จัดส่งถึงบ้านคุณภายใน 24 ชั่วโมง')
+    setDescription('สัมผัสประสบการณ์สุนทรียภาพแห่งรสชาติกับไวน์ระดับพรีเมียม คัดสรรโดย Sommelier ผู้เชี่ยวชาญ')
+    setImageUrl('/images/wine_banner.png')
+    setImages(['/images/wine_banner.png', '/images/wine_hero.png'])
+    setHeroImageUrl('/images/wine_hero.png')
+    setNewImageUrl('')
+    setBadge('ยินดีต้อนรับสู่ THE BOTTLE CLUB')
+    setDiscountTag('PREMIUM SELECTION')
+    setValidUntil('บริการจัดส่ง 24 ชม.')
+    setLinkUrl('/#products')
+    setCtaText('ดูไวน์ทั้งหมด')
+    setSecondaryCtaText('เรียนรู้เพิ่มเติม')
+    setSecondaryLinkUrl('/#wine-categories')
+    setIsFeatured(true)
+    setIsActive(true)
+    setSortOrder(0)
+    setErrorMessage('')
+    setIsModalOpen(true)
+  }
+
+  // Open Create Promo Card Modal (News & Promotions carousel cards)
+  const handleOpenCreateCard = () => {
+    setEditingPromo(null)
+    setModalMode('card')
+    setId(`promo-${Date.now().toString().slice(-6)}`)
+    setTitle('')
+    setSubtitle('')
+    setDescription('')
+    setImageUrl(PROMOTION_IMAGE_PRESETS[0].url)
+    setImages([PROMOTION_IMAGE_PRESETS[0].url])
+    setHeroImageUrl('')
+    setNewImageUrl('')
+    setBadge('PROMOTION')
+    setDiscountTag('UP TO 20% OFF')
+    setValidUntil('ถึงสิ้นเดือนนี้')
+    setLinkUrl('/#products')
+    setCtaText('ดูสินค้าโปรโมชั่น')
+    setSecondaryCtaText('')
+    setSecondaryLinkUrl('')
+    setIsFeatured(false)
+    setIsActive(true)
+    setSortOrder(promotions.filter(p => !p.is_featured).length + 1)
+    setErrorMessage('')
+    setIsModalOpen(true)
+  }
+
+  // Open Edit Modal
+  const handleOpenEdit = (p: Promotion, forceMode?: 'hero' | 'card') => {
+    setEditingPromo(p)
+    const mode = forceMode || (p.is_featured ? 'hero' : 'card')
+    setModalMode(mode)
+    setId(p.id)
+    setTitle(p.title)
+    setSubtitle(p.subtitle || '')
+    setDescription(p.description || '')
+    const initialImgs = Array.isArray(p.images) && p.images.length > 0
+      ? p.images
+      : (p.image_url ? [p.image_url] : [PROMOTION_IMAGE_PRESETS[0].url])
+    setImages(initialImgs)
+    setImageUrl(initialImgs[0] || p.image_url)
+    setHeroImageUrl(p.hero_image_url || (initialImgs.length > 1 ? initialImgs[1] : ''))
+    setNewImageUrl('')
+    setBadge(p.badge || (p.is_featured ? 'ยินดีต้อนรับสู่ THE BOTTLE CLUB' : 'PROMOTION'))
+    setDiscountTag(p.discount_tag || '')
+    setValidUntil(p.valid_until || '')
+    setLinkUrl(p.link_url || '/#products')
+    setCtaText(p.cta_text || (p.is_featured ? 'ดูไวน์ทั้งหมด' : 'ดูสินค้าโปรโมชั่น'))
+    setSecondaryCtaText(p.secondary_cta_text || (p.is_featured ? 'เรียนรู้เพิ่มเติม' : ''))
+    setSecondaryLinkUrl(p.secondary_link_url || (p.is_featured ? '/#wine-categories' : ''))
+    setIsFeatured(Boolean(p.is_featured))
+    setIsActive(p.is_active !== undefined ? Boolean(p.is_active) : true)
+    setSortOrder(Number(p.sort_order) || 1)
+    setErrorMessage('')
+    setIsModalOpen(true)
+  }
+
+  // Set as Main Hero Banner
+  const handleSetFeatured = async (targetPromo: Promotion) => {
+    const updatedList = promotions.map(p => ({
+      ...p,
+      is_featured: p.id === targetPromo.id,
+    }))
+    setPromotions(updatedList)
+
+    try {
+      await fetch('/api/admin/promotions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedList),
+      })
+
+      const token = accessToken || await ensureApiAuth()
+      if (token) {
+        promotionsApi.bulk(updatedList.map(p => ({
+          id: p.id,
+          title: p.title,
+          subtitle: p.subtitle || null,
+          description: p.description,
+          imageUrl: p.image_url,
+          images: p.images,
+          heroImageUrl: p.hero_image_url || null,
+          badge: p.badge || null,
+          discountTag: p.discount_tag || null,
+          validUntil: p.valid_until || null,
+          linkUrl: p.link_url || null,
+          ctaText: p.cta_text || null,
+          secondaryCtaText: p.secondary_cta_text || null,
+          secondaryLinkUrl: p.secondary_link_url || null,
+          isFeatured: p.is_featured,
+          isActive: p.is_active,
+          sortOrder: p.sort_order,
+        })), token).catch(() => {})
+      }
+    } catch (err) {
+      console.error('Failed to set featured promo:', err)
+      loadPromotions()
+    }
+  }
+
+  // Quick Toggle Active Status
+  const handleToggleActive = async (promo: Promotion) => {
+    const updated = { ...promo, is_active: !promo.is_active }
+    // Optimistic UI update
+    setPromotions(prev => prev.map(p => p.id === promo.id ? updated : p))
+
+    try {
+      const res = await fetch('/api/admin/promotions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      })
+      if (!res.ok) {
+        // Rollback if failed
+        setPromotions(prev => prev.map(p => p.id === promo.id ? promo : p))
+      } else {
+        const token = accessToken || await ensureApiAuth()
+        if (token) {
+          promotionsApi.update({
+            id: updated.id,
+            isActive: updated.is_active,
+          }, token).catch(() => {})
+        }
+      }
+    } catch {
+      setPromotions(prev => prev.map(p => p.id === promo.id ? promo : p))
+    }
+  }
+
+  // Delete Promotion
+  const handleDelete = async (promoId: string) => {
+    if (!confirm('คุณแน่ใจหรือไม่ว่าต้องการลบโปรโมชั่นนี้?')) return
+
+    // Optimistic UI update
+    setPromotions(prev => prev.filter(p => p.id !== promoId))
+
+    try {
+      const token = accessToken || await ensureApiAuth()
+      if (token) {
+        promotionsApi.delete(promoId, token).catch(() => {})
+      }
+      await fetch(`/api/admin/promotions?id=${promoId}`, { method: 'DELETE' })
+    } catch (err) {
+      console.error('Delete failed:', err)
+      loadPromotions()
+    }
+  }
+
+  // Restore Defaults
+  const handleRestoreDefaults = async () => {
+    if (!confirm('ต้องการรีเซ็ตโปรโมชั่นเป็นค่าเริ่มต้น (Default Presets) หรือไม่?')) return
+    setLoading(true)
+    try {
+      const res = await fetch('/api/admin/promotions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(DEFAULT_PROMOTIONS),
+      })
+      if (res.ok) {
+        setPromotions(DEFAULT_PROMOTIONS)
+      }
+    } catch (err) {
+      console.error('Failed to restore defaults:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Add image from URL input
+  const handleAddImageUrl = () => {
+    if (newImageUrl.trim()) {
+      const url = newImageUrl.trim()
+      setImages(prev => {
+        const next = [...prev, url]
+        if (!imageUrl) setImageUrl(next[0])
+        return next
+      })
+      setNewImageUrl('')
+    }
+  }
+
+  // Add preset image to list
+  const handleAddPreset = (url: string) => {
+    setImages(prev => {
+      if (prev.includes(url)) return prev
+      const next = [...prev, url]
+      if (!imageUrl) setImageUrl(next[0])
+      return next
+    })
+  }
+
+  // Remove image from list
+  const handleRemoveImage = (idxToRemove: number) => {
+    setImages(prev => {
+      const next = prev.filter((_, i) => i !== idxToRemove)
+      if (next.length > 0) {
+        setImageUrl(next[0])
+      } else {
+        setImageUrl('')
+      }
+      return next
+    })
+  }
+
+  // Set as primary image (move to index 0)
+  const handleSetPrimary = (idxToPrimary: number) => {
+    setImages(prev => {
+      const target = prev[idxToPrimary]
+      const rest = prev.filter((_, i) => i !== idxToPrimary)
+      const next = [target, ...rest]
+      setImageUrl(target)
+      return next
+    })
+  }
+
+  // Image file upload converter (supports multiple file selection)
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files && files.length > 0) {
+      Array.from(files).forEach(file => {
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          if (reader.result) {
+            const base64 = reader.result as string
+            setImages(prev => {
+              const next = [...prev, base64]
+              if (!imageUrl) setImageUrl(base64)
+              return next
+            })
+          }
+        }
+        reader.readAsDataURL(file)
+      })
+    }
+  }
+
+  // Submit Modal Form
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!title.trim()) {
+      setErrorMessage('กรุณากรอกชื่อแคมเปญโปรโมชั่น')
+      return
+    }
+
+    const finalImages = images.length > 0 ? images : (imageUrl.trim() ? [imageUrl.trim()] : [])
+    if (finalImages.length === 0) {
+      setErrorMessage('กรุณาเพิ่มรูปภาพอย่างน้อย 1 รูป (เลือกพรีเซ็ต, วาง URL หรืออัปโหลดรูปภาพ)')
+      return
+    }
+
+    if (isFeatured && heroImageUrl.trim() && !finalImages.includes(heroImageUrl.trim())) {
+      if (finalImages.length > 1) {
+        finalImages[1] = heroImageUrl.trim()
+      } else {
+        finalImages.push(heroImageUrl.trim())
+      }
     }
 
     setSaving(true)
     setErrorMessage('')
 
-    const finalImages = [bannerImageUrl.trim()]
-    if (floatingBottleUrl.trim()) {
-      finalImages.push(floatingBottleUrl.trim())
-    }
-
     const payload: Promotion = {
-      id: 'hero-featured-banner',
-      title: standardTitle,
-      subtitle: standardSubtitle,
-      description: 'สัมผัสประสบการณ์สุนทรียภาพแห่งรสชาติกับไวน์ระดับพรีเมียม คัดสรรโดย Sommelier ผู้เชี่ยวชาญ',
-      image_url: bannerImageUrl.trim(),
+      id: id.trim() || `promo-${Date.now()}`,
+      title: title.trim(),
+      subtitle: subtitle.trim(),
+      description: description.trim(),
+      image_url: finalImages[0],
       images: finalImages,
-      hero_image_url: floatingBottleUrl.trim() || undefined,
-      badge: badgeText.trim() || 'ยินดีต้อนรับสู่ The Bottle Club',
-      discount_tag: 'HOSPITALITY PARTNER',
-      valid_until: 'บริการจัดส่ง 24 ชม.',
-      link_url: '/#products',
-      cta_text: 'ดูไวน์ทั้งหมด',
-      secondary_cta_text: 'เรียนรู้เพิ่มเติม',
-      secondary_link_url: '/#wine-categories',
-      is_featured: true,
+      hero_image_url: heroImageUrl.trim() || (finalImages.length > 1 ? finalImages[1] : undefined),
+      badge: badge.trim(),
+      discount_tag: discountTag.trim(),
+      valid_until: validUntil.trim(),
+      link_url: linkUrl.trim() || '/#products',
+      cta_text: ctaText.trim() || (isFeatured ? 'ดูไวน์ทั้งหมด' : 'ดูสินค้าโปรโมชั่น'),
+      secondary_cta_text: secondaryCtaText.trim(),
+      secondary_link_url: secondaryLinkUrl.trim(),
+      is_featured: isFeatured,
       is_active: isActive,
-      sort_order: 0,
+      sort_order: Number(sortOrder) || 1,
     }
 
     try {
@@ -155,409 +426,1127 @@ export default function AdminPromotionsPage() {
       })
 
       if (!res.ok) {
-        const errJson = await res.json()
-        throw new Error(errJson.error || 'Failed to save banner')
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Failed to save promotion')
       }
 
       setSaveSuccess(true)
-      setTimeout(() => setSaveSuccess(false), 3500)
+      setTimeout(() => setSaveSuccess(false), 2000)
+
+      // Update local state
+      setPromotions(prev => {
+        const idx = prev.findIndex(p => p.id === payload.id)
+        if (idx >= 0) {
+          const next = [...prev]
+          next[idx] = payload
+          return next
+        }
+        return [payload, ...prev]
+      })
+
+      // Sync to FastAPI Backend
+      try {
+        const token = accessToken || await ensureApiAuth()
+        if (token) {
+          await promotionsApi.create({
+            id: payload.id,
+            title: payload.title,
+            subtitle: payload.subtitle || null,
+            description: payload.description,
+            imageUrl: payload.image_url,
+            images: payload.images,
+            heroImageUrl: payload.hero_image_url || null,
+            badge: payload.badge || null,
+            discountTag: payload.discount_tag || null,
+            validUntil: payload.valid_until || null,
+            linkUrl: payload.link_url || null,
+            ctaText: payload.cta_text || null,
+            secondaryCtaText: payload.secondary_cta_text || null,
+            secondaryLinkUrl: payload.secondary_link_url || null,
+            isFeatured: payload.is_featured,
+            isActive: payload.is_active,
+            sortOrder: payload.sort_order,
+          }, token).catch((e) => console.warn('FastAPI promotions sync notice:', e))
+        }
+      } catch {}
+
+      setIsModalOpen(false)
     } catch (err: any) {
-      console.error('Error saving banner:', err)
-      setErrorMessage(err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล')
+      setErrorMessage(err.message || 'เกิดข้อผิดพลาดในการบันทึก')
     } finally {
       setSaving(false)
     }
   }
 
+  // Active Hero banner (controls top of Storefront)
+  const heroBanner = promotions.find(p => p.is_featured)
+
+  // Filtered promotions
+  const filtered = promotions.filter(p => {
+    if (filterType === 'featured') return p.is_featured
+    if (filterType === 'grid') return !p.is_featured
+
+    const matchSearch =
+      p.title.toLowerCase().includes(search.toLowerCase()) ||
+      (p.subtitle && p.subtitle.toLowerCase().includes(search.toLowerCase())) ||
+      (p.discount_tag && p.discount_tag.toLowerCase().includes(search.toLowerCase())) ||
+      (p.badge && p.badge.toLowerCase().includes(search.toLowerCase()))
+
+    if (!matchSearch) return false
+
+    if (filterType === 'active') return p.is_active
+    if (filterType === 'inactive') return !p.is_active
+    return true
+  })
+
+  // KPI calculations
+  const totalCount = promotions.length
+  const activeCount = promotions.filter(p => p.is_active).length
+  const featuredCount = promotions.filter(p => p.is_featured).length
+  const inactiveCount = promotions.filter(p => !p.is_active).length
+
   return (
-    <div className="space-y-4 sm:space-y-6 max-w-7xl mx-auto pb-24 px-1 sm:px-4 md:px-6">
-      {/* ── Top Header ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-white/10">
-        <div className="min-w-0">
-          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2">
-            <Sparkles size={13} className="text-amber-400 shrink-0" />
-            <span className="truncate">PROJECTBOTTLECLUB1 • HERO BANNER MANAGER</span>
+    <div className="space-y-6 max-w-7xl mx-auto pb-16">
+      {/* ── Top Header & Actions ── */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] sm:text-xs font-bold uppercase tracking-wider mb-2">
+            <Flame size={14} className="text-rose-500" />
+            <span>WEB E-COMMERCE • PROMOTION ENGINE</span>
           </div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight flex items-center gap-2 sm:gap-3">
-            <span>จัดการรูปภาพแบนเนอร์หน้าแรก</span>
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2 sm:gap-3 flex-wrap">
+            <span>จัดการโปรโมชั่น Web Wine</span>
+            <span className="text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/30 text-rose-300 font-bold">
+              {totalCount} แคมเปญ
+            </span>
           </h1>
           <p className="text-slate-400 text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed">
-            เปลี่ยนรูปภาพพื้นหลังและรูปภาพขวดไวน์ของ Hero Banner บน Projectbottleclub1 โดยตรงแบบเรียลไทม์
+            สร้างและควบคุมแบนเนอร์โปรโมชั่นหลัก และการ์ดย่อยที่จะไปแสดงผลที่หน้าร้าน Web Store แบบเรียลไทม์
           </p>
         </div>
 
-        {/* Action buttons: 2-column grid on mobile, inline on tablet/desktop */}
-        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-3 w-full md:w-auto">
-          <button
-            onClick={loadBannerData}
-            disabled={loading}
-            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-white/10 bg-slate-900/60 hover:bg-slate-800 text-slate-300 text-xs font-bold transition-all active:scale-95 cursor-pointer min-h-[40px] sm:min-h-[42px]"
-            title="รีเฟรชข้อมูลล่าสุด"
-          >
-            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-            <span>รีเฟรช</span>
-          </button>
-
-          <a
-            href="http://localhost:3001"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white text-xs font-bold transition-all active:scale-95 min-h-[40px] sm:min-h-[42px]"
-          >
-            <span className="truncate">ดูหน้าร้าน</span>
-            <ExternalLink size={13} className="shrink-0" />
-          </a>
-
-          <button
-            onClick={handleSaveBanner}
-            disabled={saving || loading}
-            className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-amber-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs sm:text-sm font-black shadow-lg shadow-amber-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer min-h-[42px]"
-          >
-            {saving ? (
-              <>
-                <RefreshCw size={14} className="animate-spin" />
-                <span>กำลังบันทึกและซิงค์...</span>
-              </>
-            ) : (
-              <>
-                <Check size={16} />
-                <span>บันทึกและซิงค์แบนเนอร์</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Notification Alerts ── */}
-      <AnimatePresence>
-        {saveSuccess && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="p-3.5 sm:p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xl"
-          >
-            <div className="flex items-start sm:items-center gap-3">
-              <CheckCircle2 size={18} className="text-emerald-400 shrink-0 mt-0.5 sm:mt-0" />
-              <div>
-                <p className="font-bold text-xs sm:text-sm">บันทึกและซิงค์แบนเนอร์เรียบร้อยแล้ว!</p>
-                <p className="text-[11px] sm:text-xs text-emerald-300/80 mt-0.5">
-                  ข้อมูลรูปภาพถูกอัปเดตและเขียนลง Projectbottleclub1 ทันที หน้าร้านจะแสดงผลตามรูปที่ท่านเลือก
-                </p>
-              </div>
-            </div>
-            <a
-              href="http://localhost:3001"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-center font-bold px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 transition-all shrink-0 w-full sm:w-auto"
+        {/* Action Buttons: Responsive Layout for Mobile & Desktop */}
+        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 w-full xl:w-auto">
+          {/* Main Action Buttons */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full sm:w-auto">
+            {/* ปุ่มจัดการแบนเนอร์ใหญ่หน้าแรก (Hero Banner) - ไม่มีอิโมจิ/ไอคอนดาว */}
+            <button
+              onClick={handleOpenHeroBanner}
+              className="inline-flex items-center justify-center px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-amber-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs sm:text-sm font-extrabold shadow-[0_4px_20px_rgba(245,158,11,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer touch-manipulation min-h-[44px]"
             >
-              เปิดดูหน้าร้าน ↗
-            </a>
-          </motion.div>
-        )}
+              <span className="whitespace-nowrap">จัดการแบนเนอร์ใหญ่ (Hero)</span>
+            </button>
 
-        {errorMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="p-3.5 sm:p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 flex items-start sm:items-center gap-3 shadow-xl"
-          >
-            <AlertCircle size={18} className="text-rose-400 shrink-0 mt-0.5 sm:mt-0" />
-            <p className="text-xs sm:text-sm font-semibold break-words">{errorMessage}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── 👁️ Live Interactive Preview of Hero Banner ── */}
-      <div className="space-y-2 sm:space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-          <h2 className="text-xs sm:text-sm font-black text-slate-300 flex items-center gap-2">
-            <Eye size={15} className="text-amber-400" />
-            <span>ตัวอย่างสดแบนเนอร์หน้าร้าน (Live Preview)</span>
-          </h2>
-          <span className="text-[10px] sm:text-[11px] text-slate-400 sm:text-slate-500">
-            *ข้อความและเลย์เอาต์ซิงค์ตาม Projectbottleclub1
-          </span>
-        </div>
-
-        <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-amber-500/30 bg-stone-950 shadow-2xl min-h-[300px] sm:min-h-[420px] md:min-h-[460px] flex flex-col justify-end p-4 sm:p-8 lg:p-10 text-white">
-          {/* Background image preview */}
-          <div
-            className="absolute inset-0 bg-cover bg-center md:bg-[center_66%] transition-all duration-500"
-            style={{ backgroundImage: `url(${bannerImageUrl || '/images/footer-pattern.jpg'})` }}
-          />
-
-          {/* Overlays matching Projectbottleclub1 */}
-          <div className="absolute inset-0 bg-[linear-gradient(125deg,rgba(0,0,0,.85)_0%,rgba(0,0,0,.60)_45%,rgba(0,0,0,.80)_100%)] pointer-events-none" />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(12,10,9,.3)_0%,transparent_35%,rgba(12,10,9,.75)_100%)] pointer-events-none" />
-          <div className="absolute inset-0 bg-radial from-rose-950/20 via-transparent to-transparent pointer-events-none" />
-
-          {/* Left Column Content (Constrained width to avoid center logo) */}
-          <div className="relative z-10 max-w-lg space-y-2.5 sm:space-y-4">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full border border-amber-500/30 bg-white/10 backdrop-blur-md shadow max-w-full">
-              <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)] shrink-0" />
-              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-amber-200 truncate">
-                {badgeText || 'ยินดีต้อนรับสู่ The Bottle Club'}
-              </span>
-            </div>
-
-            {/* Title */}
-            <h3 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-black text-white leading-tight drop-shadow-md">
-              <span>We are your </span>
-              <span className="italic font-serif font-normal bg-gradient-to-r from-amber-200 via-amber-100 to-amber-400 bg-clip-text text-transparent">
-                essential partner
-              </span>
-              <span className="block mt-0.5 sm:mt-1">
-                for <span className="underline decoration-amber-500/70 underline-offset-4">hospitality success.</span>
-              </span>
-            </h3>
-
-            {/* Subtitle */}
-            <p className="text-[11px] sm:text-xs md:text-sm text-stone-200/90 font-light leading-relaxed max-w-md line-clamp-3 sm:line-clamp-none">
-              We provide bars and restaurants with a <strong className="font-semibold text-white">premier selection of beverages</strong>, <strong className="font-semibold text-amber-200">expert consultancy</strong>, and <strong className="font-semibold text-white">bespoke solutions</strong> designed to elevate your brand and operations.
-            </p>
-
-            {/* Buttons */}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-1 sm:pt-2">
-              <div className="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-white text-stone-950 text-[11px] sm:text-xs font-black shadow-md flex items-center gap-1.5 sm:gap-2">
-                <span>ดูไวน์ทั้งหมด</span>
-                <ArrowRight size={12} className="text-rose-700" />
-              </div>
-              <div className="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl border border-white/20 bg-white/10 text-white text-[11px] sm:text-xs font-bold backdrop-blur-md">
-                <span>เรียนรู้เพิ่มเติม</span>
-              </div>
-            </div>
+            {/* ปุ่มเพิ่มโปรโมชั่นใหม่ - มีเฉพาะเครื่องหมาย + ตัวเดียว */}
+            <button
+              onClick={handleOpenCreateCard}
+              className="inline-flex items-center justify-center gap-1.5 px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 hover:to-pink-600 text-white text-xs sm:text-sm font-extrabold shadow-[0_4px_20px_rgba(225,29,72,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer touch-manipulation min-h-[44px]"
+            >
+              <Plus size={18} className="shrink-0" />
+              <span className="whitespace-nowrap">เพิ่มโปรโมชั่นใหม่</span>
+            </button>
           </div>
-
-          {/* Floating bottle preview on right */}
-          {floatingBottleUrl && (
-            <div className="absolute bottom-1 right-2 sm:bottom-2 sm:right-4 w-20 sm:w-32 md:w-44 pointer-events-none drop-shadow-2xl opacity-60 sm:opacity-100">
-              <img
-                src={floatingBottleUrl}
-                alt="Floating bottle"
-                className="w-full h-auto object-contain max-h-[160px] sm:max-h-[260px] md:max-h-[300px]"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none'
-                }}
-              />
-            </div>
-          )}
         </div>
       </div>
 
-      {/* ── Form Controls: จัดการรูปภาพแบนเนอร์ ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        {/* 1. รูปภาพพื้นหลังแบนเนอร์ (Main Hero Background) */}
-        <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-900/60 border border-white/10 backdrop-blur-xl space-y-4 sm:space-y-5">
-          <div className="flex items-center justify-between pb-3 border-b border-white/10">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
-                <ImageIcon size={18} />
+      {/* ── KPI Cards: สรุปสถิติแคมเปญ ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="p-3.5 sm:p-5 rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-xl shadow-lg relative overflow-hidden group hover:border-indigo-500/30 transition-all">
+          <div className="flex items-center justify-between text-slate-400 mb-1.5 sm:mb-2">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider truncate">โปรโมชั่นทั้งหมด</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+              <Layers size={15} />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-white">{totalCount}</div>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate">แคมเปญทั้งหมดในระบบ</p>
+        </div>
+
+        <div className="p-3.5 sm:p-5 rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-xl shadow-lg relative overflow-hidden group hover:border-emerald-500/30 transition-all">
+          <div className="flex items-center justify-between text-slate-400 mb-1.5 sm:mb-2">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-emerald-400 truncate">เปิดแสดงหน้าร้าน</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+              <CheckCircle2 size={15} />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-emerald-400">{activeCount}</div>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate">กำลังแสดงผลใน Storefront</p>
+        </div>
+
+        <div className="p-3.5 sm:p-5 rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-xl shadow-lg relative overflow-hidden group hover:border-rose-500/30 transition-all">
+          <div className="flex items-center justify-between text-slate-400 mb-1.5 sm:mb-2">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-rose-400 truncate">แบนเนอร์ใหญ่</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
+              <Flame size={15} />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-rose-400">{featuredCount}</div>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate">แบนเนอร์หลัก (Hero)</p>
+        </div>
+
+        <div className="p-3.5 sm:p-5 rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-xl shadow-lg relative overflow-hidden group hover:border-amber-500/30 transition-all">
+          <div className="flex items-center justify-between text-slate-400 mb-1.5 sm:mb-2">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-amber-400 truncate">ปิดการแสดงผล</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+              <AlertCircle size={15} />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-amber-400">{inactiveCount}</div>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate">ฉบับร่าง หรือ ซ่อนไว้</p>
+        </div>
+      </div>
+
+      {/* ── 👑 ส่วนที่ 1: แบนเนอร์ใหญ่หน้าแรก (Hero Section Banner) ── */}
+      <div className="space-y-4 p-4 sm:p-6 rounded-3xl bg-slate-900/60 border border-white/10 backdrop-blur-xl shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-white/10">
+          <div>
+            <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2 flex-wrap">
+              <span className="p-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-rose-600 text-white shadow">
+                <Sparkles size={16} />
+              </span>
+              <span>แบนเนอร์ใหญ่หน้าแรก (Hero Section Banner)</span>
+              {heroBanner?.is_active && (
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold">
+                  ● กำลังแสดงผล
+                </span>
+              )}
+            </h2>
+            <p className="text-slate-400 text-xs mt-1 leading-relaxed">
+              แบนเนอร์ขนาดใหญ่เต็มหน้าจอส่วนบนสุดของ The Bottle Club Storefront (ภาพพื้นหลัง, ข้อความต้อนรับ, หัวข้อใหญ่, คำโปรย, และปุ่มกดทั้ง 2 ปุ่ม)
+            </p>
+          </div>
+
+          <button
+            onClick={handleOpenHeroBanner}
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-amber-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs sm:text-sm font-black shadow-lg shadow-amber-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer w-full sm:w-auto shrink-0 min-h-[44px]"
+          >
+            <Edit3 size={15} />
+            <span>{heroBanner ? 'แก้ไขแบนเนอร์ใหญ่หน้าแรก' : 'ตั้งค่าแบนเนอร์ใหญ่หน้าแรก'}</span>
+          </button>
+        </div>
+
+        {heroBanner ? (
+          <div className="relative rounded-2xl overflow-hidden border border-amber-500/30 bg-gradient-to-b lg:bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950/20 shadow-xl p-4 sm:p-7 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6">
+            {/* Background preview effect */}
+            <div
+              className="absolute inset-0 bg-cover bg-center opacity-30 pointer-events-none"
+              style={{ backgroundImage: `url(${heroBanner.image_url || '/images/wine_banner.png'})` }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent pointer-events-none" />
+
+            {/* Left Content */}
+            <div className="relative z-10 space-y-3.5 max-w-2xl">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[10px] sm:text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow">
+                  <Flame size={12} className="text-amber-400" />
+                  <span>HERO BANNER หน้าแรก</span>
+                </span>
+                {heroBanner.badge && (
+                  <span className="px-3 py-1 rounded-full bg-white/10 border border-white/15 text-white text-[10px] sm:text-[11px] font-bold backdrop-blur-md">
+                    {heroBanner.badge}
+                  </span>
+                )}
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  heroBanner.is_active ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {heroBanner.is_active ? '✓ เปิดแสดงผล' : '✕ ปิดใช้งาน'}
+                </span>
               </div>
-              <div className="min-w-0">
-                <h3 className="text-xs sm:text-sm font-bold text-white truncate">1. รูปภาพพื้นหลังแบนเนอร์ (Background Image)</h3>
-                <p className="text-[10px] sm:text-[11px] text-slate-400">รูปภาพขนาดใหญ่ที่จะแสดงผลเต็มส่วนบนของหน้าแรก</p>
+
+              <div>
+                <h3 className="text-lg sm:text-2xl font-black text-white leading-tight">
+                  {heroBanner.title}
+                </h3>
+                {heroBanner.subtitle && (
+                  <p className="text-xs sm:text-sm font-semibold text-rose-300 mt-1">
+                    {heroBanner.subtitle}
+                  </p>
+                )}
+                {heroBanner.description && heroBanner.description !== heroBanner.subtitle && (
+                  <p className="text-xs text-slate-300 mt-1.5 line-clamp-2 leading-relaxed">
+                    {heroBanner.description}
+                  </p>
+                )}
+              </div>
+
+              {/* Action Buttons & Links Preview */}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <div className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white text-stone-950 font-black text-xs shadow flex items-center gap-1.5">
+                  <span>{heroBanner.cta_text || 'ดูไวน์ทั้งหมด'}</span>
+                  <ArrowRight size={13} />
+                  <span className="text-[10px] font-normal text-slate-500 hidden sm:inline">({heroBanner.link_url || '/#products'})</span>
+                </div>
+                {heroBanner.secondary_cta_text && (
+                  <div className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full border border-white/30 bg-white/10 text-white font-bold text-xs backdrop-blur-md flex items-center gap-1.5">
+                    <span>{heroBanner.secondary_cta_text}</span>
+                    <span className="text-[10px] font-normal text-slate-400 hidden sm:inline">({heroBanner.secondary_link_url || '/#wine-categories'})</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Images Preview & Actions */}
+            <div className="relative z-10 shrink-0 flex flex-col sm:flex-row items-center justify-between sm:justify-end gap-3 sm:gap-4 pt-3 lg:pt-0 border-t border-white/10 lg:border-t-0">
+              {/* Thumbnails Row */}
+              <div className="flex items-center justify-center gap-3">
+                {/* Background Thumbnail */}
+                <div className="text-center space-y-1">
+                  <div className="w-24 h-18 sm:w-32 sm:h-24 rounded-2xl overflow-hidden border border-white/20 bg-slate-950 shadow-lg relative">
+                    <img
+                      src={heroBanner.image_url || '/images/wine_banner.png'}
+                      alt="Background"
+                      className="w-full h-full object-cover"
+                    />
+                    <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/80 text-[8px] sm:text-[9px] text-white font-bold">
+                      ภาพพื้นหลัง
+                    </span>
+                  </div>
+                </div>
+
+                {/* Floating Hero Thumbnail */}
+                <div className="text-center space-y-1">
+                  <div className="w-18 h-18 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border border-amber-500/30 bg-slate-950 shadow-lg relative p-1 flex items-center justify-center">
+                    <img
+                      src={heroBanner.hero_image_url || (heroBanner.images && heroBanner.images.length > 1 ? heroBanner.images[1] : '/images/wine_hero.png')}
+                      alt="Floating Hero"
+                      className="w-full h-full object-contain drop-shadow-md"
+                    />
+                    <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-amber-500 text-[8px] sm:text-[9px] text-slate-950 font-black">
+                      ขวดไวน์ลอย
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action buttons on Mobile & Desktop */}
+              <div className="flex sm:flex-col gap-2 w-full sm:w-auto">
+                <button
+                  onClick={() => handleOpenEdit(heroBanner, 'hero')}
+                  className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 min-h-[40px]"
+                >
+                  <Edit3 size={14} className="text-cyan-400" />
+                  <span>แก้ไข</span>
+                </button>
+                <button
+                  onClick={() => handleToggleActive(heroBanner)}
+                  className={`flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 min-h-[40px] ${
+                    heroBanner.is_active
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                      : 'bg-slate-800 text-slate-400 border border-slate-700'
+                  }`}
+                  title="เปิด/ปิด การแสดงผลแบนเนอร์ใหญ่"
+                >
+                  <span className={`w-2 h-2 rounded-full ${heroBanner.is_active ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+                  <span>{heroBanner.is_active ? 'เปิดอยู่' : 'ปิดอยู่'}</span>
+                </button>
               </div>
             </div>
           </div>
+        ) : (
+          <div className="p-6 sm:p-8 rounded-2xl border border-dashed border-amber-500/30 bg-amber-500/5 text-center flex flex-col items-center justify-center gap-3">
+            <Sparkles size={32} className="text-amber-400" />
+            <div>
+              <h3 className="text-base font-bold text-white">ยังไม่มีการตั้งค่าแบนเนอร์ใหญ่หน้าแรก</h3>
+              <p className="text-slate-400 text-xs mt-0.5">กดปุ่มด้านล่างเพื่อเริ่มกำหนดรูปภาพและข้อความสำหรับ Hero Section</p>
+            </div>
+            <button
+              onClick={handleOpenHeroBanner}
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-amber-500 text-slate-950 text-xs sm:text-sm font-extrabold shadow-lg hover:bg-amber-400 transition cursor-pointer w-full sm:w-auto min-h-[44px]"
+            >
+              <Plus size={16} />
+              <span>ตั้งค่าแบนเนอร์ใหญ่หน้าแรกทันที</span>
+            </button>
+          </div>
+        )}
+      </div>
 
-          {/* Current URL Input */}
-          <div className="space-y-1.5 sm:space-y-2">
-            <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-              <LinkIcon size={12} className="text-amber-400" />
-              <span>URL รูปภาพ หรือ ที่อยู่ไฟล์ในโปรเจกต์</span>
-            </label>
+      {/* ── 📰 ส่วนที่ 2: การ์ดข่าวสารและโปรโมชั่นลดราคา (News & Promotion Cards) ── */}
+      <div className="space-y-4 pt-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2 flex-wrap">
+              <span className="p-1.5 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                <Tag size={16} />
+              </span>
+              <span>การ์ดข่าวสารและโปรโมชั่นลดราคา (News & Promotion Cards)</span>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-bold">
+                {totalCount - featuredCount} แคมเปญ
+              </span>
+            </h2>
+            <p className="text-slate-400 text-xs leading-relaxed">
+              การ์ดย่อยที่จะไปแสดงผลในแถบสไลด์อัตโนมัติ (Carousel) ส่วน NEWS & SPECIAL PROMOTIONS ด้านล่างของหน้าแรก
+            </p>
+          </div>
+
+          <button
+            onClick={handleOpenCreateCard}
+            className="inline-flex items-center justify-center gap-1.5 px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 hover:to-pink-600 text-white text-xs sm:text-sm font-extrabold shadow-[0_4px_20px_rgba(225,29,72,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer w-full sm:w-auto shrink-0 min-h-[44px] touch-manipulation"
+          >
+            <Plus size={18} className="shrink-0" />
+            <span>เพิ่มโปรโมชั่นใหม่</span>
+          </button>
+        </div>
+
+        {/* Filter Bar & Search */}
+        <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-inner">
+          {/* Segmented Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto p-1 bg-black/40 rounded-xl no-scrollbar scroll-smooth">
+            {[
+              { id: 'all', label: 'ทั้งหมด', count: totalCount },
+              { id: 'grid', label: 'การ์ดย่อย', count: totalCount - featuredCount },
+              { id: 'featured', label: 'แบนเนอร์ใหญ่', count: featuredCount },
+              { id: 'active', label: 'เปิดใช้งาน', count: activeCount },
+              { id: 'inactive', label: 'ปิดใช้งาน', count: inactiveCount },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setFilterType(tab.id as any)}
+                className={`px-3.5 py-2 sm:py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[36px] ${
+                  filterType === tab.id
+                    ? 'bg-rose-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                  filterType === tab.id ? 'bg-black/30 text-white font-black' : 'bg-white/10 text-slate-400'
+                }`}>
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Search input */}
+          <div className="relative w-full md:w-72">
+            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              value={bannerImageUrl}
-              onChange={(e) => setBannerImageUrl(e.target.value)}
-              placeholder="เช่น /images/footer-pattern.jpg หรือ https://..."
-              className="w-full px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs focus:border-amber-400 focus:outline-none transition-all font-mono break-all"
+              placeholder="ค้นหาชื่อ, ส่วนลด, ป้าย..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full pl-9 pr-9 py-2.5 sm:py-2 rounded-xl bg-slate-950/60 border border-white/10 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none transition min-h-[40px]"
             />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-white rounded-md cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
+        </div>
+      </div>
 
-          {/* Upload Button */}
-          <div className="space-y-1.5 sm:space-y-2">
-            <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-              <Upload size={12} className="text-amber-400" />
-              <span>หรือ อัปโหลดรูปภาพใหม่จากเครื่อง</span>
-            </label>
-            <label className="flex flex-col items-center justify-center p-3.5 sm:p-4 border-2 border-dashed border-white/15 rounded-xl sm:rounded-2xl hover:border-amber-400/50 hover:bg-white/5 cursor-pointer transition-all group">
-              <Upload size={20} className="text-slate-400 group-hover:text-amber-400 transition-colors mb-1" />
-              <span className="text-xs font-bold text-slate-300 text-center">คลิกเพื่อเลือกไฟล์รูปภาพ (JPG, PNG, WebP)</span>
-              <span className="text-[10px] text-slate-500 mt-0.5 text-center">ระบบจะแปลงเป็น Base64 และซิงค์ขึ้นหน้าแรกทันที</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleBannerUpload}
-                className="hidden"
-              />
-            </label>
-          </div>
+      {/* ── Promotions List Grid ── */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <RefreshCw size={32} className="animate-spin text-rose-500 mb-3" />
+          <p className="text-slate-400 text-xs font-medium">กำลังโหลดข้อมูลโปรโมชั่น...</p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="p-8 sm:p-12 text-center rounded-2xl border border-dashed border-white/10 bg-slate-900/40">
+          <Sparkles size={40} className="mx-auto text-slate-600 mb-3" />
+          <h3 className="text-base font-bold text-white mb-1">ไม่พบรายการโปรโมชั่น</h3>
+          <p className="text-slate-400 text-xs mb-4">ลองเปลี่ยนคำค้นหา หรือกดสร้างโปรโมชั่นใหม่</p>
+          <button
+            onClick={handleOpenCreateCard}
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-rose-600 text-white text-xs sm:text-sm font-bold shadow-lg hover:bg-rose-500 transition cursor-pointer w-full sm:w-auto min-h-[44px]"
+          >
+            <Plus size={16} />
+            <span>สร้างการ์ดโปรโมชั่นแรก</span>
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+          {filtered.map(promo => (
+            <div
+              key={promo.id}
+              className={`rounded-2xl border overflow-hidden backdrop-blur-xl transition-all duration-200 flex flex-col justify-between ${
+                promo.is_featured
+                  ? 'border-rose-500/40 bg-gradient-to-b from-rose-950/20 via-slate-900/70 to-slate-900/90 shadow-[0_8px_30px_rgba(225,29,72,0.15)]'
+                  : 'border-white/10 bg-slate-900/60 hover:border-white/20'
+              }`}
+            >
+              {/* Card Image header */}
+              <div className="relative h-44 sm:h-48 w-full overflow-hidden bg-slate-950">
+                <div
+                  className="absolute inset-0 bg-cover bg-center transition-transform duration-500 hover:scale-105"
+                  style={{ backgroundImage: `url(${promo.image_url})` }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
 
-          {/* Quick Preset Selector */}
-          <div className="space-y-2 pt-1 sm:pt-2">
-            <label className="text-xs font-bold text-slate-300">พรีเซ็ตแนะนำสำหรับ The Bottle Club:</label>
-            <div className="grid grid-cols-1 gap-2">
-              {BANNER_PRESETS.map((p) => {
-                const isSelected = bannerImageUrl === p.url
-                return (
-                  <button
-                    key={p.url}
-                    type="button"
-                    onClick={() => setBannerImageUrl(p.url)}
-                    className={`p-2.5 sm:p-3 rounded-xl border text-left flex items-start sm:items-center justify-between gap-2.5 transition-all ${
-                      isSelected
-                        ? 'border-amber-500 bg-amber-500/10 text-white shadow-sm'
-                        : 'border-white/10 bg-slate-950/40 text-slate-300 hover:border-white/20'
-                    }`}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <strong className="block text-xs font-bold text-white leading-tight">{p.name}</strong>
-                      <span className="text-[10px] sm:text-[11px] text-slate-400 leading-snug line-clamp-2 mt-0.5">{p.desc}</span>
-                    </div>
-                    {isSelected && (
-                      <span className="p-1 rounded-full bg-amber-500 text-stone-950 shrink-0 mt-0.5 sm:mt-0">
-                        <Check size={12} strokeWidth={3} />
+                {/* Top Badges */}
+                <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {promo.is_featured && (
+                      <span className="px-2.5 py-0.5 rounded-md bg-gradient-to-r from-amber-500 via-rose-600 to-pink-600 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md">
+                        <Flame size={11} className="text-amber-200" />
+                        แบนเนอร์ใหญ่ (HERO)
                       </span>
                     )}
-                  </button>
-                )
-              })}
+                    {promo.badge && (
+                      <span className="px-2.5 py-0.5 rounded-md bg-white/20 backdrop-blur-md text-white text-[10px] font-bold">
+                        {promo.badge}
+                      </span>
+                    )}
+                  </div>
+
+                  {promo.discount_tag && (
+                    <span className="px-2.5 py-0.5 rounded-md bg-amber-500 text-slate-950 text-[10px] font-black flex items-center gap-1 shadow-md">
+                      <Tag size={10} />
+                      {promo.discount_tag}
+                    </span>
+                  )}
+                </div>
+
+                {/* Validity Badge */}
+                {promo.valid_until && (
+                  <div className="absolute bottom-2.5 left-3 text-[10px] font-semibold text-slate-300 flex items-center gap-1 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md">
+                    <Clock size={11} className="text-amber-400" />
+                    <span>{promo.valid_until}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Card Body */}
+              <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
+                <div>
+                  {promo.is_featured && (
+                    <div className="mb-2.5 px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] font-bold flex items-center justify-between">
+                      <span>ควบคุมส่วน Hero Section หน้าแรก</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">
+                        {promo.images && promo.images.length > 1 ? `${promo.images.length} รูป (พื้นหลัง+ขวด)` : '1 รูป (พื้นหลัง)'}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <h3 className="font-extrabold text-white text-sm sm:text-base leading-snug line-clamp-1">
+                      {promo.title}
+                    </h3>
+                  </div>
+                  {promo.subtitle && (
+                    <p className="text-xs font-semibold text-rose-300/90 line-clamp-1 mb-2">
+                      {promo.subtitle}
+                    </p>
+                  )}
+                  <p className="text-slate-400 text-xs leading-relaxed line-clamp-2 mb-4">
+                    {promo.description}
+                  </p>
+                </div>
+
+                {/* Card Meta & Controls */}
+                <div className="pt-3 border-t border-white/10 space-y-3">
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <span className="flex items-center gap-1 text-[11px] truncate max-w-[150px]">
+                      <LinkIcon size={12} className="text-slate-500 shrink-0" />
+                      <span className="truncate">{promo.link_url || '/#products'}</span>
+                    </span>
+
+                    {/* Quick Active Toggle */}
+                    <button
+                      onClick={() => handleToggleActive(promo)}
+                      className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-95 ${
+                        promo.is_active
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-sm'
+                          : 'bg-slate-800 text-slate-400 border border-slate-700'
+                      }`}
+                      title="กดเพื่อสลับ เปิด/ปิด การแสดงผล"
+                    >
+                      <span className={`w-2 h-2 rounded-full ${promo.is_active ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+                      <span>{promo.is_active ? 'เปิดแสดงผล' : 'ปิดใช้งาน'}</span>
+                    </button>
+                  </div>
+
+                  {/* Actions buttons */}
+                  <div className="flex items-center gap-2 pt-1">
+                    {!promo.is_featured && (
+                      <button
+                        onClick={() => handleSetFeatured(promo)}
+                        className="py-2.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer touch-manipulation active:scale-95 min-h-[42px]"
+                        title="ตั้งเป็นแบนเนอร์ใหญ่หน้าแรก (Hero Banner)"
+                      >
+                        <Flame size={13} className="text-amber-400 shrink-0" />
+                        <span className="whitespace-nowrap">ตั้งเป็น Hero</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => handleOpenEdit(promo)}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-xs font-bold transition cursor-pointer touch-manipulation active:scale-95 min-h-[42px]"
+                    >
+                      <Edit3 size={14} className="text-cyan-400 shrink-0" />
+                      <span>แก้ไข</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete(promo.id)}
+                      className="inline-flex items-center justify-center p-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-bold transition cursor-pointer touch-manipulation active:scale-95 min-h-[42px] min-w-[42px]"
+                      title="ลบโปรโมชั่น"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
+      )}
 
-        {/* 2. รูปภาพขวดไวน์ลอย (Floating Bottle Image) & ป้ายข้อความ */}
-        <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-900/60 border border-white/10 backdrop-blur-xl space-y-4 sm:space-y-5">
-          <div className="flex items-center justify-between pb-3 border-b border-white/10">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
-                <Layers size={18} />
+      {/* ── Create / Edit Modal with Real-time Live Preview ── */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 30 }}
+              className="relative w-full max-w-4xl bg-slate-900 border border-white/15 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden my-0 sm:my-6 max-h-[95vh] sm:max-h-[90vh] flex flex-col"
+            >
+              {/* Mobile handle indicator */}
+              <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto my-2 sm:hidden shrink-0" />
+
+              {/* Modal Header */}
+              <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-white/10 flex items-center justify-between bg-slate-950/80 backdrop-blur-md shrink-0">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className={`p-2 rounded-xl border shrink-0 ${
+                    modalMode === 'hero'
+                      ? 'bg-amber-500/15 border-amber-500/30 text-amber-400'
+                      : 'bg-rose-500/15 border-rose-500/30 text-rose-400'
+                  }`}>
+                    {modalMode === 'hero' ? <Flame size={18} /> : <Sparkles size={18} />}
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-sm sm:text-lg font-black text-white truncate">
+                      {modalMode === 'hero'
+                        ? (editingPromo ? 'จัดการแบนเนอร์ใหญ่ (Hero Banner)' : 'สร้างแบนเนอร์ใหญ่ (Hero Banner)')
+                        : (editingPromo ? 'แก้ไขการ์ดโปรโมชั่น / ข่าวสาร' : 'เพิ่มการ์ดโปรโมชั่น / ข่าวสารใหม่')}
+                    </h2>
+                    <p className="text-[11px] sm:text-xs text-slate-400 truncate">
+                      {modalMode === 'hero'
+                        ? 'กำหนดภาพพื้นหลัง ขวดลอย และปุ่ม CTA หน้าแรก'
+                        : 'กำหนดเนื้อหา รูปภาพ และพรีวิวผลการแสดงผลทันทีก่อนบันทึก'}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition cursor-pointer shrink-0 touch-manipulation"
+                >
+                  <X size={18} />
+                </button>
               </div>
-              <div className="min-w-0">
-                <h3 className="text-xs sm:text-sm font-bold text-white truncate">2. รูปภาพขวดไวน์ลอย (Floating Bottle Image)</h3>
-                <p className="text-[10px] sm:text-[11px] text-slate-400">ภาพขวดไวน์พื้นหลังใส (PNG) แสดงผลมุมขวาล่าง</p>
-              </div>
-            </div>
-          </div>
 
-          {/* Bottle URL Input */}
-          <div className="space-y-1.5 sm:space-y-2">
-            <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-              <LinkIcon size={12} className="text-rose-400" />
-              <span>URL รูปภาพขวดไวน์ (PNG พื้นใส)</span>
-            </label>
-            <input
-              type="text"
-              value={floatingBottleUrl}
-              onChange={(e) => setFloatingBottleUrl(e.target.value)}
-              placeholder="เช่น /images/wine_hero.png (เว้นว่างไว้เพื่อซ่อน)"
-              className="w-full px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs focus:border-rose-400 focus:outline-none transition-all font-mono break-all"
-            />
-          </div>
+              {/* Form Content */}
+              <form onSubmit={handleSubmit} className="flex-1 p-4 sm:p-6 space-y-5 sm:space-y-6 overflow-y-auto">
+                {errorMessage && (
+                  <div className="p-3.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 text-xs flex items-center gap-2">
+                    <AlertCircle size={15} />
+                    <span>{errorMessage}</span>
+                  </div>
+                )}
 
-          {/* Bottle Upload */}
-          <div className="space-y-1.5 sm:space-y-2">
-            <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-              <Upload size={12} className="text-rose-400" />
-              <span>หรือ อัปโหลดรูปขวดไวน์ใหม่ (PNG พื้นใส)</span>
-            </label>
-            <label className="flex flex-col items-center justify-center p-3 sm:p-3.5 border-2 border-dashed border-white/15 rounded-xl sm:rounded-2xl hover:border-rose-400/50 hover:bg-white/5 cursor-pointer transition-all group">
-              <Upload size={20} className="text-slate-400 group-hover:text-rose-400 transition-colors mb-1" />
-              <span className="text-xs font-bold text-slate-300 text-center">คลิกเพื่อเลือกไฟล์ขวด PNG</span>
-              <input
-                type="file"
-                accept="image/png,image/webp"
-                onChange={handleBottleUpload}
-                className="hidden"
-              />
-            </label>
-          </div>
+                {/* ── Multi-Image Selector & Gallery Manager ── */}
+                <div className="space-y-4 p-4 rounded-2xl bg-black/40 border border-white/10">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                      <ImageIcon size={14} className="text-rose-400" />
+                      <span>รูปภาพแบนเนอร์โปรโมชั่น (ใส่ได้หลายรูป) *</span>
+                    </label>
+                    <span className="text-[11px] font-bold text-rose-400">
+                      มีทั้งหมด {images.length} รูป
+                    </span>
+                  </div>
 
-          {/* Quick Bottle Presets */}
-          <div className="space-y-2 pt-1 sm:pt-2">
-            <label className="text-xs font-bold text-slate-300">ตัวเลือกขวดไวน์ลอย:</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {BOTTLE_PRESETS.map((bp) => {
-                const isSel = floatingBottleUrl === bp.url
-                return (
+                  {/* Thumbnail gallery preview of selected images */}
+                  {images.length > 0 && (
+                    <div className="space-y-2">
+                      <span className="text-[11px] text-slate-400 block">
+                        รูปภาพที่จะแสดงในแบนเนอร์ (รูปลำดับแรกคือรูปหลัก):
+                      </span>
+                      <div className="flex items-center gap-2.5 overflow-x-auto pb-2">
+                        {images.map((img, idx) => (
+                          <div
+                            key={idx}
+                            className="relative group shrink-0 w-24 h-20 rounded-xl overflow-hidden border border-white/15 bg-slate-950 shadow-md"
+                          >
+                            <img
+                              src={img}
+                              alt={`Promo image ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                            {/* Primary badge */}
+                            {idx === 0 && (
+                              <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-rose-600 text-[9px] font-black text-white shadow">
+                                รูปหลัก
+                              </span>
+                            )}
+                            {/* Overlay hover actions */}
+                            <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                              {idx !== 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleSetPrimary(idx)}
+                                  title="ตั้งเป็นรูปหลัก"
+                                  className="px-1.5 py-0.5 rounded bg-white/20 hover:bg-rose-600 text-white text-[10px] font-bold"
+                                >
+                                  หลัก
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveImage(idx)}
+                                title="ลบรูปนี้"
+                                className="p-1 rounded-md bg-red-600 hover:bg-red-700 text-white"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Preset quick buttons (Clicking adds to images array) */}
+                  <div className="space-y-1.5">
+                    <span className="text-[11px] text-slate-400 block">
+                      คลิกเพื่อเพิ่มรูปภาพพรีเซ็ตสำเร็จรูป:
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                      {PROMOTION_IMAGE_PRESETS.map((preset, idx) => {
+                        const isSelected = images.includes(preset.url);
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => handleAddPreset(preset.url)}
+                            className={`p-2 rounded-xl border text-left transition flex flex-col justify-between gap-2 cursor-pointer ${
+                              isSelected
+                                ? 'border-rose-500 bg-rose-500/20 text-white shadow-md'
+                                : 'border-white/10 bg-slate-800/40 text-slate-300 hover:border-white/20'
+                            }`}
+                          >
+                            <div
+                              className="w-full h-12 rounded-lg bg-cover bg-center"
+                              style={{ backgroundImage: `url(${preset.url})` }}
+                            />
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-bold truncate leading-tight">
+                                {preset.icon} {preset.name}
+                              </span>
+                              {isSelected && <Check size={11} className="text-rose-400 shrink-0" />}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* URL Input & Multiple Upload */}
+                  <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                    <div className="flex-1 flex gap-1.5">
+                      <input
+                        type="text"
+                        placeholder="วาง URL รูปภาพเพิ่มเติม (https://...)"
+                        value={newImageUrl}
+                        onChange={e => setNewImageUrl(e.target.value)}
+                        className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none min-h-[42px]"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddImageUrl}
+                        className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition shrink-0 cursor-pointer touch-manipulation active:scale-95 min-h-[42px]"
+                      >
+                        เพิ่มรูป
+                      </button>
+                    </div>
+                    <div>
+                      <label className="w-full px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition touch-manipulation active:scale-95 min-h-[42px]">
+                        <Upload size={14} />
+                        <span>อัปโหลดหลายรูป</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleFileUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Main Info Fields ── */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                      ชื่อแคมเปญโปรโมชั่น (Title) *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="เช่น GRAND CRU & VINTAGE SELECTION"
+                      value={title}
+                      onChange={e => setTitle(e.target.value)}
+                      required
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-xs sm:text-sm text-white focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                      คำโปรยรอง (Subtitle)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="เช่น สัมผัสรสชาติไวน์ชั้นเลิศระดับพรีเมียม"
+                      value={subtitle}
+                      onChange={e => setSubtitle(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-xs sm:text-sm text-white focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                    รายละเอียดโปรโมชั่น (Description) *
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="ระบุเงื่อนไข สิทธิพิเศษ และรายละเอียดโปรโมชั่น..."
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    required
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-xs sm:text-sm text-white focus:border-rose-500 focus:outline-none resize-none"
+                  />
+                </div>
+
+                {/* Badges, Discounts & Validity */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                      ป้ายกำกับ (Badge)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="เช่น FEATURED, NEW MEMBER"
+                      value={badge}
+                      onChange={e => setBadge(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                      แท็กส่วนลด (Discount Tag)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="เช่น UP TO 30% OFF, ลด 500฿"
+                      value={discountTag}
+                      onChange={e => setDiscountTag(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                      ระยะเวลา (Valid Until)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="เช่น ถึงสิ้นเดือนนี้, สิทธิ์จำกัด"
+                      value={validUntil}
+                      onChange={e => setValidUntil(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Links & CTA */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                      {isFeatured ? 'ลิงก์ปุ่มหลัก (Primary Link)' : 'ลิงก์ปลายทาง (Link URL)'}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="/#products หรือ /menu"
+                      value={linkUrl}
+                      onChange={e => setLinkUrl(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                      {isFeatured ? 'ข้อความปุ่มหลัก (Primary CTA)' : 'ข้อความบนปุ่ม (CTA Text)'}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={isFeatured ? 'เช่น ดูไวน์ทั้งหมด' : 'เช่น ดูสินค้าโปรโมชั่น'}
+                      value={ctaText}
+                      onChange={e => setCtaText(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                      ลำดับแสดงผล (Sort Order)
+                    </label>
+                    <input
+                      type="number"
+                      value={sortOrder}
+                      onChange={e => setSortOrder(Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* ── Display Style Switches ── */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-black/40 border border-white/10">
+                  {/* Featured Banner Switch */}
+                  <label className="flex items-center justify-between cursor-pointer p-3 rounded-xl bg-slate-800/30 hover:bg-slate-800/50 border border-white/5 transition">
+                    <div>
+                      <span className="text-xs font-bold text-white block">
+                        แบนเนอร์หลักหน้าแรก (Hero Banner)
+                      </span>
+                      <span className="text-[11px] text-slate-400 block mt-0.5">
+                        {isFeatured ? 'แสดงด้านบนสุดขนาดใหญ่เต็มหน้าจอ (Hero Section)' : 'แสดงเป็นการ์ดย่อย (Grid Card ข่าวสาร/โปรโมชั่น)'}
+                      </span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={isFeatured}
+                      onChange={e => setIsFeatured(e.target.checked)}
+                      className="w-5 h-5 accent-rose-500 rounded cursor-pointer"
+                    />
+                  </label>
+
+                  {/* Active Switch */}
+                  <label className="flex items-center justify-between cursor-pointer p-3 rounded-xl bg-slate-800/30 hover:bg-slate-800/50 border border-white/5 transition">
+                    <div>
+                      <span className="text-xs font-bold text-white block">
+                        เปิดใช้งานการแสดงผล (Active on Storefront)
+                      </span>
+                      <span className="text-[11px] text-slate-400 block mt-0.5">
+                        {isActive ? 'แสดงผลทันทีที่หน้าแรก' : 'ซ่อนไว้ชั่วคราว (ฉบับร่าง)'}
+                      </span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={isActive}
+                      onChange={e => setIsActive(e.target.checked)}
+                      className="w-5 h-5 accent-emerald-500 rounded cursor-pointer"
+                    />
+                  </label>
+                </div>
+
+                {/* ── Special Settings for Hero Banner Mode ── */}
+                {isFeatured && (
+                  <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-rose-950/30 via-slate-900 to-amber-950/20 border border-rose-500/30 space-y-4">
+                    <div className="flex items-center gap-2 text-rose-300">
+                      <Sparkles size={16} className="text-rose-400" />
+                      <span className="text-xs font-black uppercase tracking-wider">
+                        ตั้งค่าพิเศษสำหรับแบนเนอร์ใหญ่หน้าแรก (Hero Section Controls)
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      ข้อมูลในส่วนนี้จะถูกส่งไปแสดงผลที่ส่วนบนสุดของหน้าร้าน The Bottle Club (แทนที่ภาพและข้อความเริ่มต้นทั้งหมด) คุณสามารถปรับแต่งรูปพื้นหลัง ภาพขวดไวน์ลอย และปุ่มกดทั้งสองปุ่มได้อิสระ
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Floating Hero Image */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-200 mb-1.5">
+                          รูปขวดไวน์/เชลฟ์สินค้าลอยด้านขวา (Floating Hero Image)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="วาง URL รูปขวดไวน์ หรือ /images/wine_hero.png"
+                          value={heroImageUrl}
+                          onChange={e => setHeroImageUrl(e.target.value)}
+                          className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
+                        />
+                        <span className="text-[10px] text-slate-500 mt-1 block">
+                          หากเว้นว่าง ระบบจะใช้รูปที่ 2 จากแกลเลอรี หรือรูปเริ่มต้น /images/wine_hero.png
+                        </span>
+                      </div>
+
+                      {/* Secondary Button Text & Link */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-200 mb-1.5">
+                            ข้อความปุ่มรอง (Button 2)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="เช่น เรียนรู้เพิ่มเติม"
+                            value={secondaryCtaText}
+                            onChange={e => setSecondaryCtaText(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-200 mb-1.5">
+                            ลิงก์ปุ่มรอง (Link 2)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="เช่น /#wine-categories"
+                            value={secondaryLinkUrl}
+                            onChange={e => setSecondaryLinkUrl(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Live Interactive Preview Stage ── */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                      <Eye size={14} className="text-cyan-400" />
+                      <span>พรีวิวการแสดงผลจริง (Live Preview)</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-semibold">
+                      {isFeatured ? 'โหมด: แบนเนอร์หลักหน้าแรก (Hero Section Preview)' : 'โหมด: การ์ดย่อย (News/Promotion Card)'}
+                    </span>
+                  </div>
+
+                  {/* Live Card Preview Container */}
+                  <div className="p-3 sm:p-4 rounded-2xl bg-black/60 border border-white/10 overflow-hidden">
+                    {isFeatured ? (
+                      /* Featured Banner (Hero Section) Live Preview */
+                      <div className="relative rounded-2xl overflow-hidden border border-rose-500/40 min-h-[300px] flex flex-col justify-end p-5 sm:p-7 bg-stone-950 text-white shadow-2xl">
+                        {/* Background Banner */}
+                        <div
+                          className="absolute inset-0 bg-cover bg-center opacity-60"
+                          style={{ backgroundImage: `url(${imageUrl || PROMOTION_IMAGE_PRESETS[0].url})` }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/70 to-stone-950/30" />
+
+                        {/* Floating right image mockup */}
+                        <div className="hidden sm:block absolute bottom-3 right-4 w-32 h-44 pointer-events-none">
+                          <img
+                            src={heroImageUrl || (images.length > 1 ? images[1] : '/images/wine_hero.png')}
+                            alt=""
+                            className="w-full h-full object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.85)]"
+                          />
+                        </div>
+
+                        {/* Content */}
+                        <div className="relative z-10 max-w-lg space-y-3">
+                          {/* Welcome Badge */}
+                          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow backdrop-blur-md">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,1)]" />
+                            <span>{badge || 'ยินดีต้อนรับสู่ THE BOTTLE CLUB'}</span>
+                          </div>
+
+                          {/* Massive Title */}
+                          <h4 className="text-xl sm:text-2xl font-black text-white leading-tight drop-shadow-md">
+                            {title || 'คัดสรรไวน์ ระดับพรีเมียม เพื่อคุณโดยเฉพาะ'}
+                          </h4>
+
+                          {/* Subtitle */}
+                          <p className="text-xs text-stone-200 line-clamp-2 max-w-md leading-relaxed">
+                            {subtitle || description || 'ไวน์นำเข้าคุณภาพเยี่ยมจากทั่วโลก จัดส่งถึงบ้านคุณภายใน 24 ชั่วโมง'}
+                          </p>
+
+                          {/* CTA Buttons */}
+                          <div className="flex flex-wrap items-center gap-2 pt-1">
+                            <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-black text-stone-950 shadow-md">
+                              <span>{ctaText || 'ดูไวน์ทั้งหมด'}</span>
+                              <ArrowRight size={13} />
+                            </span>
+                            {secondaryCtaText && (
+                              <span className="inline-flex items-center rounded-full border border-white/30 bg-white/10 px-4 py-2 text-xs font-bold text-white backdrop-blur-md">
+                                {secondaryCtaText}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Service badges mini */}
+                          <div className="flex items-center gap-2 pt-1 text-[10px] text-white/80">
+                            <span className="px-2 py-0.5 rounded-md bg-white/10 border border-white/10">🚚 จัดส่งรวดเร็ว</span>
+                            <span className="px-2 py-0.5 rounded-md bg-white/10 border border-white/10">✨ คัดสรรโดยผู้เชี่ยวชาญ</span>
+                            <span className="px-2 py-0.5 rounded-md bg-white/10 border border-white/10">🔒 ชำระเงินปลอดภัย</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Grid Card Preview */
+                      <div className="max-w-sm rounded-xl overflow-hidden border border-white/10 bg-slate-900/90 flex flex-col justify-between">
+                        <div className="relative h-28 bg-cover bg-center" style={{ backgroundImage: `url(${imageUrl || PROMOTION_IMAGE_PRESETS[0].url})` }}>
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
+                          <div className="absolute top-2 left-2 flex gap-1">
+                            {badge && <span className="px-2 py-0.5 rounded bg-rose-600 text-white text-[9px] font-bold">{badge}</span>}
+                            {discountTag && <span className="px-2 py-0.5 rounded bg-amber-500 text-black text-[9px] font-black">{discountTag}</span>}
+                          </div>
+                        </div>
+                        <div className="p-3">
+                          <h4 className="text-sm font-bold text-white line-clamp-1">{title || 'ชื่อแคมเปญโปรโมชั่น'}</h4>
+                          <p className="text-slate-400 text-xs line-clamp-1 mt-0.5">{description || 'รายละเอียดโปรโมชั่น'}</p>
+                          <div className="mt-3 pt-2 border-t border-white/10 flex justify-between items-center text-xs">
+                            <span className="text-rose-400 font-bold">{ctaText || 'ดูข้อเสนอ'} ➜</span>
+                            <span className="text-[10px] text-slate-500">{validUntil}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Modal Footer Buttons */}
+                <div className="pt-4 border-t border-white/10 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 sticky bottom-0 bg-slate-900/95 backdrop-blur-md -mx-4 -mb-4 sm:-mx-6 sm:-mb-6 p-4 sm:p-6 z-20">
                   <button
-                    key={bp.name}
                     type="button"
-                    onClick={() => setFloatingBottleUrl(bp.url)}
-                    className={`p-2.5 sm:p-3 rounded-xl border text-center transition-all ${
-                      isSel
-                        ? 'border-rose-500 bg-rose-500/10 text-white font-bold'
-                        : 'border-white/10 bg-slate-950/40 text-slate-400 hover:border-white/20'
-                    }`}
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-5 py-3 sm:py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs sm:text-sm font-bold transition cursor-pointer touch-manipulation text-center min-h-[44px]"
                   >
-                    <span className="text-xs truncate block">{bp.name}</span>
+                    ยกเลิก
                   </button>
-                )
-              })}
-            </div>
+
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 hover:to-pink-600 text-white text-xs sm:text-sm font-extrabold shadow-[0_4px_16px_rgba(225,29,72,0.4)] transition-all cursor-pointer disabled:opacity-50 touch-manipulation active:scale-95 min-h-[44px]"
+                  >
+                    {saving ? (
+                      <>
+                        <RefreshCw size={15} className="animate-spin" />
+                        <span>กำลังบันทึก...</span>
+                      </>
+                    ) : saveSuccess ? (
+                      <>
+                        <CheckCircle2 size={15} className="text-emerald-300" />
+                        <span>บันทึกสำเร็จ!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check size={15} />
+                        <span>
+                          {modalMode === 'hero'
+                            ? (editingPromo ? 'บันทึกแบนเนอร์ใหญ่' : 'สร้างแบนเนอร์ใหญ่')
+                            : (editingPromo ? 'บันทึกการแก้ไข' : 'บันทึกโปรโมชั่นใหม่')}
+                        </span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
           </div>
-
-          {/* ข้อความป้ายต้อนรับ (Welcome Badge) */}
-          <div className="pt-3 border-t border-white/10 space-y-1.5 sm:space-y-2">
-            <label className="text-xs font-bold text-slate-300">ข้อความป้ายต้อนรับ (Badge Pill):</label>
-            <input
-              type="text"
-              value={badgeText}
-              onChange={(e) => setBadgeText(e.target.value)}
-              placeholder="ยินดีต้อนรับสู่ The Bottle Club"
-              className="w-full px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs focus:border-amber-400 focus:outline-none transition-all"
-            />
-          </div>
-
-          {/* สถานะการแสดงผล */}
-          <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <span className="text-xs font-bold text-white block">เปิดใช้งานแบนเนอร์หน้าร้าน</span>
-              <span className="text-[10px] sm:text-[11px] text-slate-400">หากปิด จะใช้แบนเนอร์สำรองของระบบ</span>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer shrink-0">
-              <input
-                type="checkbox"
-                checked={isActive}
-                onChange={(e) => setIsActive(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-            </label>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Bottom Save Action Bar ── */}
-      <div className="p-3.5 sm:p-5 rounded-2xl bg-slate-900/95 border border-amber-500/30 backdrop-blur-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 sticky bottom-2 sm:bottom-4 shadow-2xl z-30">
-        <div className="text-center sm:text-left">
-          <p className="text-xs font-bold text-white">พร้อมอัปเดตรูปภาพแบนเนอร์หน้าแรกหรือไม่?</p>
-          <p className="text-[10px] sm:text-[11px] text-slate-400">ระบบจะบันทึกลง Database และเขียนไฟล์ซิงค์ตรงไปยัง Projectbottleclub1 ทันที</p>
-        </div>
-
-        <button
-          onClick={handleSaveBanner}
-          disabled={saving || loading}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-amber-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs sm:text-sm font-black shadow-lg shadow-amber-500/30 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer min-h-[44px]"
-        >
-          {saving ? (
-            <>
-              <RefreshCw size={15} className="animate-spin" />
-              <span>กำลังบันทึกและซิงค์...</span>
-            </>
-          ) : (
-            <>
-              <Check size={16} strokeWidth={2.5} />
-              <span>บันทึกและซิงค์แบนเนอร์</span>
-            </>
-          )}
-        </button>
-      </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
