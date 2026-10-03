@@ -40,8 +40,8 @@ export default function AdminPromotionsPage() {
   const [validUntil, setValidUntil] = useState('ถึงสิ้นเดือนนี้')
   const [linkUrl, setLinkUrl] = useState('/#products')
   const [ctaText, setCtaText] = useState('ดูสินค้าโปรโมชั่น')
-  const [secondaryCtaText, setSecondaryCtaText] = useState('เรียนรู้เพิ่มเติม')
-  const [secondaryLinkUrl, setSecondaryLinkUrl] = useState('/#wine-categories')
+  const [secondaryCtaText, setSecondaryCtaText] = useState('')
+  const [secondaryLinkUrl, setSecondaryLinkUrl] = useState('')
   const [heroImageUrl, setHeroImageUrl] = useState('')
   const [isFeatured, setIsFeatured] = useState(false)
   const [isActive, setIsActive] = useState(true)
@@ -129,8 +129,8 @@ export default function AdminPromotionsPage() {
     setValidUntil('บริการจัดส่ง 24 ชม.')
     setLinkUrl('/#products')
     setCtaText('ดูไวน์ทั้งหมด')
-    setSecondaryCtaText('เรียนรู้เพิ่มเติม')
-    setSecondaryLinkUrl('/#wine-categories')
+    setSecondaryCtaText('')
+    setSecondaryLinkUrl('')
     setIsFeatured(true)
     setIsActive(true)
     setSortOrder(0)
@@ -185,8 +185,8 @@ export default function AdminPromotionsPage() {
     setValidUntil(p.valid_until || '')
     setLinkUrl(p.link_url || '/#products')
     setCtaText(p.cta_text || (p.is_featured ? 'ดูไวน์ทั้งหมด' : 'ดูสินค้าโปรโมชั่น'))
-    setSecondaryCtaText(p.secondary_cta_text || (p.is_featured ? 'เรียนรู้เพิ่มเติม' : ''))
-    setSecondaryLinkUrl(p.secondary_link_url || (p.is_featured ? '/#wine-categories' : ''))
+    setSecondaryCtaText(p.secondary_cta_text || '')
+    setSecondaryLinkUrl(p.secondary_link_url || '')
     setIsFeatured(Boolean(p.is_featured))
     setIsActive(p.is_active !== undefined ? Boolean(p.is_active) : true)
     setSortOrder(Number(p.sort_order) || 1)
@@ -1358,54 +1358,24 @@ export default function AdminPromotionsPage() {
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-300 leading-relaxed">
-                      ข้อมูลในส่วนนี้จะถูกส่งไปแสดงผลที่ส่วนบนสุดของหน้าร้าน The Bottle Club (แทนที่ภาพและข้อความเริ่มต้นทั้งหมด) คุณสามารถปรับแต่งรูปพื้นหลัง ภาพขวดไวน์ลอย และปุ่มกดทั้งสองปุ่มได้อิสระ
+                      ข้อมูลในส่วนนี้จะถูกส่งไปแสดงผลที่ส่วนบนสุดของหน้าร้าน The Bottle Club (แทนที่ภาพและข้อความเริ่มต้นทั้งหมด) คุณสามารถปรับแต่งรูปพื้นหลัง และภาพขวดไวน์ลอยได้อิสระ
                     </p>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
                       {/* Floating Hero Image */}
-                      <div>
-                        <label className="block text-xs font-bold text-slate-200 mb-1.5">
-                          รูปขวดไวน์/เชลฟ์สินค้าลอยด้านขวา (Floating Hero Image)
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="วาง URL รูปขวดไวน์ หรือ /images/wine_hero.png"
-                          value={heroImageUrl}
-                          onChange={e => setHeroImageUrl(e.target.value)}
-                          className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
-                        />
-                        <span className="text-[10px] text-slate-500 mt-1 block">
-                          หากเว้นว่าง ระบบจะใช้รูปที่ 2 จากแกลเลอรี หรือรูปเริ่มต้น /images/wine_hero.png
-                        </span>
-                      </div>
-
-                      {/* Secondary Button Text & Link */}
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="block text-xs font-bold text-slate-200 mb-1.5">
-                            ข้อความปุ่มรอง (Button 2)
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="เช่น เรียนรู้เพิ่มเติม"
-                            value={secondaryCtaText}
-                            onChange={e => setSecondaryCtaText(e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-slate-200 mb-1.5">
-                            ลิงก์ปุ่มรอง (Link 2)
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="เช่น /#wine-categories"
-                            value={secondaryLinkUrl}
-                            onChange={e => setSecondaryLinkUrl(e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
-                          />
-                        </div>
-                      </div>
+                      <label className="block text-xs font-bold text-slate-200 mb-1.5">
+                        รูปขวดไวน์/เชลฟ์สินค้าลอยด้านขวา (Floating Hero Image)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="วาง URL รูปขวดไวน์ หรือ /images/wine_hero.png"
+                        value={heroImageUrl}
+                        onChange={e => setHeroImageUrl(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none font-mono"
+                      />
+                      <span className="text-[10px] text-slate-500 mt-1 block">
+                        หากเว้นว่าง ระบบจะใช้รูปที่ 2 จากแกลเลอรี หรือรูปเริ่มต้น /images/wine_hero.png
+                      </span>
                     </div>
                   </div>
                 )}
