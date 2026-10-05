@@ -377,7 +377,12 @@ export default function AdminPromotionsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim()) {
-      setErrorMessage('กรุณากรอกชื่อแคมเปญโปรโมชั่น')
+      setErrorMessage(modalMode === 'hero' ? 'กรุณากรอกหัวข้อแบนเนอร์ใหญ่' : 'กรุณากรอกชื่อแคมเปญโปรโมชั่น')
+      return
+    }
+
+    if (modalMode === 'card' && !description.trim()) {
+      setErrorMessage('กรุณากรอกรายละเอียดโปรโมชั่น')
       return
     }
 
@@ -402,7 +407,7 @@ export default function AdminPromotionsPage() {
       id: id.trim() || `promo-${Date.now()}`,
       title: title.trim(),
       subtitle: subtitle.trim(),
-      description: description.trim() || subtitle.trim() || title.trim(),
+      description: modalMode === 'hero' ? (description.trim() || subtitle.trim() || title.trim()) : description.trim(),
       image_url: finalImages[0],
       images: finalImages,
       hero_image_url: heroImageUrl.trim() || (finalImages.length > 1 ? finalImages[1] : undefined),
@@ -413,7 +418,7 @@ export default function AdminPromotionsPage() {
       cta_text: ctaText.trim() || (isFeatured ? 'ดูไวน์ทั้งหมด' : 'ดูสินค้าโปรโมชั่น'),
       secondary_cta_text: secondaryCtaText.trim(),
       secondary_link_url: secondaryLinkUrl.trim(),
-      is_featured: isFeatured,
+      is_featured: modalMode === 'hero' ? true : isFeatured,
       is_active: isActive,
       sort_order: Number(sortOrder) || 1,
     }
@@ -621,7 +626,7 @@ export default function AdminPromotionsPage() {
             className="inline-flex items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-amber-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs sm:text-sm font-black shadow-lg shadow-amber-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer w-full sm:w-auto shrink-0 min-h-[44px]"
           >
             <Edit3 size={15} />
-            <span>{heroBanner ? 'แก้ไขแบนเนอร์ใหญ่หน้าแรก' : 'ตั้งค่าแบนเนอร์ใหญ่หน้าแรก'}</span>
+            <span>{heroBanner ? 'จัดการแบนเนอร์ใหญ่ (Hero)' : 'ตั้งค่าแบนเนอร์ใหญ่ (Hero)'}</span>
           </button>
         </div>
 
@@ -703,19 +708,21 @@ export default function AdminPromotionsPage() {
                   </div>
                 </div>
 
-                {/* Floating Hero Thumbnail */}
-                <div className="text-center space-y-1">
-                  <div className="w-18 h-18 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border border-amber-500/30 bg-slate-950 shadow-lg relative p-1 flex items-center justify-center">
-                    <img
-                      src={heroBanner.hero_image_url || (heroBanner.images && heroBanner.images.length > 1 ? heroBanner.images[1] : '/images/wine_hero.png')}
-                      alt="Floating Hero"
-                      className="w-full h-full object-contain drop-shadow-md"
-                    />
-                    <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-amber-500 text-[8px] sm:text-[9px] text-slate-950 font-black">
-                      ขวดไวน์ลอย
-                    </span>
+                {/* Floating Hero Thumbnail (if set) */}
+                {heroBanner.hero_image_url && (
+                  <div className="text-center space-y-1">
+                    <div className="w-18 h-18 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border border-amber-500/30 bg-slate-950 shadow-lg relative p-1 flex items-center justify-center">
+                      <img
+                        src={heroBanner.hero_image_url}
+                        alt="Floating Hero"
+                        className="w-full h-full object-contain drop-shadow-md"
+                      />
+                      <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-amber-500 text-[8px] sm:text-[9px] text-slate-950 font-black">
+                        ขวดไวน์ลอย
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Action buttons on Mobile & Desktop */}
@@ -754,7 +761,7 @@ export default function AdminPromotionsPage() {
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-amber-500 text-slate-950 text-xs sm:text-sm font-extrabold shadow-lg hover:bg-amber-400 transition cursor-pointer w-full sm:w-auto min-h-[44px]"
             >
               <Plus size={16} />
-              <span>ตั้งค่าแบนเนอร์ใหญ่หน้าแรกทันที</span>
+              <span>จัดการแบนเนอร์ใหญ่ (Hero) ทันที</span>
             </button>
           </div>
         )}
@@ -1150,10 +1157,10 @@ export default function AdminPromotionsPage() {
 
                   {/* URL Input & Multiple Upload */}
                   <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                    <div className="flex-1">
+                    <div className="flex-1 flex gap-2">
                       <input
                         type="text"
-                        placeholder="วาง URL รูปภาพเพิ่มเติม (https://... กด Enter เพื่อเพิ่ม)"
+                        placeholder="วาง URL รูปภาพเพิ่มเติม (https://... หรือกดปุ่มเพิ่มรูป)"
                         value={newImageUrl}
                         onChange={e => setNewImageUrl(e.target.value)}
                         onKeyDown={e => {
@@ -1162,8 +1169,15 @@ export default function AdminPromotionsPage() {
                             handleAddImageUrl()
                           }
                         }}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none min-h-[42px]"
+                        className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none min-h-[42px]"
                       />
+                      <button
+                        type="button"
+                        onClick={handleAddImageUrl}
+                        className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition shrink-0 cursor-pointer touch-manipulation active:scale-95 min-h-[42px]"
+                      >
+                        เพิ่มรูป
+                      </button>
                     </div>
                     <div>
                       <label className="w-full px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition touch-manipulation active:scale-95 min-h-[42px]">
@@ -1185,11 +1199,11 @@ export default function AdminPromotionsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                      ชื่อแคมเปญโปรโมชั่น (Title) *
+                      {modalMode === 'hero' ? 'หัวข้อหลักแบนเนอร์ใหญ่ (Hero Title) *' : 'ชื่อแคมเปญโปรโมชั่น (Title) *'}
                     </label>
                     <input
                       type="text"
-                      placeholder="เช่น GRAND CRU & VINTAGE SELECTION"
+                      placeholder={modalMode === 'hero' ? 'เช่น คัดสรรไวน์ ระดับพรีเมียม เพื่อคุณโดยเฉพาะ' : 'เช่น GRAND CRU & VINTAGE SELECTION'}
                       value={title}
                       onChange={e => setTitle(e.target.value)}
                       required
@@ -1199,11 +1213,11 @@ export default function AdminPromotionsPage() {
 
                   <div>
                     <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                      คำโปรยรอง (Subtitle)
+                      {modalMode === 'hero' ? 'คำโปรยรอง (Hero Subtitle)' : 'คำโปรยรอง (Subtitle)'}
                     </label>
                     <input
                       type="text"
-                      placeholder="เช่น สัมผัสรสชาติไวน์ชั้นเลิศระดับพรีเมียม"
+                      placeholder={modalMode === 'hero' ? 'เช่น ไวน์นำเข้าคุณภาพเยี่ยมจากทั่วโลก จัดส่งถึงบ้านคุณภายใน 24 ชั่วโมง' : 'เช่น สัมผัสรสชาติไวน์ชั้นเลิศระดับพรีเมียม'}
                       value={subtitle}
                       onChange={e => setSubtitle(e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-xs sm:text-sm text-white focus:border-rose-500 focus:outline-none"
@@ -1211,25 +1225,86 @@ export default function AdminPromotionsPage() {
                   </div>
                 </div>
 
-                {/* Badge */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                    ป้ายกำกับ (Badge)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="เช่น FEATURED, NEW MEMBER หรือ ยินดีต้อนรับสู่ The Bottle Club"
-                    value={badge}
-                    onChange={e => setBadge(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-xs sm:text-sm text-white focus:border-rose-500 focus:outline-none"
-                  />
-                </div>
+                {/* For Standard Promotion Card: Description, Badge, Discount Tag, Valid Until */}
+                {modalMode === 'card' ? (
+                  <>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                        รายละเอียดโปรโมชั่น (Description) *
+                      </label>
+                      <textarea
+                        rows={3}
+                        placeholder="ระบุเงื่อนไข สิทธิพิเศษ และรายละเอียดโปรโมชั่น..."
+                        value={description}
+                        onChange={e => setDescription(e.target.value)}
+                        required
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-xs sm:text-sm text-white focus:border-rose-500 focus:outline-none resize-none"
+                      />
+                    </div>
+
+                    {/* Badges, Discounts & Validity */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                          ป้ายกำกับ (Badge)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="เช่น FEATURED, NEW MEMBER"
+                          value={badge}
+                          onChange={e => setBadge(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                          แท็กส่วนลด (Discount Tag)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="เช่น UP TO 30% OFF, ลด 500฿"
+                          value={discountTag}
+                          onChange={e => setDiscountTag(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                          ระยะเวลา (Valid Until)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="เช่น ถึงสิ้นเดือนนี้, สิทธิ์จำกัด"
+                          value={validUntil}
+                          onChange={e => setValidUntil(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  /* For Hero Banner: Simple Welcome Badge only */
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                      ป้ายกำกับด้านบน (Welcome Badge)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="เช่น ยินดีต้อนรับสู่ THE BOTTLE CLUB หรือ SPECIAL SELECTION"
+                      value={badge}
+                      onChange={e => setBadge(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-xs sm:text-sm text-white focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+                )}
 
                 {/* Links & CTA */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                   <div>
                     <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                      {isFeatured ? 'ลิงก์ปุ่มหลัก (Primary Link)' : 'ลิงก์ปลายทาง (Link URL)'}
+                      {modalMode === 'hero' ? 'ลิงก์ปุ่มหลัก (Primary Link)' : 'ลิงก์ปลายทาง (Link URL)'}
                     </label>
                     <input
                       type="text"
@@ -1242,11 +1317,11 @@ export default function AdminPromotionsPage() {
 
                   <div>
                     <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                      {isFeatured ? 'ข้อความปุ่มหลัก (Primary CTA)' : 'ข้อความบนปุ่ม (CTA Text)'}
+                      {modalMode === 'hero' ? 'ข้อความปุ่มหลัก (Primary CTA)' : 'ข้อความบนปุ่ม (CTA Text)'}
                     </label>
                     <input
                       type="text"
-                      placeholder={isFeatured ? 'เช่น ดูไวน์ทั้งหมด' : 'เช่น ดูสินค้าโปรโมชั่น'}
+                      placeholder={modalMode === 'hero' ? 'เช่น ดูไวน์ทั้งหมด' : 'เช่น ดูสินค้าโปรโมชั่น'}
                       value={ctaText}
                       onChange={e => setCtaText(e.target.value)}
                       className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs text-white focus:border-rose-500 focus:outline-none"
@@ -1267,24 +1342,25 @@ export default function AdminPromotionsPage() {
                 </div>
 
                 {/* ── Display Style Switches ── */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-black/40 border border-white/10">
-                  {/* Featured Banner Switch */}
-                  <label className="flex items-center justify-between cursor-pointer p-3 rounded-xl bg-slate-800/30 hover:bg-slate-800/50 border border-white/5 transition">
-                    <div>
-                      <span className="text-xs font-bold text-white block">
-                        แบนเนอร์หลักหน้าแรก (Hero Banner)
-                      </span>
-                      <span className="text-[11px] text-slate-400 block mt-0.5">
-                        {isFeatured ? 'แสดงด้านบนสุดขนาดใหญ่เต็มหน้าจอ (Hero Section)' : 'แสดงเป็นการ์ดย่อย (Grid Card ข่าวสาร/โปรโมชั่น)'}
-                      </span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={isFeatured}
-                      onChange={e => setIsFeatured(e.target.checked)}
-                      className="w-5 h-5 accent-rose-500 rounded cursor-pointer"
-                    />
-                  </label>
+                <div className={`grid grid-cols-1 ${modalMode === 'card' ? 'sm:grid-cols-2' : ''} gap-4 p-4 rounded-2xl bg-black/40 border border-white/10`}>
+                  {modalMode === 'card' && (
+                    <label className="flex items-center justify-between cursor-pointer p-3 rounded-xl bg-slate-800/30 hover:bg-slate-800/50 border border-white/5 transition">
+                      <div>
+                        <span className="text-xs font-bold text-white block">
+                          แบนเนอร์หลักหน้าแรก (Hero Banner)
+                        </span>
+                        <span className="text-[11px] text-slate-400 block mt-0.5">
+                          {isFeatured ? 'แสดงด้านบนสุดขนาดใหญ่เต็มหน้าจอ (Hero Section)' : 'แสดงเป็นการ์ดย่อย (Grid Card ข่าวสาร/โปรโมชั่น)'}
+                        </span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={isFeatured}
+                        onChange={e => setIsFeatured(e.target.checked)}
+                        className="w-5 h-5 accent-rose-500 rounded cursor-pointer"
+                      />
+                    </label>
+                  )}
 
                   {/* Active Switch */}
                   <label className="flex items-center justify-between cursor-pointer p-3 rounded-xl bg-slate-800/30 hover:bg-slate-800/50 border border-white/5 transition">
@@ -1330,14 +1406,16 @@ export default function AdminPromotionsPage() {
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/70 to-stone-950/30" />
 
-                        {/* Floating right image mockup */}
-                        <div className="hidden sm:block absolute bottom-3 right-4 w-32 h-44 pointer-events-none">
-                          <img
-                            src={heroImageUrl || (images.length > 1 ? images[1] : '/images/wine_hero.png')}
-                            alt=""
-                            className="w-full h-full object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.85)]"
-                          />
-                        </div>
+                        {/* Floating right image mockup (only if heroImageUrl is specified) */}
+                        {heroImageUrl && (
+                          <div className="hidden sm:block absolute bottom-3 right-4 w-32 h-44 pointer-events-none">
+                            <img
+                              src={heroImageUrl}
+                              alt=""
+                              className="w-full h-full object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.85)]"
+                            />
+                          </div>
+                        )}
 
                         {/* Content */}
                         <div className="relative z-10 max-w-lg space-y-3">
