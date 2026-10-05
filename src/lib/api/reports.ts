@@ -12,6 +12,16 @@ export interface DailySummaryParams {
   branch_id?: number
 }
 
+export interface EcommerceDashboardResponse {
+  sales_today: number
+  sales_this_month: number
+  pending_orders_count: number
+  pending_slips_count: number
+  total_members: number
+  recent_orders: any[]
+  top_selling_wines: any[]
+}
+
 export const reportsApi = {
   getSales: (params: SalesReportParams, token?: string) => {
     const q = new URLSearchParams()
@@ -27,4 +37,7 @@ export const reportsApi = {
     if (params.branch_id != null) q.set('branch_id', String(params.branch_id))
     return apiRequest<DailySalesSummary>(`/reports/daily-summary?${q}`, { token })
   },
+
+  getEcommerceDashboard: (token?: string) =>
+    apiRequest<EcommerceDashboardResponse>('/reports/ecommerce/dashboard', { token }),
 }

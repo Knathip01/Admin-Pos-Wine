@@ -31,4 +31,16 @@ export const customersApi = {
 
   delete: (id: number, token?: string) =>
     apiRequest<void>(`/customers/${id}`, { method: 'DELETE', token }),
+
+  getAddresses: (customerId: number, token?: string) =>
+    apiRequest<any[]>(`/customer-addresses/customer/${customerId}`, { token }),
+
+  createAddress: (data: any, token?: string) =>
+    apiRequest<any>('/customer-addresses/', { method: 'POST', body: data, token }),
+
+  updateAddress: (customerId: number, addressId: number, data: any, token?: string) =>
+    apiRequest<any>(`/customer-addresses/customer/${customerId}/${addressId}`, { method: 'PUT', body: data, token }),
+
+  deleteAddress: (customerId: number, addressId: number, token?: string) =>
+    apiRequest<void>(`/customer-addresses/customer/${customerId}/${addressId}`, { method: 'DELETE', token }),
 }

@@ -23,4 +23,10 @@ export const ordersApi = {
     apiRequest<OrderResponse>(`/orders/${id}/status`, { method: 'PUT', body: data, token }),
   complete: (id: number, token?: string) =>
     apiRequest<OrderResponse>(`/orders/${id}/complete`, { method: 'PUT', token }),
+  updateTracking: (id: number, data: { tracking_number: string; fulfillment_status?: string }, token?: string) =>
+    apiRequest<OrderResponse>(`/orders/${id}/tracking`, { method: 'PUT', body: data, token }),
+  track: (trackingOrRef: string) =>
+    apiRequest<any>(`/orders/track/${encodeURIComponent(trackingOrRef)}`),
+  checkout: (id: number, data?: any, token?: string) =>
+    apiRequest<any>(`/orders/${id}/checkout`, { method: 'POST', body: data || {}, token }),
 }

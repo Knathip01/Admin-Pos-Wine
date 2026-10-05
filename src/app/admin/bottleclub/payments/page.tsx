@@ -466,7 +466,19 @@ export default function AdminPaymentsPage() {
   const handleApprove = async (orderId: number, note: string) => {
     const token = await ensureApiAuth();
     if (token) {
-      await ordersApi.updateStatus(orderId, { status: 'confirmed', notes: note }, token);
+      try {
+        // Try approving via slip-verify transaction API first (auto stock deduct + loyalty award)
+        const slips = await slipVerifyApi.listByOrder(orderId, token).catch(() => []);
+        const targetSlip = Array.isArray(slips) ? (slips.find((s: any) => s.status === 'pending') || slips[0]) : null;
+        if (targetSlip && typeof targetSlip.id === 'number') {
+          await slipVerifyApi.approve(targetSlip.id, note, token);
+        } else {
+          await ordersApi.updateStatus(orderId, { status: 'confirmed', notes: note }, token);
+        }
+      } catch (err) {
+        console.warn('Fallback to order status update:', err);
+        await ordersApi.updateStatus(orderId, { status: 'confirmed', notes: note }, token);
+      }
     }
     setSelectedOrder(null);
     await fetchOrders();
@@ -476,7 +488,18 @@ export default function AdminPaymentsPage() {
   const handleReject = async (orderId: number, note: string) => {
     const token = await ensureApiAuth();
     if (token) {
-      await ordersApi.updateStatus(orderId, { status: 'cancelled', notes: note }, token);
+      try {
+        const slips = await slipVerifyApi.listByOrder(orderId, token).catch(() => []);
+        const targetSlip = Array.isArray(slips) ? (slips.find((s: any) => s.status === 'pending') || slips[0]) : null;
+        if (targetSlip && typeof targetSlip.id === 'number') {
+          await slipVerifyApi.reject(targetSlip.id, note, token);
+        } else {
+          await ordersApi.updateStatus(orderId, { status: 'cancelled', notes: note }, token);
+        }
+      } catch (err) {
+        console.warn('Fallback to order status update:', err);
+        await ordersApi.updateStatus(orderId, { status: 'cancelled', notes: note }, token);
+      }
     }
     setSelectedOrder(null);
     await fetchOrders();

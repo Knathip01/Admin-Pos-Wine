@@ -31,4 +31,25 @@ export const slipVerifyApi = {
 
   listByOrder: (orderId: number, token?: string) =>
     apiRequest<SlipVerificationResult[]>(`/slip-verify/order/${orderId}`, { token }),
+
+  list: (params: { status?: string; limit?: number } = {}, token?: string) => {
+    const q = new URLSearchParams()
+    if (params.status) q.set('status', params.status)
+    if (params.limit) q.set('limit', String(params.limit))
+    return apiRequest<{ items: SlipVerificationResult[]; total: number }>(`/slip-verify/list?${q}`, { token })
+  },
+
+  approve: (verificationId: number, note?: string, token?: string) =>
+    apiRequest<SlipVerificationResult>(`/slip-verify/${verificationId}/approve`, {
+      method: 'POST',
+      body: note ? { note } : {},
+      token,
+    }),
+
+  reject: (verificationId: number, note?: string, token?: string) =>
+    apiRequest<SlipVerificationResult>(`/slip-verify/${verificationId}/reject`, {
+      method: 'POST',
+      body: note ? { note } : {},
+      token,
+    }),
 }

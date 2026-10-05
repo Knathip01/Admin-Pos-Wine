@@ -141,11 +141,12 @@ export default function ProjectbottleClub1Page() {
       const token = accessToken || await ensureApiAuth();
       if (token) {
         const todayStr = new Date().toISOString().split('T')[0];
-        const [ordersRes, lowStockRes, custRes, reportsRes] = await Promise.allSettled([
+        const [ordersRes, lowStockRes, custRes, reportsRes, ecomDashRes] = await Promise.allSettled([
           ordersApi.list({ page: 1, per_page: 20 }, token),
           inventoryApi.getLowStock(10, token),
           customersApi.list({ page: 1, per_page: 50 }, token),
           reportsApi.getSales({ date_from: todayStr, date_to: todayStr }, token),
+          reportsApi.getEcommerceDashboard(token),
         ]);
 
         const rawOrders = ordersRes.status === 'fulfilled'
@@ -158,15 +159,18 @@ export default function ProjectbottleClub1Page() {
           ? (Array.isArray(custRes.value) ? custRes.value : (custRes.value?.customers || []))
           : [];
         const salesReport = reportsRes.status === 'fulfilled' ? reportsRes.value : null;
+        const ecomDash = ecomDashRes.status === 'fulfilled' ? ecomDashRes.value : null;
 
-        const totalRev = rawOrders.reduce((acc: number, o: any) => acc + Number(o.grand_total ?? o.total_amount ?? 0), 0);
-        const pendingCount = rawOrders.filter((o: any) => o.status === 'pending').length;
+        const calculatedRev = rawOrders.reduce((acc: number, o: any) => acc + Number(o.grand_total ?? o.total_amount ?? 0), 0);
+        const totalRev = ecomDash?.sales_today != null ? Number(ecomDash.sales_today) : calculatedRev;
+        const pendingCount = ecomDash?.pending_orders_count != null ? ecomDash.pending_orders_count : rawOrders.filter((o: any) => o.status === 'pending').length;
+        const memberCount = ecomDash?.total_members != null ? ecomDash.total_members : rawCusts.length;
 
         setData({
           metrics: {
             todayRevenue: totalRev.toLocaleString('th-TH', { minimumFractionDigits: 2 }),
             pendingOrders: pendingCount,
-            newMembers: rawCusts.length,
+            newMembers: memberCount,
             lowStockAlerts: lowStocks.length,
           },
           lowStockProducts: lowStocks.map((ls: any, idx: number) => ({
