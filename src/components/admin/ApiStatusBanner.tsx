@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { useApiAuth, ensureApiAuth, DEFAULT_API_CREDENTIALS } from '@/lib/store/api-auth'
+import { useApiAuth, ensureApiAuth, isTokenExpired, DEFAULT_API_CREDENTIALS } from '@/lib/store/api-auth'
 import { checkHealth } from '@/lib/api/client'
 import { authApi } from '@/lib/api/auth'
 import { Wifi, WifiOff, RefreshCw, Activity, ShieldCheck } from 'lucide-react'
@@ -23,7 +23,7 @@ export function ApiStatusBanner() {
 
   // 2. Auto-authenticate seamlessly in background
   useEffect(() => {
-    if (!accessToken) {
+    if (!accessToken || isTokenExpired(accessToken)) {
       ensureApiAuth().then((token) => {
         if (token) setHealth('online')
       })

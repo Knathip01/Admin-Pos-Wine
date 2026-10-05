@@ -61,25 +61,26 @@ export async function apiRequest<T>(
     cacheTtlMs = DEFAULT_CACHE_TTL_MS,
     _retry = false
   } = opts
-  let { token, branchId = 1 } = opts
+  let { token, branchId } = opts
 
   const isGet = method.toUpperCase() === 'GET'
 
-  if (!token && !path.startsWith('/auth/login')) {
+  if (!path.startsWith('/auth/login')) {
     try {
       const { useApiAuth, ensureApiAuth, isTokenExpired } = await import('@/lib/store/api-auth')
-      const currentToken = useApiAuth.getState().accessToken
-      if (currentToken && !isTokenExpired(currentToken)) {
-        token = currentToken
-      } else {
+      if (!token || isTokenExpired(token)) {
         token = (await ensureApiAuth()) ?? undefined
       }
       if (branchId == null) {
-        branchId = useApiAuth.getState().currentBranchId ?? 1
+        branchId = (typeof window !== 'undefined' ? useApiAuth.getState().currentBranchId : null) ?? 1
       }
     } catch {
       // Fallback
     }
+  }
+
+  if (branchId == null) {
+    branchId = 1
   }
 
   const ROOT_URL = BASE_URL.replace(/\/api\/v1\/?$/, '')
@@ -114,18 +115,40 @@ export async function apiRequest<T>(
   }
 
   const performFetch = async (): Promise<T> => {
-    const headers: Record<string, string> = {}
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+      'X-Branch-Id': String(branchId || 1),
+    }
 
     if (token) headers['Authorization'] = `Bearer ${token}`
-    if (branchId != null) headers['X-Branch-Id'] = String(branchId)
     if (!isFormData && body !== undefined) headers['Content-Type'] = 'application/json'
 
-    const res = await fetch(fullUrl, {
-      method,
-      headers,
-      body: isFormData ? (body as FormData) : body !== undefined ? JSON.stringify(body) : undefined,
-      signal,
-    })
+    // Add safe timeout: 10s for GET, 15s for mutations
+    const timeoutMs = isGet ? 10_000 : 15_000
+    const timeoutController = new AbortController()
+    const timerId = setTimeout(() => {
+      timeoutController.abort(new Error(`API request timed out after ${timeoutMs}ms: ${path}`))
+    }, timeoutMs)
+
+    if (signal) {
+      if (signal.aborted) {
+        timeoutController.abort(signal.reason)
+      } else {
+        signal.addEventListener('abort', () => timeoutController.abort(signal.reason), { once: true })
+      }
+    }
+
+    let res: Response
+    try {
+      res = await fetch(fullUrl, {
+        method,
+        headers,
+        body: isFormData ? (body as FormData) : body !== undefined ? JSON.stringify(body) : undefined,
+        signal: timeoutController.signal,
+      })
+    } finally {
+      clearTimeout(timerId)
+    }
 
     // Auto-retry on 401 Unauthorized by re-authenticating with superadmin credentials
     if (res.status === 401 && !_retry && !path.startsWith('/auth/login')) {
@@ -133,7 +156,7 @@ export async function apiRequest<T>(
         const { ensureApiAuth } = await import('@/lib/store/api-auth')
         const freshToken = await ensureApiAuth(true)
         if (freshToken) {
-          return apiRequest<T>(path, { ...opts, token: freshToken, _retry: true, skipCache: true })
+          return apiRequest<T>(path, { ...opts, token: freshToken, branchId: branchId || 1, _retry: true, skipCache: true })
         }
       } catch {
         // Fall through to error
@@ -198,10 +221,16 @@ export async function apiRequest<T>(
 }
 
 export async function checkHealth(): Promise<Record<string, string>> {
-  const res = await fetch(HEALTH_URL, { cache: 'no-store' })
-  const contentType = res.headers.get('content-type') || ''
-  if (!res.ok || !contentType.includes('application/json')) {
-    throw new Error(`Health check failed with HTTP ${res.status}`)
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 4000)
+  try {
+    const res = await fetch(HEALTH_URL, { cache: 'no-store', signal: controller.signal })
+    const contentType = res.headers.get('content-type') || ''
+    if (!res.ok || !contentType.includes('application/json')) {
+      throw new Error(`Health check failed with HTTP ${res.status}`)
+    }
+    return res.json()
+  } finally {
+    clearTimeout(timer)
   }
-  return res.json()
 }

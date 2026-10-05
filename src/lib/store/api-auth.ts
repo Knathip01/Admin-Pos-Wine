@@ -95,7 +95,7 @@ export async function ensureApiAuth(forceRefresh = false): Promise<string | null
     return inFlightAuthPromise
   }
 
-  inFlightAuthPromise = (async () => {
+  const authTask = (async () => {
     try {
       // If refresh token exists and not force fresh login, try refresh first (faster than full login)
       const currentRefresh = state.refreshToken
@@ -134,10 +134,17 @@ export async function ensureApiAuth(forceRefresh = false): Promise<string | null
       }
 
       return null
-    } finally {
-      inFlightAuthPromise = null
+    } catch {
+      return null
     }
   })()
+
+  inFlightAuthPromise = Promise.race([
+    authTask,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
+  ]).finally(() => {
+    inFlightAuthPromise = null
+  })
 
   return inFlightAuthPromise
 }

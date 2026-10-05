@@ -123,7 +123,7 @@ function MobileOrderCard({ order, idx }: { order: DashboardData['recentOrders'][
 }
 
 export default function ProjectbottleClub1Page() {
-  const { accessToken } = useApiAuth();
+  const accessToken = useApiAuth((s) => s.accessToken);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -137,68 +137,72 @@ export default function ProjectbottleClub1Page() {
         clearApiCache();
       } catch {}
     }
+
+    // Safety timeout: ensure loading skeleton never stays stuck longer than 3.5 seconds
+    const safetyTimer = setTimeout(() => {
+      setLoading(false);
+    }, 3500);
+
     try {
-      const token = accessToken || await ensureApiAuth();
-      if (token) {
-        const todayStr = new Date().toISOString().split('T')[0];
-        const [ordersRes, lowStockRes, custRes, reportsRes, ecomDashRes] = await Promise.allSettled([
-          ordersApi.list({ page: 1, per_page: 20 }, token),
-          inventoryApi.getLowStock(10, token),
-          customersApi.list({ page: 1, per_page: 50 }, token),
-          reportsApi.getSales({ date_from: todayStr, date_to: todayStr }, token),
-          reportsApi.getEcommerceDashboard(token),
-        ]);
+      const token = await ensureApiAuth();
+      const todayStr = new Date().toISOString().split('T')[0];
+      const [ordersRes, lowStockRes, custRes, reportsRes, ecomDashRes] = await Promise.allSettled([
+        ordersApi.list({ page: 1, per_page: 20 }, token || undefined),
+        inventoryApi.getLowStock(10, token || undefined),
+        customersApi.list({ page: 1, per_page: 50 }, token || undefined),
+        reportsApi.getSales({ date_from: todayStr, date_to: todayStr }, token || undefined),
+        reportsApi.getEcommerceDashboard(token || undefined),
+      ]);
 
-        const rawOrders = ordersRes.status === 'fulfilled'
-          ? (Array.isArray(ordersRes.value) ? ordersRes.value : (ordersRes.value?.orders || []))
-          : [];
-        const lowStocks = lowStockRes.status === 'fulfilled'
-          ? (Array.isArray(lowStockRes.value) ? lowStockRes.value : [])
-          : [];
-        const rawCusts = custRes.status === 'fulfilled'
-          ? (Array.isArray(custRes.value) ? custRes.value : (custRes.value?.customers || []))
-          : [];
-        const salesReport = reportsRes.status === 'fulfilled' ? reportsRes.value : null;
-        const ecomDash = ecomDashRes.status === 'fulfilled' ? ecomDashRes.value : null;
+      const rawOrders = ordersRes.status === 'fulfilled'
+        ? (Array.isArray(ordersRes.value) ? ordersRes.value : (ordersRes.value?.orders || []))
+        : [];
+      const lowStocks = lowStockRes.status === 'fulfilled'
+        ? (Array.isArray(lowStockRes.value) ? lowStockRes.value : [])
+        : [];
+      const rawCusts = custRes.status === 'fulfilled'
+        ? (Array.isArray(custRes.value) ? custRes.value : (custRes.value?.customers || []))
+        : [];
+      const salesReport = reportsRes.status === 'fulfilled' ? reportsRes.value : null;
+      const ecomDash = ecomDashRes.status === 'fulfilled' ? ecomDashRes.value : null;
 
-        const calculatedRev = rawOrders.reduce((acc: number, o: any) => acc + Number(o.grand_total ?? o.total_amount ?? 0), 0);
-        const totalRev = ecomDash?.sales_today != null ? Number(ecomDash.sales_today) : calculatedRev;
-        const pendingCount = ecomDash?.pending_orders_count != null ? ecomDash.pending_orders_count : rawOrders.filter((o: any) => o.status === 'pending').length;
-        const memberCount = ecomDash?.total_members != null ? ecomDash.total_members : rawCusts.length;
+      const calculatedRev = rawOrders.reduce((acc: number, o: any) => acc + Number(o.grand_total ?? o.total_amount ?? 0), 0);
+      const totalRev = ecomDash?.sales_today != null ? Number(ecomDash.sales_today) : calculatedRev;
+      const pendingCount = ecomDash?.pending_orders_count != null ? ecomDash.pending_orders_count : rawOrders.filter((o: any) => o.status === 'pending').length;
+      const memberCount = ecomDash?.total_members != null ? ecomDash.total_members : rawCusts.length;
 
-        setData({
-          metrics: {
-            todayRevenue: totalRev.toLocaleString('th-TH', { minimumFractionDigits: 2 }),
-            pendingOrders: pendingCount,
-            newMembers: memberCount,
-            lowStockAlerts: lowStocks.length,
-          },
-          lowStockProducts: lowStocks.map((ls: any, idx: number) => ({
-            id: ls.product_id ?? idx,
-            name: ls.product_name ?? `สินค้า #${ls.product_id}`,
-            stock: ls.quantity ?? 0,
-            price: 0,
-          })),
-          salesData: salesReport?.sales_by_hour?.length
-            ? salesReport.sales_by_hour.map((sh: any) => ({ date: sh.hour, amount: sh.amount }))
-            : [{ date: 'วันนี้', amount: totalRev }],
-          recentOrders: rawOrders.slice(0, 5).map((o: any) => ({
-            id: o.id,
-            customer: o.customer_name ?? o.order_number ?? `Order #${o.id}`,
-            total: `฿${Number(o.grand_total ?? o.total_amount ?? 0).toLocaleString('th-TH')}`,
-            status: o.status,
-            date: new Date(o.created_at).toLocaleDateString('th-TH'),
-            paymentMethod: 'โอนเงิน',
-            type: 'online',
-          })),
-        });
-        setLastUpdated(new Date());
-      } else {
-        setData(emptyData);
-      }
-    } catch {
-      setData(emptyData);
+      setData({
+        metrics: {
+          todayRevenue: totalRev.toLocaleString('th-TH', { minimumFractionDigits: 2 }),
+          pendingOrders: pendingCount,
+          newMembers: memberCount,
+          lowStockAlerts: lowStocks.length,
+        },
+        lowStockProducts: lowStocks.map((ls: any, idx: number) => ({
+          id: ls.product_id ?? idx,
+          name: ls.product_name ?? `สินค้า #${ls.product_id}`,
+          stock: ls.quantity ?? 0,
+          price: 0,
+        })),
+        salesData: salesReport?.sales_by_hour?.length
+          ? salesReport.sales_by_hour.map((sh: any) => ({ date: sh.hour, amount: sh.amount }))
+          : [{ date: 'วันนี้', amount: totalRev }],
+        recentOrders: rawOrders.slice(0, 5).map((o: any) => ({
+          id: o.id,
+          customer: o.customer_name ?? o.order_number ?? `Order #${o.id}`,
+          total: `฿${Number(o.grand_total ?? o.total_amount ?? 0).toLocaleString('th-TH')}`,
+          status: o.status,
+          date: o.created_at ? new Date(o.created_at).toLocaleDateString('th-TH') : '-',
+          paymentMethod: 'โอนเงิน',
+          type: 'online',
+        })),
+      });
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.warn('Dashboard data fetch error:', err);
+      setData((prev) => prev ?? emptyData);
     } finally {
+      clearTimeout(safetyTimer);
       setLoading(false);
       setRefreshing(false);
     }
@@ -208,7 +212,7 @@ export default function ProjectbottleClub1Page() {
     loadData();
     const interval = setInterval(() => loadData(false), 30000);
     return () => clearInterval(interval);
-  }, [accessToken]);
+  }, []);
 
   if (loading && !data) {
     return <LoadingSkeleton />;
