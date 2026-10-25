@@ -5,7 +5,7 @@ import {
   CreditCard, CheckCircle2, XCircle, Clock, AlertCircle,
   Eye, Search, RotateCcw, Loader2, ImageOff, X, ZoomIn,
   ZoomOut, RotateCw, Check, AlertTriangle, Filter,
-  Receipt, ChevronDown, ChevronUp, Sparkles, ShieldCheck, ShieldAlert
+  Receipt, ChevronDown, ChevronUp, Sparkles, ShieldCheck, ShieldAlert, ExternalLink
 } from 'lucide-react';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import OrderStatusBadge from '@/components/admin/OrderStatusBadge';
@@ -41,6 +41,7 @@ const METHOD_LABEL: Record<string, string> = {
   line_pay:    'LINE Pay',
   shopee_pay:  'ShopeePay',
   true_wallet: 'TrueMoney Wallet',
+  credit_card: 'บัตรเครดิต',
 };
 
 const METHOD_COLOR: Record<string, string> = {
@@ -51,6 +52,7 @@ const METHOD_COLOR: Record<string, string> = {
   line_pay:    'bg-[rgba(52,211,153,0.12)] text-[#34d399] border-[rgba(52,211,153,0.30)]',
   shopee_pay:  'bg-[rgba(251,146,60,0.12)] text-[#fb923c] border-[rgba(251,146,60,0.30)]',
   true_wallet: 'bg-[rgba(244,63,94,0.12)] text-[#fb7185] border-[rgba(244,63,94,0.30)]',
+  credit_card: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
 };
 
 // ── Slip Viewer Modal ──────────────────────────────────────────────────────────
@@ -125,20 +127,32 @@ function SlipModal({
               <Icon className="w-4 h-4 text-[#22e5ff]" />
             </button>
           ))}
+          {order.hasSlip && order.paymentSlipUrl && (
+            <a
+              href={order.paymentSlipUrl}
+              target="_blank"
+              rel="noreferrer"
+              title="เปิดภาพขนาดเต็มในแท็บใหม่"
+              className="p-2.5 admin-btn-secondary rounded-xl flex items-center gap-1.5 text-xs text-[#22e5ff] font-bold"
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span className="hidden sm:inline">ดูภาพเต็ม</span>
+            </a>
+          )}
         </div>
         <button onClick={onClose}
           className="absolute top-5 right-5 z-20 p-2.5 admin-btn-secondary text-[#3d4d6a] hover:text-white rounded-xl cursor-pointer">
           <X className="w-5 h-5" />
         </button>
 
-        <div className="overflow-auto w-full h-full flex items-center justify-center">
-          {order.hasSlip && !imgError ? (
+        <div className="overflow-auto w-full h-full flex items-center justify-center p-4">
+          {order.hasSlip && order.paymentSlipUrl && !imgError ? (
             <div style={{ transform: `scale(${scale}) rotate(${rotate}deg)`, transition: 'transform 0.2s ease' }}>
               <img
                 src={order.paymentSlipUrl}
                 alt={`Slip #${order.id}`}
                 onError={() => setImgError(true)}
-                className="max-h-[45vh] lg:max-h-[80vh] object-contain rounded-2xl shadow-2xl border border-white/10"
+                className="max-h-[50vh] lg:max-h-[82vh] max-w-full object-contain rounded-2xl shadow-2xl border border-white/10"
                 draggable={false}
               />
             </div>
@@ -146,7 +160,7 @@ function SlipModal({
             <div className="text-center space-y-3">
               <ImageOff className="w-14 h-14 text-[#3d4d6a] mx-auto" />
               <p className="text-[#94a3c4] font-bold text-sm">ยังไม่มีสลิปแนบมา</p>
-              <p className="text-[#3d4d6a] text-xs">ลูกค้าอาจยังไม่ได้อัปโหลด หรือลิงก์สลิปไม่ถูกต้อง</p>
+              <p className="text-[#3d4d6a] text-xs">ลูกค้าอาจยังไม่ได้อัปโหลด หรือกำลังรอการส่งรูปภาพจาก Backend API</p>
             </div>
           )}
         </div>
@@ -203,8 +217,10 @@ function SlipModal({
                 }`}>
                   {ocrResult.is_duplicate ? '⚠️ สลิปซ้ำ' : ocrResult.is_valid !== false ? '✓ สลิปถูกต้อง' : '✕ ไม่ถูกต้อง'}
                 </span>
+              ) : order.hasSlip ? (
+                <span className="text-[10px] text-amber-400 font-semibold bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">รอตรวจเช็ค</span>
               ) : (
-                <span className="text-[10px] text-[#5a6e90]">พร้อมตรวจเช็ค</span>
+                <span className="text-[10px] text-[#5a6e90]">ไม่มีสลิป</span>
               )}
             </div>
 
@@ -296,28 +312,42 @@ function OrderCard({
   onQuickApprove: (id: number) => void;
   onQuickReject: (id: number) => void;
 }) {
-  const needsReview = order.status === 'pending' && order.hasSlip;
-  const isPending   = order.status === 'pending' && !order.hasSlip;
-  const isRejected  = order.status === 'payment_rejected';
-  const isConfirmed = order.status === 'confirmed';
+  const needsReview = (order.status === 'pending' || order.status === 'unfulfilled') && order.hasSlip;
+  const isPending   = (order.status === 'pending' || order.status === 'unfulfilled') && !order.hasSlip;
+  const isRejected  = order.status === 'payment_rejected' || order.status === 'cancelled';
+  const isConfirmed = order.status === 'confirmed' || order.status === 'paid' || order.status === 'completed';
 
   return (
     <div className={`admin-panel rounded-2xl transition-all ${needsReview ? 'border-[rgba(251,191,36,0.40)] shadow-[0_0_20px_rgba(251,191,36,0.10)]' : ''}`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         {/* Left info */}
         <div className="flex items-center gap-4 min-w-0">
-          {/* Slip indicator icon */}
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-            needsReview ? 'bg-[rgba(251,191,36,0.12)] border border-[rgba(251,191,36,0.30)]'
-            : isPending  ? 'bg-white/5 border border-white/10'
-            : isRejected ? 'bg-[rgba(244,63,94,0.12)] border border-[rgba(244,63,94,0.30)]'
-            : 'bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.30)]'
-          }`}>
-            {needsReview ? <Receipt className="w-5 h-5 text-[#fbbf24]" /> :
-             isPending   ? <Clock    className="w-5 h-5 text-[#5a6e90]" /> :
-             isRejected  ? <XCircle  className="w-5 h-5 text-[#fb7185]"  /> :
-             <CheckCircle2 className="w-5 h-5 text-[#34d399]" />}
-          </div>
+          {order.hasSlip && order.paymentSlipUrl ? (
+            <div
+              onClick={() => onViewSlip(order)}
+              className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-white/20 cursor-pointer hover:border-[#22e5ff] transition group relative bg-black/40"
+              title="คลิกดูสลิป"
+            >
+              <img
+                src={order.paymentSlipUrl}
+                alt={`Slip #${order.id}`}
+                className="w-full h-full object-cover group-hover:scale-110 transition duration-200"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition" />
+            </div>
+          ) : (
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+              needsReview ? 'bg-[rgba(251,191,36,0.12)] border border-[rgba(251,191,36,0.30)]'
+              : isPending  ? 'bg-white/5 border border-white/10'
+              : isRejected ? 'bg-[rgba(244,63,94,0.12)] border border-[rgba(244,63,94,0.30)]'
+              : 'bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.30)]'
+            }`}>
+              {needsReview ? <Receipt className="w-5 h-5 text-[#fbbf24]" /> :
+               isPending   ? <Clock    className="w-5 h-5 text-[#5a6e90]" /> :
+               isRejected  ? <XCircle  className="w-5 h-5 text-[#fb7185]"  /> :
+               <CheckCircle2 className="w-5 h-5 text-[#34d399]" />}
+            </div>
+          )}
 
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -325,7 +355,12 @@ function OrderCard({
               <OrderStatusBadge status={order.status} />
               {needsReview && (
                 <span className="text-[10px] font-extrabold bg-[rgba(251,191,36,0.15)] text-[#fbbf24] px-2.5 py-0.5 rounded-full border border-[rgba(251,191,36,0.35)] animate-pulse">
-                  รอตรวจสอบ
+                  รอตรวจสอบ (มีสลิป)
+                </span>
+              )}
+              {isPending && (
+                <span className="text-[10px] font-semibold text-[#5a6e90] bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
+                  รอสลิป
                 </span>
               )}
             </div>
@@ -351,7 +386,6 @@ function OrderCard({
 
           {/* Action buttons */}
           <div className="flex items-center gap-2">
-            {/* View slip */}
             <button
               onClick={() => onViewSlip(order)}
               id={`btn-view-slip-${order.id}`}
@@ -365,7 +399,6 @@ function OrderCard({
               {order.hasSlip ? 'ดูสลิป & AI Check' : 'ดูรายละเอียด'}
             </button>
 
-            {/* Quick approve — only when slip present + pending */}
             {needsReview && (
               <>
                 <button
@@ -412,8 +445,8 @@ export default function AdminPaymentsPage() {
 
   // Summary stats
   const safeOrders      = orders || [];
-  const pendingWithSlip = safeOrders.filter(o => o.status === 'pending' && o.hasSlip).length;
-  const pendingNoSlip   = safeOrders.filter(o => o.status === 'pending' && !o.hasSlip).length;
+  const pendingWithSlip = safeOrders.filter(o => (o.status === 'pending' || o.status === 'unfulfilled') && o.hasSlip).length;
+  const pendingNoSlip   = safeOrders.filter(o => (o.status === 'pending' || o.status === 'unfulfilled') && !o.hasSlip).length;
 
   const fetchOrders = useCallback(async (force = false) => {
     if (orders.length === 0) setLoading(true);
@@ -429,24 +462,68 @@ export default function AdminPaymentsPage() {
       const token = accessToken || await ensureApiAuth();
       if (!token) throw new Error('ไม่สามารถเชื่อมต่อ API ได้');
 
-      const res = await ordersApi.list({ page, per_page: 20 }, token);
+      // Fetch remote orders from Wayneven API
+      const res = await ordersApi.list({ page, per_page: 50 }, token);
       const list = Array.isArray(res) ? res : (res?.orders || []);
 
-      setOrders(list.map((o: any) => ({
-        id: o.id,
-        customerName: o.customer_name ?? o.order_number ?? `Order #${o.id}`,
-        customerEmail: '-',
-        total: Number(o.grand_total ?? o.total_amount ?? 0),
-        subtotal: Number(o.subtotal ?? o.total_amount ?? 0),
-        shippingFee: 0,
-        paymentMethod: 'promptpay',
-        status: o.status,
-        hasSlip: true,
-        paymentSlipUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80',
-        adminNote: o.notes || '',
-        date: new Date(o.created_at).toLocaleDateString('th-TH'),
-        approvedAt: o.completed_at ? new Date(o.completed_at).toLocaleDateString('th-TH') : null,
-      })));
+      // Fetch order slips from shared Supabase settings
+      let slipsMap: Record<string, any> = {};
+      try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://yywymyxautnskmuvupwv.supabase.co';
+        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_L0zDWoTrfHQHPSvUBntbgA_H-kUMxgR';
+        const slipRes = await fetch(`${supabaseUrl}/rest/v1/settings?key=eq.order_slips&select=*`, {
+          headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+          cache: 'no-store',
+        });
+        if (slipRes.ok) {
+          const rows = await slipRes.json();
+          if (Array.isArray(rows) && rows.length > 0) {
+            const rawVal = rows[0].value;
+            slipsMap = typeof rawVal === 'string' ? JSON.parse(rawVal) : (rawVal || {});
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to load shared order slips:', e);
+      }
+
+      // Map orders with their pure Backend API properties and real slips
+      const mappedOrders: PaymentOrder[] = list.map((o: any) => {
+        const orderIdStr = String(o.id);
+        const slipRecord = slipsMap[orderIdStr];
+        let realSlipUrl = '';
+
+        if (slipRecord?.slip_url) {
+          realSlipUrl = slipRecord.slip_url;
+        } else if (slipRecord?.public_url) {
+          realSlipUrl = slipRecord.public_url;
+        } else if (o.notes && o.notes.includes('SLIP:')) {
+          realSlipUrl = o.notes.split('SLIP:')[1].trim().split(' ')[0];
+        } else if (o.slip_url || o.slip_image_url || o.payment_slip_url) {
+          realSlipUrl = o.slip_url || o.slip_image_url || o.payment_slip_url;
+        }
+
+        const hasSlip = Boolean(realSlipUrl);
+
+        return {
+          id: o.id,
+          customerName: slipRecord?.customer_name ?? o.customer_name ?? o.order_number ?? `Order #${o.id}`,
+          customerEmail: slipRecord?.customer_email ?? '-',
+          total: Number(o.grand_total ?? o.total_amount ?? 0),
+          subtotal: Number(o.subtotal ?? o.total_amount ?? 0),
+          shippingFee: Number(o.shipping_fee ?? 0),
+          paymentMethod: o.notes?.includes('Payment:')
+            ? o.notes.split('Payment:')[1].split(',')[0].trim()
+            : 'promptpay',
+          status: o.status,
+          hasSlip,
+          paymentSlipUrl: realSlipUrl,
+          adminNote: slipRecord?.notes || o.notes || '',
+          date: new Date(o.created_at).toLocaleDateString('th-TH'),
+          approvedAt: o.completed_at ? new Date(o.completed_at).toLocaleDateString('th-TH') : null,
+        };
+      });
+
+      setOrders(mappedOrders);
       setTotal(res.total ?? list.length);
     } catch (err: any) {
       setError(err.message || 'ไม่สามารถดึงข้อมูลการชำระเงินจาก API จริงได้');
@@ -465,44 +542,131 @@ export default function AdminPaymentsPage() {
   // ── Approve handler
   const handleApprove = async (orderId: number, note: string) => {
     const token = await ensureApiAuth();
+
+    // Update order_slips in Supabase
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://yywymyxautnskmuvupwv.supabase.co';
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_L0zDWoTrfHQHPSvUBntbgA_H-kUMxgR';
+      const slipRes = await fetch(`${supabaseUrl}/rest/v1/settings?key=eq.order_slips&select=*`, {
+        headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+        cache: 'no-store',
+      });
+      if (slipRes.ok) {
+        const rows = await slipRes.json();
+        if (Array.isArray(rows) && rows.length > 0) {
+          const rowId = rows[0].id;
+          const currentSlips = typeof rows[0].value === 'string' ? JSON.parse(rows[0].value) : (rows[0].value || {});
+          if (currentSlips[String(orderId)]) {
+            currentSlips[String(orderId)].status = 'approved';
+            currentSlips[String(orderId)].admin_note = note || 'อนุมัติเรียบร้อยแล้ว';
+            currentSlips[String(orderId)].approved_at = new Date().toISOString();
+            await fetch(`${supabaseUrl}/rest/v1/settings?id=eq.${rowId}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                apikey: anonKey,
+                Authorization: `Bearer ${anonKey}`,
+                Prefer: 'return=minimal',
+              },
+              body: JSON.stringify({
+                value: JSON.stringify(currentSlips),
+                updated_at: new Date().toISOString(),
+              }),
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to sync approval to Supabase:', e);
+    }
+
     if (token) {
+      // 1. Always execute checkout on the order so backend marks order as paid & awards points
       try {
-        // Try approving via slip-verify transaction API first (auto stock deduct + loyalty award)
+        const currentOrder = orders.find(o => o.id === orderId);
+        await ordersApi.checkout(orderId, {
+          payments: [{
+            payment_method: currentOrder?.paymentMethod || 'bank_transfer',
+            amount: currentOrder?.total || 1,
+            notes: note || 'ยืนยันการชำระเงินโดยแอดมิน',
+          }]
+        }, token);
+      } catch (chkErr) {
+        console.warn('Orders checkout error on backend:', chkErr);
+      }
+
+      // 2. Also try approving slip verification record if pending
+      try {
         const slips = await slipVerifyApi.listByOrder(orderId, token).catch(() => []);
-        const targetSlip = Array.isArray(slips) ? (slips.find((s: any) => s.status === 'pending') || slips[0]) : null;
+        const targetSlip = Array.isArray(slips) ? slips.find((s: any) => s.status === 'pending') : null;
         if (targetSlip && typeof targetSlip.id === 'number') {
-          await slipVerifyApi.approve(targetSlip.id, note, token);
-        } else {
-          await ordersApi.updateStatus(orderId, { status: 'confirmed', notes: note }, token);
+          await slipVerifyApi.approve(targetSlip.id, note, token).catch(() => {});
         }
       } catch (err) {
-        console.warn('Fallback to order status update:', err);
-        await ordersApi.updateStatus(orderId, { status: 'confirmed', notes: note }, token);
+        console.warn('Approve slip verification error (non-fatal):', err);
       }
     }
+
     setSelectedOrder(null);
-    await fetchOrders();
+    await fetchOrders(true);
   };
 
   // ── Reject handler
   const handleReject = async (orderId: number, note: string) => {
     const token = await ensureApiAuth();
+
+    // Update order_slips in Supabase
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://yywymyxautnskmuvupwv.supabase.co';
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_L0zDWoTrfHQHPSvUBntbgA_H-kUMxgR';
+      const slipRes = await fetch(`${supabaseUrl}/rest/v1/settings?key=eq.order_slips&select=*`, {
+        headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+        cache: 'no-store',
+      });
+      if (slipRes.ok) {
+        const rows = await slipRes.json();
+        if (Array.isArray(rows) && rows.length > 0) {
+          const rowId = rows[0].id;
+          const currentSlips = typeof rows[0].value === 'string' ? JSON.parse(rows[0].value) : (rows[0].value || {});
+          if (currentSlips[String(orderId)]) {
+            currentSlips[String(orderId)].status = 'rejected';
+            currentSlips[String(orderId)].admin_note = note || 'ปฏิเสธการชำระเงิน';
+            currentSlips[String(orderId)].rejected_at = new Date().toISOString();
+            await fetch(`${supabaseUrl}/rest/v1/settings?id=eq.${rowId}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                apikey: anonKey,
+                Authorization: `Bearer ${anonKey}`,
+                Prefer: 'return=minimal',
+              },
+              body: JSON.stringify({
+                value: JSON.stringify(currentSlips),
+                updated_at: new Date().toISOString(),
+              }),
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to sync rejection to Supabase:', e);
+    }
+
     if (token) {
       try {
+        await ordersApi.cancel(orderId, note || 'ปฏิเสธสลิปการชำระเงิน', token).catch(() => {});
         const slips = await slipVerifyApi.listByOrder(orderId, token).catch(() => []);
-        const targetSlip = Array.isArray(slips) ? (slips.find((s: any) => s.status === 'pending') || slips[0]) : null;
+        const targetSlip = Array.isArray(slips) ? slips.find((s: any) => s.status === 'pending') : null;
         if (targetSlip && typeof targetSlip.id === 'number') {
-          await slipVerifyApi.reject(targetSlip.id, note, token);
-        } else {
-          await ordersApi.updateStatus(orderId, { status: 'cancelled', notes: note }, token);
+          await slipVerifyApi.reject(targetSlip.id, note, token).catch(() => {});
         }
       } catch (err) {
-        console.warn('Fallback to order status update:', err);
-        await ordersApi.updateStatus(orderId, { status: 'cancelled', notes: note }, token);
+        console.warn('Reject error / fallback:', err);
       }
     }
+
     setSelectedOrder(null);
-    await fetchOrders();
+    await fetchOrders(true);
   };
 
   // ── Quick actions (no note)
@@ -515,6 +679,15 @@ export default function AdminPaymentsPage() {
     if (!confirm(`ปฏิเสธออเดอร์ #${id}?`)) return;
     try { await handleReject(id, 'ปฏิเสธโดยแอดมิน'); } catch { alert('เกิดข้อผิดพลาด'); }
   };
+
+  // Filter orders according to tab
+  const displayOrders = orders.filter((o) => {
+    if (!statusFilter || statusFilter === 'all') return true;
+    if (statusFilter === 'pending') return o.status === 'pending' || o.status === 'unfulfilled';
+    if (statusFilter === 'confirmed') return o.status === 'confirmed' || o.status === 'paid' || o.status === 'completed';
+    if (statusFilter === 'payment_rejected') return o.status === 'payment_rejected' || o.status === 'cancelled';
+    return o.status === statusFilter;
+  });
 
   return (
     <div className="space-y-5 sm:space-y-6 select-none font-sans animate-in" style={{ padding: '20px', maxWidth: 1500 }}>
@@ -564,8 +737,8 @@ export default function AdminPaymentsPage() {
             urgent: false,
           },
           {
-            label: 'ถูกปฏิเสธ',
-            value: loading ? '—' : orders.filter(o => o.status === 'payment_rejected').length,
+            label: 'ถูกปฏิเสธ / ยกเลิก',
+            value: loading ? '—' : orders.filter(o => o.status === 'payment_rejected' || o.status === 'cancelled').length,
             icon: XCircle,
             color: 'bg-[rgba(244,63,94,0.08)] border-[rgba(244,63,94,0.25)] text-[#fb7185]',
             iconColor: 'text-[#fb7185] bg-[rgba(244,63,94,0.15)]',
@@ -592,17 +765,22 @@ export default function AdminPaymentsPage() {
       {/* ── Filters Bar ────────────────────────────────────────────── */}
       <div className="admin-panel p-4 flex flex-wrap gap-3 items-center justify-between">
         <div className="flex flex-wrap gap-2 items-center">
-          {['all', 'pending', 'confirmed', 'payment_rejected'].map((st) => (
+          {[
+            { id: 'all', label: 'ทั้งหมด' },
+            { id: 'pending', label: 'รอตรวจสอบ' },
+            { id: 'confirmed', label: 'อนุมัติแล้ว' },
+            { id: 'payment_rejected', label: 'ปฏิเสธ / ยกเลิก' }
+          ].map((st) => (
             <button
-              key={st}
-              onClick={() => { setStatusFilter(st === 'all' ? '' : st); setPage(1); }}
+              key={st.id}
+              onClick={() => { setStatusFilter(st.id === 'all' ? '' : st.id); setPage(1); }}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition ${
-                (st === 'all' && !statusFilter) || statusFilter === st
+                (st.id === 'all' && !statusFilter) || statusFilter === st.id
                   ? 'admin-btn-primary'
                   : 'admin-btn-secondary'
               }`}
             >
-              {st === 'all' ? 'ทั้งหมด' : st === 'pending' ? 'รอตรวจสอบ' : st === 'confirmed' ? 'อนุมัติแล้ว' : 'ปฏิเสธแล้ว'}
+              {st.label}
             </button>
           ))}
         </div>
@@ -624,14 +802,14 @@ export default function AdminPaymentsPage() {
             <div key={i} className="h-24 rounded-2xl bg-white/5" />
           ))}
         </div>
-      ) : orders.length === 0 ? (
+      ) : displayOrders.length === 0 ? (
         <div className="admin-panel p-12 text-center space-y-3">
           <Receipt className="w-10 h-10 text-[#3d4d6a] mx-auto" />
           <p className="text-sm font-bold text-[#94a3c4]">ไม่พบรายการชำระเงินตามเงื่อนไขที่เลือก</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {orders.map((ord) => (
+          {displayOrders.map((ord) => (
             <OrderCard
               key={ord.id}
               order={ord}

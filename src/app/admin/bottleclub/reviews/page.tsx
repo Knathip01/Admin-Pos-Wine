@@ -20,7 +20,7 @@ interface ReviewRow {
   rating: number;
   comment: string;
   isApproved: boolean;
-  status: 'approved' | 'pending' | 'rejected';
+  status: 'approved' | 'pending' | 'rejected' | 'hidden';
   createdAt: string;
 }
 
@@ -182,7 +182,7 @@ export default function AdminReviewsPage() {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleModerate = async (id: number, nextStatus: 'approved' | 'rejected') => {
+  const handleModerate = async (id: number, nextStatus: 'approved' | 'rejected' | 'hidden') => {
     // Optimistic UI update
     setReviews(prev => prev.map(r => r.id === id ? {
       ...r,
@@ -205,7 +205,12 @@ export default function AdminReviewsPage() {
         body: JSON.stringify({ id, isApproved: nextStatus === 'approved', status: nextStatus }),
       }).catch(() => {});
 
-      triggerNotification('success', `${nextStatus === 'approved' ? 'อนุมัติ' : 'ปฏิเสธ'}รีวิว #${id} เรียบร้อยแล้ว`);
+      const labelMap = {
+        approved: 'อนุมัติ',
+        rejected: 'ปฏิเสธ',
+        hidden: 'ซ่อน',
+      };
+      triggerNotification('success', `${labelMap[nextStatus]}รีวิว #${id} เรียบร้อยแล้ว`);
       if (selectedReview && selectedReview.id === id) {
         setSelectedReview(prev => prev ? { ...prev, isApproved: nextStatus === 'approved', status: nextStatus } : null);
       }
@@ -216,24 +221,24 @@ export default function AdminReviewsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (confirm(`คุณต้องการลบรีวิว #${id} ใช่หรือไม่?`)) {
+    if (confirm(`คุณต้องการซ่อนรีวิว #${id} จากหน้าร้านใช่หรือไม่?`)) {
       setReviews(prev => prev.filter(r => r.id !== id));
 
       try {
         const token = accessToken || await ensureApiAuth();
         if (token) {
           try {
-            await reviewsApi.delete(id, token);
+            await reviewsApi.moderate(id, { status: 'hidden' }, token);
           } catch {}
         }
 
         await fetch(`/api/admin/reviews?id=${id}`, { method: 'DELETE' }).catch(() => {});
-        triggerNotification('success', `ลบรีวิว #${id} เรียบร้อยแล้ว`);
+        triggerNotification('success', `ซ่อนรีวิว #${id} จากหน้าร้านเรียบร้อยแล้ว`);
         if (selectedReview && selectedReview.id === id) {
           setSelectedReview(null);
         }
       } catch (err: any) {
-        triggerNotification('error', `ลบไม่สำเร็จ: ${err.message}`);
+        triggerNotification('error', `ดำเนินการไม่สำเร็จ: ${err.message}`);
         loadReviews();
       }
     }
@@ -328,6 +333,13 @@ export default function AdminReviewsPage() {
     {
       header: 'สถานะการตรวจ',
       accessor: (row) => {
+        if (row.status === 'hidden') {
+          return (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-slate-500/10 text-slate-400 border border-slate-500/20">
+              <span>ซ่อนไว้ (Hidden)</span>
+            </span>
+          );
+        }
         if (row.status === 'rejected') {
           return (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-rose-500/10 text-rose-400 border border-rose-500/20">
@@ -470,6 +482,7 @@ export default function AdminReviewsPage() {
               <option value="pending">รอการอนุมัติ (Pending)</option>
               <option value="approved">อนุมัติแล้ว (Approved)</option>
               <option value="rejected">ปฏิเสธ (Rejected)</option>
+              <option value="hidden">ซ่อนไว้ (Hidden)</option>
             </select>
           </div>
         </div>

@@ -453,7 +453,7 @@ export default function AdminPromotionsPage() {
       try {
         const token = accessToken || await ensureApiAuth()
         if (token) {
-          await promotionsApi.create({
+          const promoApiPayload = {
             id: payload.id,
             title: payload.title,
             subtitle: payload.subtitle || null,
@@ -471,7 +471,12 @@ export default function AdminPromotionsPage() {
             isFeatured: payload.is_featured,
             isActive: payload.is_active,
             sortOrder: payload.sort_order,
-          }, token).catch((e) => console.warn('FastAPI promotions sync notice:', e))
+          }
+          if (editingPromo) {
+            await promotionsApi.update(promoApiPayload, token).catch((e) => console.warn('FastAPI promotions update notice:', e))
+          } else {
+            await promotionsApi.create(promoApiPayload, token).catch((e) => console.warn('FastAPI promotions create notice:', e))
+          }
         }
       } catch {}
 
@@ -534,11 +539,12 @@ export default function AdminPromotionsPage() {
         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 w-full xl:w-auto">
           {/* Main Action Buttons */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full sm:w-auto">
-            {/* ปุ่มจัดการแบนเนอร์ใหญ่หน้าแรก (Hero Banner) - ไม่มีอิโมจิ/ไอคอนดาว */}
+            {/* ปุ่มจัดการแบนเนอร์ใหญ่หน้าแรก (Hero Banner) - มีเครื่องหมาย + */}
             <button
               onClick={handleOpenHeroBanner}
-              className="inline-flex items-center justify-center px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-amber-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs sm:text-sm font-extrabold shadow-[0_4px_20px_rgba(245,158,11,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer touch-manipulation min-h-[44px]"
+              className="inline-flex items-center justify-center gap-1.5 px-5 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-600 to-amber-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs sm:text-sm font-extrabold shadow-[0_4px_20px_rgba(245,158,11,0.35)] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer touch-manipulation min-h-[44px]"
             >
+              <Plus size={18} className="shrink-0" />
               <span className="whitespace-nowrap">จัดการแบนเนอร์ใหญ่ (Hero)</span>
             </button>
 

@@ -21,7 +21,9 @@ import { customersApi } from '@/lib/api/customers';
 interface DashboardData {
   metrics: {
     todayRevenue: string;
+    monthRevenue: string;
     pendingOrders: number;
+    pendingSlips: number;
     newMembers: number;
     lowStockAlerts: number;
   };
@@ -30,6 +32,12 @@ interface DashboardData {
     name: string;
     stock: number;
     price: number;
+  }[];
+  topSellingWines: {
+    id: number;
+    name: string;
+    quantity: number;
+    revenue: number;
   }[];
   salesData: {
     date: string;
@@ -49,11 +57,14 @@ interface DashboardData {
 const emptyData: DashboardData = {
   metrics: {
     todayRevenue: '0.00',
+    monthRevenue: '0.00',
     pendingOrders: 0,
+    pendingSlips: 0,
     newMembers: 0,
     lowStockAlerts: 0,
   },
   lowStockProducts: [],
+  topSellingWines: [],
   salesData: [],
   recentOrders: [],
 };
@@ -150,7 +161,7 @@ export default function ProjectbottleClub1Page() {
         ordersApi.list({ page: 1, per_page: 20 }, token || undefined),
         inventoryApi.getLowStock(10, token || undefined),
         customersApi.list({ page: 1, per_page: 50 }, token || undefined),
-        reportsApi.getSales({ date_from: todayStr, date_to: todayStr }, token || undefined),
+        reportsApi.getSales({ date_from: todayStr, date_to: todayStr, order_source: 'ecommerce' }, token || undefined),
         reportsApi.getEcommerceDashboard(token || undefined),
       ]);
 
@@ -168,13 +179,26 @@ export default function ProjectbottleClub1Page() {
 
       const calculatedRev = rawOrders.reduce((acc: number, o: any) => acc + Number(o.grand_total ?? o.total_amount ?? 0), 0);
       const totalRev = ecomDash?.sales_today != null ? Number(ecomDash.sales_today) : calculatedRev;
+      const monthRev = ecomDash?.sales_this_month != null ? Number(ecomDash.sales_this_month) : 0;
       const pendingCount = ecomDash?.pending_orders_count != null ? ecomDash.pending_orders_count : rawOrders.filter((o: any) => o.status === 'pending').length;
+      const pendingSlips = ecomDash?.pending_slips_count != null ? ecomDash.pending_slips_count : 0;
       const memberCount = ecomDash?.total_members != null ? ecomDash.total_members : rawCusts.length;
+
+      const topWines = Array.isArray(ecomDash?.top_selling_wines) && ecomDash.top_selling_wines.length > 0
+        ? ecomDash.top_selling_wines.map((w: any, idx: number) => ({
+            id: w.id ?? w.product_id ?? idx,
+            name: w.name ?? w.product_name ?? `ไวน์ #${idx + 1}`,
+            quantity: Number(w.quantity ?? w.sold_count ?? w.count ?? 0),
+            revenue: Number(w.revenue ?? w.total_amount ?? w.amount ?? 0),
+          }))
+        : [];
 
       setData({
         metrics: {
           todayRevenue: totalRev.toLocaleString('th-TH', { minimumFractionDigits: 2 }),
+          monthRevenue: monthRev.toLocaleString('th-TH', { minimumFractionDigits: 2 }),
           pendingOrders: pendingCount,
+          pendingSlips: pendingSlips,
           newMembers: memberCount,
           lowStockAlerts: lowStocks.length,
         },
@@ -184,17 +208,18 @@ export default function ProjectbottleClub1Page() {
           stock: ls.quantity ?? 0,
           price: 0,
         })),
+        topSellingWines: topWines,
         salesData: salesReport?.sales_by_hour?.length
           ? salesReport.sales_by_hour.map((sh: any) => ({ date: sh.hour, amount: sh.amount }))
           : [{ date: 'วันนี้', amount: totalRev }],
-        recentOrders: rawOrders.slice(0, 5).map((o: any) => ({
+        recentOrders: (Array.isArray(ecomDash?.recent_orders) && ecomDash.recent_orders.length > 0 ? ecomDash.recent_orders : rawOrders).slice(0, 5).map((o: any) => ({
           id: o.id,
           customer: o.customer_name ?? o.order_number ?? `Order #${o.id}`,
           total: `฿${Number(o.grand_total ?? o.total_amount ?? 0).toLocaleString('th-TH')}`,
           status: o.status,
           date: o.created_at ? new Date(o.created_at).toLocaleDateString('th-TH') : '-',
           paymentMethod: 'โอนเงิน',
-          type: 'online',
+          type: o.order_source || 'online',
         })),
       });
       setLastUpdated(new Date());
@@ -272,27 +297,51 @@ export default function ProjectbottleClub1Page() {
       </motion.div>
 
       {/* ─── KPI Cards Row ─── */}
-      <motion.div variants={fadeUp} className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <motion.div variants={fadeUp} className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         <KPICard
           title="ยอดขายวันนี้"
           value={`฿${displayData.metrics.todayRevenue}`}
-          change="+0%"
-          trend="neutral"
+          change={`เดือนนี้ ฿${displayData.metrics.monthRevenue}`}
+          trend="up"
           icon={DollarSign}
           sparkline={sparklines.revenue}
         />
         <KPICard
           title="ออเดอร์รอดำเนินการ"
           value={displayData.metrics.pendingOrders.toString()}
-          change="0 ออเดอร์"
+          change="คำสั่งซื้อใหม่"
           trend="neutral"
           icon={ShoppingBag}
           sparkline={sparklines.orders}
         />
+        <div className="admin-panel p-4 flex flex-col justify-between relative overflow-hidden" style={{
+          border: displayData.metrics.pendingSlips > 0 ? '1px solid rgba(251,191,36,0.4)' : undefined,
+          background: displayData.metrics.pendingSlips > 0 ? 'linear-gradient(135deg, rgba(251,191,36,0.08) 0%, rgba(10,14,26,0.92) 100%)' : undefined
+        }}>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-[#94a3c4] font-semibold">สลิปรอตรวจสอบ</span>
+            <div className="p-2 rounded-xl" style={{ background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}>
+              <CreditCard className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2">
+            <div className="text-2xl font-black text-[#eef2ff] flex items-center gap-2">
+              <span>{displayData.metrics.pendingSlips}</span>
+              {displayData.metrics.pendingSlips > 0 && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse">
+                  รอยืนยัน
+                </span>
+              )}
+            </div>
+            <Link href="/admin/bottleclub/payments" className="text-[11px] text-[#fbbf24] hover:underline font-bold mt-1 inline-flex items-center gap-1">
+              ตรวจสลิปทันที <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+        </div>
         <KPICard
-          title="สมาชิกใหม่เดือนนี้"
+          title="สมาชิกทั้งหมด"
           value={displayData.metrics.newMembers.toString()}
-          change="+0%"
+          change="สมาชิกระบบ"
           trend="neutral"
           icon={Users}
           sparkline={sparklines.members}

@@ -1,30 +1,13 @@
 import { apiRequest } from './client'
-import type { PaginationParams } from './types'
+import type {
+  ReviewResponse,
+  ReviewListResponse,
+  ReviewCreate,
+  ReviewModerationRequest,
+  PaginationParams,
+} from './types'
 
-export interface ReviewResponse {
-  id: number
-  product_id: number
-  product_name?: string | null
-  customer_id?: number | null
-  customer_name?: string | null
-  rating: number
-  title?: string | null
-  comment: string
-  status: string
-  created_at: string
-}
-
-export interface ReviewListResponse {
-  reviews: ReviewResponse[]
-  total: number
-  page: number
-  per_page: number
-}
-
-export interface ReviewModerationRequest {
-  status: 'approved' | 'rejected' | 'pending'
-  notes?: string | null
-}
+export type { ReviewResponse, ReviewListResponse, ReviewCreate, ReviewModerationRequest }
 
 export interface ListReviewsParams extends PaginationParams {
   product_id?: number
@@ -32,6 +15,7 @@ export interface ListReviewsParams extends PaginationParams {
 }
 
 export const reviewsApi = {
+  // GET /api/v1/reviews/
   list: (params: ListReviewsParams = {}, token?: string) => {
     const q = new URLSearchParams()
     if (params.page) q.set('page', String(params.page))
@@ -41,19 +25,31 @@ export const reviewsApi = {
     return apiRequest<ReviewListResponse>(`/reviews/?${q}`, { token })
   },
 
+  // GET /api/v1/reviews/{review_id}
   get: (reviewId: number, token?: string) =>
     apiRequest<ReviewResponse>(`/reviews/${reviewId}`, { token }),
 
-  moderate: (reviewId: number, data: ReviewModerationRequest, token?: string) =>
-    apiRequest<ReviewResponse>(`/reviews/${reviewId}/moderation`, {
-      method: 'PUT',
+  // POST /api/v1/reviews/
+  create: (data: ReviewCreate, token?: string) =>
+    apiRequest<ReviewResponse>('/reviews/', {
+      method: 'POST',
       body: data,
       token,
     }),
 
+  // PATCH /api/v1/reviews/{review_id}/moderation (body: status pending|approved|rejected|hidden)
+  moderate: (reviewId: number, data: ReviewModerationRequest, token?: string) =>
+    apiRequest<ReviewResponse>(`/reviews/${reviewId}/moderation`, {
+      method: 'PATCH',
+      body: data,
+      token,
+    }),
+
+  // Soft moderation fallback helper to hide a review (replaces unsupported DELETE)
   delete: (reviewId: number, token?: string) =>
-    apiRequest<void>(`/reviews/${reviewId}`, {
-      method: 'DELETE',
+    apiRequest<ReviewResponse>(`/reviews/${reviewId}/moderation`, {
+      method: 'PATCH',
+      body: { status: 'hidden' },
       token,
     }),
 }

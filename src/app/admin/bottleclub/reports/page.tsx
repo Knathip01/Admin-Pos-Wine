@@ -4,22 +4,26 @@ import React, { useEffect, useState, useMemo } from 'react';
 import {
   AreaChart, Area, BarChart, Bar, Cell, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, RadialBarChart, RadialBar,
+  PieChart, Pie,
 } from 'recharts';
 import {
-  Download, TrendingUp, TrendingDown, Award, CreditCard,
-  ShieldAlert, RefreshCw, ArrowUpRight, Layers, Wine,
-  BarChart3, Zap, Crown, Medal, Star,
+  Download, TrendingUp, Award, CreditCard,
+  ShieldAlert, RefreshCw, Layers, Wine,
+  BarChart3, Crown, Medal, Star, Clock, ShoppingCart,
+  FileCheck2, Calendar, Filter,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useApiAuth, ensureApiAuth } from '@/lib/store/api-auth';
 import { reportsApi } from '@/lib/api/reports';
+import type { EcommerceDashboardResponse } from '@/lib/api/types';
 
 /* ─── Types ─── */
 interface SalesReportData {
   sales: { date: string; amount: number; count: number }[];
   topProducts: { name: string; quantity: number; revenue: number }[];
   payments: { method: string; value: number }[];
+  totalSales: number;
+  totalOrders: number;
 }
 
 /* ─── Constants ─── */
@@ -47,8 +51,8 @@ const fadeUp = {
 };
 
 /* ─── Helpers ─── */
-const fmt = (n: number) => `฿${n.toLocaleString('th-TH', { maximumFractionDigits: 0 })}`;
-const fmtFull = (n: number) => `฿${n.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+const fmt = (n: number) => `฿${(n || 0).toLocaleString('th-TH', { maximumFractionDigits: 0 })}`;
+const fmtFull = (n: number) => `฿${(n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
 
 /* ─── Custom Tooltips ─── */
 const AreaTooltip = ({ active, payload }: any) => {
@@ -72,18 +76,91 @@ const BarTooltip = ({ active, payload }: any) => {
   );
 };
 
+/* ─── Live E-commerce Strip ─── */
+function EcommerceLiveStrip({ ecom }: { ecom: EcommerceDashboardResponse | null }) {
+  if (!ecom) return null;
+
+  const cards = [
+    {
+      label: 'ยอดขายออนไลน์วันนี้',
+      value: fmt(ecom.sales_today),
+      sub: 'Today e-Commerce',
+      color: '#22e5ff',
+      icon: TrendingUp,
+    },
+    {
+      label: 'ยอดขายออนไลน์เดือนนี้',
+      value: fmt(ecom.sales_this_month),
+      sub: 'This Month Revenue',
+      color: '#34d399',
+      icon: ShoppingCart,
+    },
+    {
+      label: 'ออเดอร์ค้างจัดส่ง',
+      value: `${ecom.pending_orders_count || 0}`,
+      sub: 'Pending Fulfillment',
+      color: '#fbbf24',
+      icon: Clock,
+    },
+    {
+      label: 'สลิปรอตรวจสอบ',
+      value: `${ecom.pending_slips_count || 0}`,
+      sub: 'Pending Slips',
+      color: ecom.pending_slips_count > 0 ? '#fb7185' : '#94a3c4',
+      icon: FileCheck2,
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {cards.map((c, i) => {
+        const Icon = c.icon;
+        return (
+          <motion.div
+            key={c.label}
+            custom={i}
+            variants={fadeUp}
+            initial="hidden"
+            animate="show"
+            className="admin-panel p-4 group cursor-default relative overflow-hidden"
+          >
+            <div
+              className="absolute top-0 right-0 w-20 h-20 pointer-events-none rounded-full"
+              style={{
+                background: `radial-gradient(circle, ${c.color}20 0%, transparent 70%)`,
+                transform: 'translate(25%, -25%)',
+              }}
+            />
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-bold text-[#94a3c4] uppercase tracking-wider">{c.label}</span>
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: `${c.color}15`, border: `1px solid ${c.color}30` }}
+              >
+                <Icon className="w-3.5 h-3.5" style={{ color: c.color }} />
+              </div>
+            </div>
+            <div className="text-xl font-black text-[#eef2ff] tracking-tight font-mono">{c.value}</div>
+            <div className="text-[10px] text-[#5a6e90] mt-0.5 font-semibold">{c.sub}</div>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ─── Summary KPI Strip ─── */
 function SummaryStrip({ data }: { data: SalesReportData }) {
-  const totalRevenue = data.sales.reduce((s, d) => s + d.amount, 0);
-  const totalOrders  = data.sales.reduce((s, d) => s + d.count,  0);
-  const avgOrder     = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-  const topPayment   = [...data.payments].sort((a, b) => b.value - a.value)[0];
+  const totalRevenue = data.totalSales || data.sales.reduce((s, d) => s + d.amount, 0);
+  const totalOrders = data.totalOrders || data.sales.reduce((s, d) => s + d.count, 0);
+  const avgOrder = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+  const topPayment = [...data.payments].sort((a, b) => b.value - a.value)[0];
 
   const kpis = [
-    { label: 'รายได้รวมทั้งหมด', value: fmt(totalRevenue), sub: 'Total Revenue', accent: '#22e5ff', icon: TrendingUp },
-    { label: 'ออเดอร์ทั้งหมด', value: totalOrders.toLocaleString(), sub: 'Total Orders', accent: '#fbbf24', icon: Layers },
-    { label: 'มูลค่าเฉลี่ย/ออเดอร์', value: fmt(avgOrder), sub: 'Avg Order Value', accent: '#34d399', icon: BarChart3 },
-    { label: 'ช่องทางยอดนิยม', value: topPayment?.method?.toUpperCase() ?? '–', sub: fmt(topPayment?.value ?? 0), accent: '#c084fc', icon: CreditCard },
+    { label: 'ยอดขายรวมตามช่วงเวลา', value: fmt(totalRevenue), sub: 'Total Period Revenue', accent: '#22e5ff', icon: TrendingUp },
+    { label: 'จำนวนออเดอร์ทั้งหมด', value: totalOrders.toLocaleString(), sub: 'Period Orders', accent: '#fbbf24', icon: Layers },
+    { label: 'มูลค่าเฉลี่ยต่อออเดอร์', value: fmt(avgOrder), sub: 'Avg Order Value (AOV)', accent: '#34d399', icon: BarChart3 },
+    { label: 'หมวดหมู่/ชำระเงินเด่น', value: topPayment?.method ?? '–', sub: fmt(topPayment?.value ?? 0), accent: '#c084fc', icon: CreditCard },
   ];
 
   return (
@@ -94,23 +171,17 @@ function SummaryStrip({ data }: { data: SalesReportData }) {
           <motion.div key={kpi.label} custom={i} variants={fadeUp} initial="hidden" animate="show"
             className="admin-panel p-4 group cursor-default relative overflow-hidden"
           >
-            {/* Corner glow */}
             <div className="absolute top-0 right-0 w-24 h-24 pointer-events-none rounded-full" style={{ background: `radial-gradient(circle, ${kpi.accent}18 0%, transparent 70%)`, transform: 'translate(30%,-30%)' }} />
 
             <div className="flex items-center justify-between mb-3">
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[#5a6e90]">{kpi.label}</p>
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
-                style={{ background: `${kpi.accent}15`, border: `1px solid ${kpi.accent}30` }}>
-                <Icon className="w-3.5 h-3.5" style={{ color: kpi.accent }} />
+              <span className="text-[10px] font-bold text-[#94a3c4] uppercase tracking-wider">{kpi.label}</span>
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110" style={{ background: `${kpi.accent}18`, border: `1px solid ${kpi.accent}35` }}>
+                <Icon className="w-4 h-4" style={{ color: kpi.accent }} />
               </div>
             </div>
-            <p className="text-xl font-black leading-none text-[#eef2ff] tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>{kpi.value}</p>
-            <p className="text-[10px] text-[#5a6e90] font-semibold mt-1.5">{kpi.sub}</p>
 
-            {/* Bottom progress line */}
-            <div className="absolute bottom-0 left-0 right-0 h-[2px] rounded-b-2xl overflow-hidden">
-              <div className="h-full w-3/4 transition-all duration-700" style={{ background: `linear-gradient(to right, ${kpi.accent}40, ${kpi.accent})` }} />
-            </div>
+            <div className="text-xl sm:text-2xl font-black text-[#eef2ff] tracking-tight font-mono">{kpi.value}</div>
+            <div className="text-[10px] text-[#5a6e90] mt-1 font-semibold">{kpi.sub}</div>
           </motion.div>
         );
       })}
@@ -129,8 +200,8 @@ function RevenueChart({ data }: { data: SalesReportData }) {
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h3 className="font-extrabold text-[#eef2ff] text-sm" style={{ fontFamily: "'Outfit', sans-serif" }}>กราฟยอดขายรายวัน</h3>
-          <p className="text-[10px] text-[#5a6e90] uppercase tracking-wider font-bold mt-0.5">Daily Revenue Analytics</p>
+          <h3 className="font-extrabold text-[#eef2ff] text-sm" style={{ fontFamily: "'Outfit', sans-serif" }}>แนวโน้มยอดขายตามช่วงเวลา</h3>
+          <p className="text-[10px] text-[#5a6e90] uppercase tracking-wider font-bold mt-0.5">Sales Trend Analytics</p>
         </div>
         <div className="admin-tab-group shrink-0">
           {CHART_TABS.map((t) => (
@@ -141,7 +212,7 @@ function RevenueChart({ data }: { data: SalesReportData }) {
         </div>
       </div>
 
-      <div style={{ height: 220 }}>
+      <div style={{ height: 230 }}>
         <AnimatePresence mode="wait">
           <motion.div key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} style={{ height: '100%' }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -183,11 +254,10 @@ function RevenueChart({ data }: { data: SalesReportData }) {
         </AnimatePresence>
       </div>
 
-      {/* Average annotation */}
       {tab === 'รายได้' && avg > 0 && (
         <div className="mt-3 flex items-center gap-2">
           <div className="h-px flex-1" style={{ background: 'rgba(34,229,255,0.2)', borderTop: '1px dashed rgba(34,229,255,0.3)' }} />
-          <span className="text-[10px] font-extrabold text-[#22e5ff] uppercase tracking-wider">avg {fmt(avg)}/วัน</span>
+          <span className="text-[10px] font-extrabold text-[#22e5ff] uppercase tracking-wider font-mono">เฉลี่ย {fmt(avg)} / วัน</span>
           <div className="h-px flex-1" style={{ background: 'rgba(34,229,255,0.2)', borderTop: '1px dashed rgba(34,229,255,0.3)' }} />
         </div>
       )}
@@ -205,11 +275,10 @@ function PaymentPanel({ data }: { data: SalesReportData }) {
       className="admin-panel p-6 relative overflow-hidden flex flex-col"
     >
       <div className="mb-4">
-        <h3 className="font-extrabold text-[#eef2ff] text-sm" style={{ fontFamily: "'Outfit', sans-serif" }}>ช่องทางการชำระเงิน</h3>
-        <p className="text-[10px] text-[#5a6e90] uppercase tracking-wider font-bold mt-0.5">Payment Method Breakdown</p>
+        <h3 className="font-extrabold text-[#eef2ff] text-sm" style={{ fontFamily: "'Outfit', sans-serif" }}>สัดส่วนตามหมวดหมู่ / การชำระ</h3>
+        <p className="text-[10px] text-[#5a6e90] uppercase tracking-wider font-bold mt-0.5">Category & Payment Breakdown</p>
       </div>
 
-      {/* Donut chart */}
       <div className="relative flex items-center justify-center" style={{ height: 180 }}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -240,15 +309,13 @@ function PaymentPanel({ data }: { data: SalesReportData }) {
             />
           </PieChart>
         </ResponsiveContainer>
-        {/* Center label */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <p className="text-[9px] text-[#5a6e90] font-bold uppercase tracking-wider">รวมทั้งหมด</p>
-          <p className="text-sm font-black text-[#22e5ff] mt-0.5" style={{ fontFamily: "'Outfit', sans-serif" }}>{fmt(total)}</p>
+          <p className="text-[9px] text-[#5a6e90] font-bold uppercase tracking-wider">รวม</p>
+          <p className="text-sm font-black text-[#22e5ff] mt-0.5 font-mono">{fmt(total)}</p>
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="mt-4 space-y-2 flex-1">
+      <div className="mt-4 space-y-2 flex-1 max-h-40 overflow-y-auto">
         {data.payments.map((p, idx) => {
           const pct = total > 0 ? ((p.value / total) * 100).toFixed(1) : '0';
           const pal = PAYMENT_PALETTE[idx % PAYMENT_PALETTE.length];
@@ -262,8 +329,8 @@ function PaymentPanel({ data }: { data: SalesReportData }) {
             >
               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: pal.color, boxShadow: hovered === idx ? `0 0 8px ${pal.glow}` : 'none' }} />
               <span className="text-[10px] font-bold text-[#94a3c4] uppercase tracking-wide flex-1 truncate">{p.method}</span>
-              <span className="text-[10px] font-black text-[#eef2ff]">{pct}%</span>
-              <span className="text-[10px] text-[#5a6e90] font-semibold">{fmt(p.value)}</span>
+              <span className="text-[10px] font-black text-[#eef2ff] font-mono">{pct}%</span>
+              <span className="text-[10px] text-[#5a6e90] font-semibold font-mono">{fmt(p.value)}</span>
             </div>
           );
         })}
@@ -284,9 +351,9 @@ function TopProductsPanel({ data }: { data: SalesReportData }) {
         <div>
           <h3 className="font-extrabold text-[#eef2ff] text-sm flex items-center gap-2" style={{ fontFamily: "'Outfit', sans-serif" }}>
             <Award className="w-4 h-4 text-[#fbbf24]" />
-            สินค้าขายดีที่สุด
+            สินค้าขายดีที่สุด (Top Selling Products)
           </h3>
-          <p className="text-[10px] text-[#5a6e90] uppercase tracking-wider font-bold mt-0.5">Top Selling Products by Revenue</p>
+          <p className="text-[10px] text-[#5a6e90] uppercase tracking-wider font-bold mt-0.5">Top Selling Items by Revenue</p>
         </div>
       </div>
 
@@ -303,19 +370,16 @@ function TopProductsPanel({ data }: { data: SalesReportData }) {
               style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}
             >
               <div className="relative flex items-center gap-3">
-                {/* Rank badge */}
                 <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all duration-250 group-hover:scale-110"
                   style={{ background: rank.bg, border: `1px solid ${rank.border}` }}>
                   <RankIcon className="w-4 h-4" style={{ color: rank.color }} />
                 </div>
 
-                {/* Name + bar */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-1.5">
                     <p className="text-xs font-bold text-[#eef2ff] truncate m-0">{p.name}</p>
-                    <p className="text-xs font-black text-[#22e5ff] shrink-0 m-0" style={{ fontFamily: "'Outfit', sans-serif" }}>{fmtFull(p.revenue)}</p>
+                    <p className="text-xs font-black text-[#22e5ff] shrink-0 m-0 font-mono">{fmtFull(p.revenue)}</p>
                   </div>
-                  {/* Progress bar */}
                   <div className="h-1 rounded-full overflow-hidden bg-white/5">
                     <motion.div
                       className="h-full rounded-full"
@@ -327,7 +391,7 @@ function TopProductsPanel({ data }: { data: SalesReportData }) {
                   </div>
                   <div className="flex items-center justify-between mt-1">
                     <span className="text-[9px] text-[#5a6e90] font-semibold">{p.quantity} ชิ้น</span>
-                    <span className="text-[9px] font-bold" style={{ color: rank.color }}>{pct.toFixed(0)}%</span>
+                    <span className="text-[9px] font-bold font-mono" style={{ color: rank.color }}>{pct.toFixed(0)}%</span>
                   </div>
                 </div>
               </div>
@@ -338,7 +402,7 @@ function TopProductsPanel({ data }: { data: SalesReportData }) {
         {data.topProducts.length === 0 && (
           <div className="py-12 flex flex-col items-center gap-2 text-[#3d4d6a]">
             <Wine className="w-8 h-8" />
-            <p className="text-xs font-semibold">ยังไม่มีข้อมูลสินค้าขายดี</p>
+            <p className="text-xs font-semibold">ยังไม่มีข้อมูลสินค้าขายดีในช่วงนี้</p>
           </div>
         )}
       </div>
@@ -352,13 +416,16 @@ function LoadingSkeleton() {
     <div className="space-y-5 animate-pulse select-none" style={{ padding: '20px', maxWidth: 1500 }}>
       <div className="h-10 w-48 rounded-xl bg-white/5" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[1,2,3,4].map(i => <div key={i} className="h-24 rounded-2xl bg-white/5" />)}
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[1,2,3,4].map(i => <div key={i} className="h-28 rounded-2xl bg-white/5" />)}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 h-80 rounded-2xl bg-white/5" />
         <div className="h-80 rounded-2xl bg-white/5" />
       </div>
-      <div className="h-96 rounded-2xl bg-white/5" />
+      <div className="h-72 rounded-2xl bg-white/5" />
     </div>
   );
 }
@@ -366,11 +433,16 @@ function LoadingSkeleton() {
 /* ─── Main Page ─── */
 export default function AdminReportsPage() {
   const { accessToken } = useApiAuth();
-  const [data, setData]       = useState<SalesReportData | null>(null);
+  const [data, setData] = useState<SalesReportData | null>(null);
+  const [ecomDashboard, setEcomDashboard] = useState<EcommerceDashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError]     = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+
+  // Filters
+  const [sourceFilter, setSourceFilter] = useState<'ecommerce' | 'all' | 'pos' | 'qr'>('ecommerce');
+  const [rangeFilter, setRangeFilter] = useState<'7d' | '30d' | '90d'>('30d');
 
   const load = async (force = false) => {
     setError(null);
@@ -384,37 +456,72 @@ export default function AdminReportsPage() {
     }
     try {
       const token = accessToken || await ensureApiAuth();
-      if (token) {
-        const today = new Date();
-        const past = new Date();
-        past.setDate(past.getDate() - 30);
-        const date_from = past.toISOString().split('T')[0];
-        const date_to = today.toISOString().split('T')[0];
-        const result = await reportsApi.getSales({ date_from, date_to }, token);
+      if (!token) throw new Error('ไม่พบสิทธิ์การเข้าถึง API');
+
+      const today = new Date();
+      const past = new Date();
+      const days = rangeFilter === '7d' ? 7 : rangeFilter === '90d' ? 90 : 30;
+      past.setDate(past.getDate() - days);
+      const date_from = past.toISOString().split('T')[0];
+      const date_to = today.toISOString().split('T')[0];
+
+      // Concurrently fetch Sales Report and Ecommerce Dashboard
+      const [salesRes, ecomRes] = await Promise.allSettled([
+        reportsApi.getSales({
+          date_from,
+          date_to,
+          order_source: sourceFilter === 'all' ? undefined : sourceFilter,
+          group_by: days > 30 ? 'month' : 'day',
+        }, token),
+        reportsApi.getEcommerceDashboard(token),
+      ]);
+
+      if (ecomRes.status === 'fulfilled' && ecomRes.value) {
+        setEcomDashboard(ecomRes.value);
+      }
+
+      if (salesRes.status === 'fulfilled') {
+        const result = salesRes.value;
+        const salesByHour = Array.isArray(result.sales_by_hour)
+          ? result.sales_by_hour
+          : (Array.isArray((result as any).sales_by_day) ? (result as any).sales_by_day : []);
         
-        const salesByHour = Array.isArray(result.sales_by_hour) ? result.sales_by_hour : [];
-        const topProds = Array.isArray(result.top_products) ? result.top_products : [];
+        let topProds = Array.isArray(result.top_products) ? result.top_products : [];
+        // If top_products is empty but ecom top_selling_wines is available, blend them
+        if (topProds.length === 0 && ecomRes.status === 'fulfilled' && ecomRes.value?.top_selling_wines) {
+          topProds = ecomRes.value.top_selling_wines.map(w => ({
+            name: w.product_name,
+            quantity: w.total_quantity,
+            revenue: w.total_revenue,
+          }));
+        }
+
         const salesByCat = Array.isArray(result.sales_by_category) ? result.sales_by_category : [];
 
         setData({
+          totalSales: Number(result.total_sales ?? 0),
+          totalOrders: Number(result.total_orders ?? 0),
           sales: salesByHour.map((s: any) => ({
-            date: s.hour ?? s.date ?? '00:00',
+            date: s.date ?? s.hour ?? s.day ?? '00:00',
             amount: Number(s.amount ?? s.total ?? 0),
-            count: Number(s.count ?? 1),
+            count: Number(s.count ?? s.orders_count ?? 1),
           })),
           topProducts: topProds.map((tp: any) => ({
-            name: tp.product_name ?? tp.name ?? 'สินค้า',
-            quantity: Number(tp.quantity ?? tp.total_qty ?? 0),
-            revenue: Number(tp.revenue ?? tp.total_amount ?? 0),
+            name: tp.product_name ?? tp.name ?? 'สินค้าไวน์',
+            quantity: Number(tp.quantity ?? tp.total_qty ?? tp.total_quantity ?? 0),
+            revenue: Number(tp.revenue ?? tp.total_amount ?? tp.total_revenue ?? 0),
           })),
           payments: salesByCat.length
-            ? salesByCat.map((c: any) => ({ method: c.category_name ?? c.category ?? 'หมวดหมู่', value: Number(c.total_amount ?? c.amount ?? 0) }))
+            ? salesByCat.map((c: any) => ({
+                method: c.category_name ?? c.category ?? c.name ?? 'หมวดหมู่',
+                value: Number(c.total_amount ?? c.amount ?? c.revenue ?? 0),
+              }))
             : [
-                { method: 'ยอดขายรวม (Total Sales)', value: Number(result.total_sales ?? 0) },
+                { method: 'ยอดขาย e-Commerce รวม', value: Number(result.total_sales ?? 0) },
               ],
         });
       } else {
-        throw new Error('ไม่สามารถเชื่อมต่อ API รายงานได้');
+        throw new Error('ไม่สามารถดึงข้อมูลรายงานยอดขายจาก API ได้');
       }
     } catch (e: any) {
       setError(e.message || 'ไม่สามารถดึงข้อมูลรายงานยอดขายจาก API จริงได้');
@@ -425,7 +532,31 @@ export default function AdminReportsPage() {
     }
   };
 
-  useEffect(() => { setMounted(true); load(); }, [accessToken]);
+  useEffect(() => {
+    setMounted(true);
+    load();
+  }, [accessToken, sourceFilter, rangeFilter]);
+
+  const handleExportCSV = () => {
+    if (!data) return;
+    const rows = [
+      ['วันที่/ช่วงเวลา', 'ยอดขาย (บาท)', 'จำนวนคำสั่งซื้อ'],
+      ...data.sales.map(s => [s.date, s.amount.toString(), s.count.toString()]),
+      [],
+      ['สินค้าขายดี', 'จำนวนที่ขาย (ขวด/ชิ้น)', 'รายได้รวม (บาท)'],
+      ...data.topProducts.map(p => [p.name, p.quantity.toString(), p.revenue.toString()]),
+    ];
+
+    const csvContent = '\uFEFF' + rows.map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `bottleclub_sales_report_${sourceFilter}_${rangeFilter}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   if (!mounted || (loading && !data)) return <LoadingSkeleton />;
 
@@ -448,7 +579,6 @@ export default function AdminReportsPage() {
 
   return (
     <div className="space-y-5 sm:space-y-6 select-none font-sans animate-in" style={{ padding: '20px', maxWidth: 1500 }}>
-
       {/* ─── Page header ─── */}
       <motion.div custom={0} variants={fadeUp} initial="hidden" animate="show"
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
@@ -456,33 +586,103 @@ export default function AdminReportsPage() {
         <div>
           <div className="flex items-center gap-2.5 mb-1">
             <h2 className="text-xl sm:text-2xl font-black text-[#eef2ff] tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>
-              รายงานยอดขาย (Bottle Club)
+              รายงานยอดขาย e-Commerce (Bottle Club)
             </h2>
-            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-widest text-[#34d399] bg-[rgba(52,211,153,0.12)] border border-[rgba(52,211,153,0.30)]">
-              Live
+            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-widest text-[#34d399] bg-[rgba(52,211,153,0.12)] border border-[rgba(52,211,153,0.30)] font-mono">
+              Live FastAPI
             </span>
           </div>
-          <p className="text-xs text-[#5a6e90] font-semibold">Sales Analytics & Market Intelligence Dashboard</p>
+          <p className="text-xs text-[#5a6e90] font-semibold">
+            วิเคราะห์ยอดขายออนไลน์ คำสั่งซื้อ ช่องทางชำระเงิน และสินค้าไวน์ยอดนิยมตรงจาก FastAPI
+          </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Filter Toolbar */}
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {/* Source Filter */}
+          <div className="flex items-center rounded-xl bg-black/40 border border-white/10 p-1 text-xs">
+            <button
+              onClick={() => setSourceFilter('ecommerce')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition cursor-pointer ${
+                sourceFilter === 'ecommerce'
+                  ? 'bg-cyan-500/20 text-[#22e5ff] border border-cyan-500/40 shadow-[0_0_10px_rgba(34,229,255,0.2)]'
+                  : 'text-[#94a3c4] hover:text-[#eef2ff]'
+              }`}
+            >
+              e-Commerce
+            </button>
+            <button
+              onClick={() => setSourceFilter('all')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition cursor-pointer ${
+                sourceFilter === 'all'
+                  ? 'bg-cyan-500/20 text-[#22e5ff] border border-cyan-500/40 shadow-[0_0_10px_rgba(34,229,255,0.2)]'
+                  : 'text-[#94a3c4] hover:text-[#eef2ff]'
+              }`}
+            >
+              ทุกช่องทาง
+            </button>
+            <button
+              onClick={() => setSourceFilter('pos')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition cursor-pointer ${
+                sourceFilter === 'pos'
+                  ? 'bg-cyan-500/20 text-[#22e5ff] border border-cyan-500/40 shadow-[0_0_10px_rgba(34,229,255,0.2)]'
+                  : 'text-[#94a3c4] hover:text-[#eef2ff]'
+              }`}
+            >
+              POS หน้าร้าน
+            </button>
+          </div>
+
+          {/* Time Range Filter */}
+          <div className="flex items-center rounded-xl bg-black/40 border border-white/10 p-1 text-xs">
+            <button
+              onClick={() => setRangeFilter('7d')}
+              className={`px-2.5 py-1.5 rounded-lg font-bold transition cursor-pointer ${
+                rangeFilter === '7d' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'text-[#94a3c4] hover:text-[#eef2ff]'
+              }`}
+            >
+              7 วัน
+            </button>
+            <button
+              onClick={() => setRangeFilter('30d')}
+              className={`px-2.5 py-1.5 rounded-lg font-bold transition cursor-pointer ${
+                rangeFilter === '30d' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'text-[#94a3c4] hover:text-[#eef2ff]'
+              }`}
+            >
+              30 วัน
+            </button>
+            <button
+              onClick={() => setRangeFilter('90d')}
+              className={`px-2.5 py-1.5 rounded-lg font-bold transition cursor-pointer ${
+                rangeFilter === '90d' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'text-[#94a3c4] hover:text-[#eef2ff]'
+              }`}
+            >
+              90 วัน
+            </button>
+          </div>
+
           <button
             onClick={() => load(true)}
             disabled={refreshing}
             className="admin-btn-secondary flex items-center gap-1.5 px-3 py-2 text-xs font-bold cursor-pointer disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-[#22e5ff]' : ''}`} /> รีเฟรช
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-[#22e5ff]' : ''}`} />
+            <span>รีเฟรช</span>
           </button>
           <button
-            onClick={() => window.open('/api/admin/reports?export=csv', '_blank')}
+            onClick={handleExportCSV}
             className="admin-btn-primary flex items-center gap-1.5 px-4 py-2 text-xs font-bold cursor-pointer"
           >
-            <Download className="w-3.5 h-3.5" /> ส่งออก CSV
+            <Download className="w-3.5 h-3.5" />
+            <span>ส่งออก CSV</span>
           </button>
         </div>
       </motion.div>
 
-      {/* ─── KPI Strip ─── */}
+      {/* ─── Real-time E-Commerce Live Performance ─── */}
+      <EcommerceLiveStrip ecom={ecomDashboard} />
+
+      {/* ─── KPI Strip (Period Selected) ─── */}
       <SummaryStrip data={data} />
 
       {/* ─── Main chart grid ─── */}
@@ -498,4 +698,3 @@ export default function AdminReportsPage() {
     </div>
   );
 }
-

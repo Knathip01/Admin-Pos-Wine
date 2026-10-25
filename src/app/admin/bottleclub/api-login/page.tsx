@@ -9,8 +9,14 @@ export default function ApiLoginPage() {
   const router = useRouter()
 
   useEffect(() => {
-    ensureApiAuth().finally(() => {
-      router.replace('/admin/bottleclub')
+    ensureApiAuth().then((token) => {
+      if (token) {
+        router.replace('/admin/bottleclub')
+      } else {
+        router.replace('/admin/login')
+      }
+    }).catch(() => {
+      router.replace('/admin/login')
     })
   }, [router])
 

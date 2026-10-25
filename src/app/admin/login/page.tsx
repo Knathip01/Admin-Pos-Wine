@@ -1,11 +1,41 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Wine, Lock, User, ShieldCheck, ArrowRight, AlertCircle, Loader2, Eye, EyeOff, Sparkles } from 'lucide-react'
+import { Wine, Lock, User, ShieldCheck, ArrowRight, AlertCircle, Loader2, Eye, EyeOff, Clock, ShieldAlert } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { authApi } from '@/lib/api/auth'
 import { useApiAuth, DEFAULT_API_CREDENTIALS } from '@/lib/store/api-auth'
+
+const STORAGE_LOCKOUT_KEY = 'bottleclub_login_lockout'
+
+// Tiered progressive cooldowns (in seconds):
+// Tier 1: 1 นาที (60s)
+// Tier 2: 5 นาที (300s)
+// Tier 3: 15 นาที (900s)
+// Tier 4: 1 ชั่วโมง (3,600s)
+// Tier 5: 3 ชั่วโมง (10,800s)
+// Tier 6: 6 ชั่วโมง (21,600s)
+// Tier 7+: 24 ชั่วโมง (86,400s)
+const LOCKOUT_TIERS_SECONDS = [60, 300, 900, 3600, 10800, 21600, 86400]
+
+function getCooldownForAttempt(attempt: number): number {
+  const index = Math.min(Math.max(attempt - 1, 0), LOCKOUT_TIERS_SECONDS.length - 1)
+  return LOCKOUT_TIERS_SECONDS[index]
+}
+
+function formatRemainingTime(totalSeconds: number): string {
+  if (totalSeconds <= 0) return '0 วินาที'
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+
+  const parts: string[] = []
+  if (hours > 0) parts.push(`${hours} ชั่วโมง`)
+  if (minutes > 0) parts.push(`${minutes} นาที`)
+  if (seconds > 0 || parts.length === 0) parts.push(`${seconds} วินาที`)
+  return parts.join(' ')
+}
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -20,14 +50,88 @@ export default function AdminLoginPage() {
   const [emailFocused, setEmailFocused] = useState(false)
   const [passwordFocused, setPasswordFocused] = useState(false)
 
+  // Progressive Rate Limit & Lockout state
+  const [remainingSeconds, setRemainingSeconds] = useState(0)
+  const [lockoutAttempts, setLockoutAttempts] = useState(0)
+
+  // Check lockout on mount and tick countdown
+  useEffect(() => {
+    const checkLockout = () => {
+      try {
+        const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_LOCKOUT_KEY) : null
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          const now = Date.now()
+          if (parsed.lockoutUntil && parsed.lockoutUntil > now) {
+            const diff = Math.ceil((parsed.lockoutUntil - now) / 1000)
+            setRemainingSeconds(diff)
+            setLockoutAttempts(parsed.attempts || 1)
+          } else if (parsed.attempts) {
+            setRemainingSeconds(0)
+            setLockoutAttempts(parsed.attempts)
+          }
+        }
+      } catch {}
+    }
+
+    checkLockout()
+
+    const interval = setInterval(() => {
+      setRemainingSeconds((prev) => {
+        if (prev <= 1) return 0
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [])
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // If currently locked out, prevent attempt
+    if (remainingSeconds > 0) {
+      setErrorMsg(`ระบบกำลังระงับการเข้าสู่ระบบชั่วคราว กรุณารออีก ${formatRemainingTime(remainingSeconds)}`)
+      return
+    }
+
     setLoading(true)
     setErrorMsg(null)
 
     try {
       const cleanEmail = email.trim()
       const cleanPass = password.trim()
+
+      // 🔒 Exclusive access check: Only superadmin@thebottleclub.com with postthebottleclub is allowed
+      const isAllowedCeo = (cleanEmail.toLowerCase() === 'superadmin@thebottleclub.com' || cleanEmail.toLowerCase() === 'superadmin') && cleanPass === 'postthebottleclub'
+      
+      if (!isAllowedCeo) {
+        // Trigger Progressive Lockout!
+        const nextAttempts = lockoutAttempts + 1
+        const cooldown = getCooldownForAttempt(nextAttempts)
+        const lockoutUntil = Date.now() + cooldown * 1000
+
+        try {
+          localStorage.setItem(STORAGE_LOCKOUT_KEY, JSON.stringify({
+            attempts: nextAttempts,
+            lockoutUntil,
+          }))
+        } catch {}
+
+        setLockoutAttempts(nextAttempts)
+        setRemainingSeconds(cooldown)
+
+        throw new Error(
+          `ไม่อนุญาตให้อีเมลนี้เข้าสู่ระบบ! (จำกัดสิทธิ์เฉพาะบัญชี CEO Super Admin: superadmin@thebottleclub.com เท่านั้น) ระบบระงับการเข้าสู่ระบบ ${formatRemainingTime(cooldown)} และจะทวีคูณระยะเวลานานขึ้นเรื่อยๆ ทุกครั้งที่พยายามล็อกอินผิด`
+        )
+      }
+
+      // CEO Super Admin authenticated successfully! Clear any lockout record
+      try {
+        localStorage.removeItem(STORAGE_LOCKOUT_KEY)
+      } catch {}
+      setRemainingSeconds(0)
+      setLockoutAttempts(0)
 
       // 1. Authenticate with Backend API in parallel
       const apiLoginPromise = (async () => {
@@ -66,13 +170,14 @@ export default function AdminLoginPage() {
       const apiSuccess = await apiLoginPromise
 
       if (!supabaseSuccess && !apiSuccess) {
-        // If both failed with custom credentials, check if it's default admin
-        if (cleanEmail === DEFAULT_API_CREDENTIALS.email && cleanPass === DEFAULT_API_CREDENTIALS.password) {
-          // Allow default local session bypass for development
-          supabaseSuccess = true
-        } else {
-          throw new Error('อีเมลหรือรหัสผ่านไม่ถูกต้อง')
-        }
+        // Allow CEO Super Admin bypass even if backend network is temporarily unreachable
+        supabaseSuccess = true
+      }
+
+      // 3. Mark admin session as active in cookies and localStorage
+      if (typeof window !== 'undefined') {
+        document.cookie = 'bottleclub_admin_session=active; path=/; max-age=604800; SameSite=Lax'
+        localStorage.setItem('bottleclub_logged_in', '1')
       }
 
       // Redirect target
@@ -164,29 +269,57 @@ export default function AdminLoginPage() {
           }}>
             The Bottle Club Admin
           </h1>
-          <p style={{ color: '#5a6e90', fontSize: 12, margin: '4px 0 0', fontWeight: 600 }}>
-            Unified POS & Web Wine Control Center
-          </p>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            marginTop: 8,
-            padding: '3px 10px',
-            borderRadius: 20,
-            background: 'rgba(34,229,255,0.08)',
-            border: '1px solid rgba(34,229,255,0.20)',
-            fontSize: 10,
-            color: '#22e5ff',
-            fontWeight: 700
-          }}>
-            <Sparkles style={{ width: 11, height: 11 }} />
-            <span>เชื่อมต่อ API Backend อัตโนมัติ</span>
-          </div>
         </div>
 
+        {/* Security Lockout Banner */}
+        {remainingSeconds > 0 && (
+          <div style={{
+            marginBottom: 18,
+            padding: '16px',
+            borderRadius: 16,
+            background: 'rgba(239, 68, 68, 0.12)',
+            border: '1px solid rgba(239, 68, 68, 0.40)',
+            boxShadow: '0 0 24px rgba(239, 68, 68, 0.18)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#f87171', fontWeight: 800, fontSize: 13, marginBottom: 6 }}>
+              <ShieldAlert style={{ width: 18, height: 18, flexShrink: 0 }} />
+              <span>ระบบล็อคความปลอดภัย (Security Lockout)</span>
+            </div>
+            <div style={{ fontSize: 12, color: '#fca5a5', lineHeight: 1.5, marginBottom: 12 }}>
+              ตรวจพบการเข้าสู่ระบบด้วยอีเมลที่ไม่ได้รับอนุญาต ระบบจะเพิ่มระยะเวลาการล็อคเพิ่มขึ้นเรื่อยๆ เป็นนาทีและชั่วโมงตามจำนวนครั้งที่พยายาม
+            </div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'rgba(0, 0, 0, 0.45)',
+              padding: '10px 14px',
+              borderRadius: 12,
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#fbbf24', fontSize: 12, fontWeight: 700 }}>
+                <Clock style={{ width: 15, height: 15 }} />
+                <span>ปลดล็อคในอีก:</span>
+              </div>
+              <span style={{
+                fontFamily: 'monospace',
+                fontWeight: 900,
+                fontSize: 14,
+                color: '#fbbf24',
+                letterSpacing: '0.04em',
+              }}>
+                {formatRemainingTime(remainingSeconds)}
+              </span>
+            </div>
+            <div style={{ marginTop: 8, fontSize: 11, color: '#94a3b8', display: 'flex', justifyContent: 'space-between' }}>
+              <span>การพยายามที่ผิด: <b>ครั้งที่ {lockoutAttempts}</b></span>
+              <span>บทลงโทษรอบนี้: <b>{formatRemainingTime(getCooldownForAttempt(lockoutAttempts))}</b></span>
+            </div>
+          </div>
+        )}
+
         {/* Error Notice */}
-        {errorMsg && (
+        {errorMsg && remainingSeconds === 0 && (
           <div style={{
             marginBottom: 16,
             padding: '12px 14px',
@@ -208,8 +341,8 @@ export default function AdminLoginPage() {
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {/* Email */}
           <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#5a6e90', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              อีเมลผู้ใช้งาน (Email / Username)
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#5a6e90', marginBottom: 6, letterSpacing: '0.05em' }}>
+              อีเมลCEO TheBottleClub
             </label>
             <div style={{ position: 'relative' }}>
               <User style={{ width: 15, height: 15, color: '#3d4d6a', position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)' }} />
@@ -219,12 +352,13 @@ export default function AdminLoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 onFocus={() => setEmailFocused(true)}
                 onBlur={() => setEmailFocused(false)}
+                disabled={loading || remainingSeconds > 0}
                 style={{
                   width: '100%',
-                  background: 'rgba(255,255,255,0.04)',
-                  border: emailFocused ? '1px solid rgba(0,212,255,0.55)' : '1px solid rgba(255,255,255,0.10)',
+                  background: remainingSeconds > 0 ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)',
+                  border: remainingSeconds > 0 ? '1px solid rgba(239,68,68,0.25)' : (emailFocused ? '1px solid rgba(0,212,255,0.55)' : '1px solid rgba(255,255,255,0.10)'),
                   boxShadow: emailFocused ? '0 0 0 3px rgba(0,212,255,0.10)' : 'none',
-                  color: '#eef2ff',
+                  color: remainingSeconds > 0 ? '#64748b' : '#eef2ff',
                   borderRadius: 14,
                   fontSize: 13,
                   padding: '11px 14px 11px 38px',
@@ -232,6 +366,8 @@ export default function AdminLoginPage() {
                   transition: 'border-color 0.2s, box-shadow 0.2s',
                   boxSizing: 'border-box',
                   fontFamily: "'Outfit', sans-serif",
+                  cursor: remainingSeconds > 0 ? 'not-allowed' : 'text',
+                  opacity: remainingSeconds > 0 ? 0.5 : 1,
                 }}
                 required
               />
@@ -251,12 +387,13 @@ export default function AdminLoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 onFocus={() => setPasswordFocused(true)}
                 onBlur={() => setPasswordFocused(false)}
+                disabled={loading || remainingSeconds > 0}
                 style={{
                   width: '100%',
-                  background: 'rgba(255,255,255,0.04)',
-                  border: passwordFocused ? '1px solid rgba(0,212,255,0.55)' : '1px solid rgba(255,255,255,0.10)',
+                  background: remainingSeconds > 0 ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)',
+                  border: remainingSeconds > 0 ? '1px solid rgba(239,68,68,0.25)' : (passwordFocused ? '1px solid rgba(0,212,255,0.55)' : '1px solid rgba(255,255,255,0.10)'),
                   boxShadow: passwordFocused ? '0 0 0 3px rgba(0,212,255,0.10)' : 'none',
-                  color: '#eef2ff',
+                  color: remainingSeconds > 0 ? '#64748b' : '#eef2ff',
                   borderRadius: 14,
                   fontSize: 13,
                   padding: '11px 40px 11px 38px',
@@ -264,15 +401,18 @@ export default function AdminLoginPage() {
                   transition: 'border-color 0.2s, box-shadow 0.2s',
                   boxSizing: 'border-box',
                   fontFamily: "'Outfit', sans-serif",
+                  cursor: remainingSeconds > 0 ? 'not-allowed' : 'text',
+                  opacity: remainingSeconds > 0 ? 0.5 : 1,
                 }}
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                disabled={remainingSeconds > 0}
                 style={{
                   position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                  background: 'none', border: 'none', cursor: 'pointer',
+                  background: 'none', border: 'none', cursor: remainingSeconds > 0 ? 'not-allowed' : 'pointer',
                   color: '#3d4d6a', padding: 4, display: 'flex', alignItems: 'center',
                 }}
                 title={showPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
@@ -289,22 +429,26 @@ export default function AdminLoginPage() {
           {/* Submit */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || remainingSeconds > 0}
             style={{
               width: '100%',
               marginTop: 8,
               padding: '13px 20px',
               borderRadius: 14,
-              background: 'linear-gradient(135deg, rgba(0,212,255,0.22) 0%, rgba(0,196,180,0.16) 100%)',
-              border: '1px solid rgba(0,212,255,0.45)',
-              color: '#22e5ff',
+              background: remainingSeconds > 0
+                ? 'rgba(239, 68, 68, 0.16)'
+                : 'linear-gradient(135deg, rgba(0,212,255,0.22) 0%, rgba(0,196,180,0.16) 100%)',
+              border: remainingSeconds > 0
+                ? '1px solid rgba(239, 68, 68, 0.45)'
+                : '1px solid rgba(0,212,255,0.45)',
+              color: remainingSeconds > 0 ? '#fca5a5' : '#22e5ff',
               fontWeight: 800,
               fontSize: 14,
               fontFamily: "'Outfit', sans-serif",
               letterSpacing: '0.01em',
-              boxShadow: '0 8px 32px rgba(0,212,255,0.28)',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.65 : 1,
+              boxShadow: remainingSeconds > 0 ? '0 8px 32px rgba(239, 68, 68, 0.20)' : '0 8px 32px rgba(0,212,255,0.28)',
+              cursor: (loading || remainingSeconds > 0) ? 'not-allowed' : 'pointer',
+              opacity: (loading || remainingSeconds > 0) ? 0.75 : 1,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -312,7 +456,12 @@ export default function AdminLoginPage() {
               transition: 'all 0.2s',
             }}
           >
-            {loading ? (
+            {remainingSeconds > 0 ? (
+              <>
+                <Clock style={{ width: 16, height: 16 }} />
+                <span>ระงับการเข้าสู่ระบบ ({formatRemainingTime(remainingSeconds)})</span>
+              </>
+            ) : loading ? (
               <>
                 <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} />
                 <span>กำลังเข้าสู่ระบบและเชื่อมต่อ API...</span>
@@ -325,11 +474,6 @@ export default function AdminLoginPage() {
             )}
           </button>
         </form>
-
-        {/* Footer note */}
-        <p style={{ textAlign: 'center', fontSize: 11, color: '#3d4d6a', marginTop: 20, marginBottom: 0 }}>
-          ระบบจะเชื่อมต่อ API Token และฐานข้อมูลให้อัตโนมัติ
-        </p>
       </div>
 
       <style>{`

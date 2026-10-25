@@ -6,9 +6,10 @@ import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import {
   Wine, Search, Plus, Edit2, Trash2, ShieldAlert, CheckCircle2,
   RotateCcw, AlertTriangle, X, Loader2, Save, Tag, Check, RefreshCw,
-  Layers, Package, DollarSign, Barcode, Sparkles
+  Layers, Package, DollarSign, Barcode, Sparkles, BookOpen, DownloadCloud, Globe
 } from 'lucide-react';
 import { catalogApi } from '@/lib/api/catalog';
+import { wineProductsApi, type WineProductItem } from '@/lib/api/wine-products';
 import type { CategoryResponse, ProductResponse } from '@/lib/api/types';
 import { useApiAuth, ensureApiAuth } from '@/lib/store/api-auth';
 
@@ -42,8 +43,8 @@ interface CategoryRow {
 export default function AdminProductsPage() {
   const { accessToken } = useApiAuth();
 
-  // Tab State: 'products' | 'categories'
-  const [activeTab, setActiveTab] = useState<'products' | 'categories'>('products');
+  // Tab State: 'products' | 'categories' | 'wine_catalog'
+  const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'wine_catalog'>('products');
 
   // Data States
   const [products, setProducts] = useState<ProductRow[]>([]);
@@ -85,6 +86,44 @@ export default function AdminProductsPage() {
   });
 
   const [saving, setSaving] = useState(false);
+
+  type WineProductRow = WineProductItem;
+
+  // 🍷 Wine Reference Catalog State (Section 13 /api/v1/wine-products/)
+  const [wineProducts, setWineProducts] = useState<WineProductRow[]>([]);
+  const [wineLoading, setWineLoading] = useState(false);
+  const [wineTotal, setWineTotal] = useState(0);
+  const [winePage, setWinePage] = useState(1);
+
+  async function loadWineCatalog(page = 1, searchQuery = '') {
+    setWineLoading(true);
+    try {
+      const res = await wineProductsApi.list({ page, per_page: 15, search: searchQuery || undefined });
+      setWineProducts((res.items || []).map((item, idx) => ({ ...item, id: item.id ?? idx + 1 })));
+      setWineTotal(res.total || 0);
+      setWinePage(page);
+    } catch (err) {
+      console.warn('Failed to load wine reference catalog:', err);
+    } finally {
+      setWineLoading(false);
+    }
+  }
+
+  const handleImportWineProduct = (wp: WineProductItem) => {
+    setIsAddProductModalOpen(true);
+    setProductForm({
+      name: wp.product_name || `Wine ${wp.code}`,
+      description: [wp.brands, wp.countries_en, wp.categories_en, wp.alcohol_100g ? `แอลกอฮอล์ ${wp.alcohol_100g}%` : null].filter(Boolean).join(' • '),
+      category_id: categories.length > 0 ? String(categories[0].id) : '',
+      sku: wp.code,
+      barcode: wp.code,
+      selling_price: '890',
+      cost_price: '550',
+      unit: wp.quantity || 'ขวด',
+      is_active: true,
+    });
+    triggerNotification('success', `คัดลอกข้อมูล "${wp.product_name}" เข้าระบบแล้ว กรุณาระบุราคาขายและกดบันทึก`);
+  };
 
   // Map category_id -> name for quick lookup
   const categoryMap = useMemo(() => {
@@ -228,6 +267,12 @@ export default function AdminProductsPage() {
         unit: productForm.unit || 'each',
         is_active: productForm.is_active,
       };
+
+      if (!payload.selling_price || payload.selling_price <= 0) {
+        triggerNotification('error', 'ราคาขาย (Selling Price) ต้องมากกว่า 0 บาทตามมาตรฐาน Backend');
+        setSaving(false);
+        return;
+      }
 
       if (editingProduct) {
         await catalogApi.updateProduct(editingProduct.id, payload, token);
@@ -565,6 +610,70 @@ export default function AdminProductsPage() {
     }
   ];
 
+  const wineColumns: Column<WineProductRow>[] = [
+    {
+      header: 'รหัสสินค้า',
+      accessor: (row) => <span className="font-mono font-bold text-[#22e5ff] text-xs">#{row.code}</span>,
+      sortable: true,
+      sortKey: 'code',
+    },
+    {
+      header: 'ชื่อไวน์ / แบรนด์',
+      accessor: (row) => (
+        <div className="flex items-center gap-2.5">
+          {row.image_small_url || row.image_url ? (
+            <img src={row.image_small_url || row.image_url || ''} alt={row.product_name || ''} className="w-9 h-9 rounded-lg object-contain bg-white/5 border border-white/10 shrink-0" />
+          ) : (
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-cyan-500/10 border border-cyan-500/30 text-[#22e5ff] shrink-0">
+              <Wine className="w-4 h-4" />
+            </div>
+          )}
+          <div>
+            <div className="font-extrabold text-[#eef2ff] text-sm">{row.product_name || `Wine ${row.code}`}</div>
+            <div className="text-[11px] text-[#5a6e90]">{row.brands || 'Unbranded'}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      header: 'หมวดหมู่ / แหล่งกำเนิด',
+      accessor: (row) => (
+        <div className="text-xs">
+          <div className="text-[#94a3c4] font-semibold">{row.categories_en || '-'}</div>
+          <div className="text-[10px] text-[#5a6e90] flex items-center gap-1">
+            <Globe className="w-2.5 h-2.5" />
+            <span>{row.countries_en || row.origins_en || '-'}</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      header: 'ปริมาณ / แอลกอฮอล์',
+      accessor: (row) => (
+        <div className="text-xs font-mono">
+          <div className="text-[#94a3c4]">{row.quantity || '-'}</div>
+          {row.alcohol_100g && <div className="text-[10px] text-amber-300 font-semibold">{row.alcohol_100g}% Alc</div>}
+        </div>
+      ),
+    },
+    {
+      header: 'การจัดการ',
+      accessor: (row) => (
+        <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => handleImportWineProduct(row)}
+            className="admin-btn-primary text-xs px-3 py-1.5 flex items-center gap-1.5 cursor-pointer font-bold"
+            title="คัดลอกข้อมูลเข้าแคตตาล็อกร้านค้า"
+          >
+            <DownloadCloud className="w-3.5 h-3.5" />
+            <span>นำเข้าสู่ร้านค้า</span>
+          </button>
+        </div>
+      ),
+      className: 'text-right'
+    }
+  ];
+
   return (
     <div className="space-y-5 sm:space-y-6 select-none font-sans animate-in" style={{ padding: '20px', maxWidth: 1500 }}>
       <AdminPageHeader
@@ -574,13 +683,16 @@ export default function AdminProductsPage() {
         action={
           <div className="flex items-center gap-2">
             <button
-              onClick={() => loadData(true)}
-              disabled={refreshing}
+              onClick={() => {
+                if (activeTab === 'wine_catalog') loadWineCatalog(winePage, search);
+                else loadData(true);
+              }}
+              disabled={refreshing || wineLoading}
               className="p-2.5 px-3.5 rounded-xl transition-all duration-200 cursor-pointer disabled:opacity-50 flex items-center gap-2 text-xs font-semibold"
               style={{ color: '#22e5ff', background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.2)' }}
               title="รีเฟรชข้อมูลสินค้าและหมวดหมู่"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${(refreshing || wineLoading) ? 'animate-spin' : ''}`} />
               <span>รีเฟรชข้อมูล</span>
             </button>
             {activeTab === 'products' ? (
@@ -590,20 +702,20 @@ export default function AdminProductsPage() {
               >
                 <Plus className="w-4 h-4" /> เพิ่มสินค้าใหม่
               </button>
-            ) : (
+            ) : activeTab === 'categories' ? (
               <button
                 onClick={handleOpenAddCategory}
                 className="admin-btn-primary inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> เพิ่มหมวดหมู่ใหม่
               </button>
-            )}
+            ) : null}
           </div>
         }
       />
 
       {/* Tabs Switcher */}
-      <div className="flex items-center gap-2 border-b border-[rgba(255,255,255,0.08)] pb-2">
+      <div className="flex items-center gap-2 border-b border-[rgba(255,255,255,0.08)] pb-2 flex-wrap">
         <button
           onClick={() => setActiveTab('products')}
           className={`px-4 py-2 text-xs font-black rounded-lg transition-all flex items-center gap-2 cursor-pointer ${
@@ -631,6 +743,24 @@ export default function AdminProductsPage() {
           <span>หมวดหมู่สินค้า (Categories)</span>
           <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] bg-white/10 font-mono">
             {categories.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => {
+            setActiveTab('wine_catalog');
+            if (wineProducts.length === 0) loadWineCatalog(1, search);
+          }}
+          className={`px-4 py-2 text-xs font-black rounded-lg transition-all flex items-center gap-2 cursor-pointer ${
+            activeTab === 'wine_catalog'
+              ? 'bg-[rgba(34,229,255,0.15)] text-[#22e5ff] border border-[rgba(34,229,255,0.30)] shadow-[0_0_12px_rgba(34,229,255,0.2)]'
+              : 'text-[#94a3c4] hover:text-[#eef2ff] hover:bg-white/5'
+          }`}
+        >
+          <Globe className="w-4 h-4" />
+          <span>ฐานข้อมูลไวน์อ้างอิง (Wine DB)</span>
+          <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] bg-white/10 font-mono">
+            {wineTotal > 0 ? wineTotal : '141+'}
           </span>
         </button>
       </div>
@@ -723,7 +853,7 @@ export default function AdminProductsPage() {
           totalItems={filteredProducts.length}
           emptyMessage="ไม่พบรายการสินค้าใน FastAPI Database"
         />
-      ) : (
+      ) : activeTab === 'categories' ? (
         <DataTable
           columns={categoryColumns}
           data={filteredCategories}
@@ -732,6 +862,19 @@ export default function AdminProductsPage() {
           totalItems={filteredCategories.length}
           emptyMessage="ไม่พบข้อมูลหมวดหมู่ใน FastAPI Database"
         />
+      ) : (
+        <div className="space-y-4">
+          <DataTable
+            columns={wineColumns}
+            data={wineProducts}
+            loading={wineLoading}
+            itemsPerPage={15}
+            totalItems={wineTotal}
+            currentPage={winePage}
+            onPageChange={(page) => loadWineCatalog(page, search)}
+            emptyMessage="ไม่พบรายการไวน์อ้างอิงจาก Open Food Facts API (สามารถกดค้นหาหรือรีเฟรชได้)"
+          />
+        </div>
       )}
 
       {/* ─── Add/Edit Product Modal ─────────────────────────────── */}

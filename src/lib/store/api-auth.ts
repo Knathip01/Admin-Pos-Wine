@@ -111,28 +111,7 @@ export async function ensureApiAuth(forceRefresh = false): Promise<string | null
         }
       }
 
-      // Attempt auto-login with default superadmin credentials
-      const attempts = [
-        { username: DEFAULT_API_CREDENTIALS.username, password: DEFAULT_API_CREDENTIALS.password },
-        { username: DEFAULT_API_CREDENTIALS.email, password: DEFAULT_API_CREDENTIALS.password },
-      ]
-
-      for (const cred of attempts) {
-        try {
-          const tokens = await authApi.login(cred)
-          if (tokens?.access_token) {
-            state.setTokens(tokens.access_token, tokens.refresh_token)
-            // Fetch profile in background without blocking the token return
-            authApi.me(tokens.access_token).then((profile) => {
-              if (profile) state.setProfile(profile)
-            }).catch(() => {})
-            return tokens.access_token
-          }
-        } catch {
-          // Continue to next attempt
-        }
-      }
-
+      // User must explicitly log in at /admin/login. No automatic background auto-login.
       return null
     } catch {
       return null

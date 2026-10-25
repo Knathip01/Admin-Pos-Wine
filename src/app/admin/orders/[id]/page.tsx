@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import OrderStatusBadge from '@/components/admin/OrderStatusBadge'
-import { ArrowLeft, Printer, Wine, User, CreditCard, Loader2, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Printer, Wine, User, CreditCard, Loader2, AlertCircle, MapPin, Phone, Copy, Check } from 'lucide-react'
 import { ordersApi } from '@/lib/api/orders'
 import { useApiAuth, ensureApiAuth } from '@/lib/store/api-auth'
 import type { OrderResponse } from '@/lib/api/types'
@@ -14,6 +14,12 @@ export default function OrderDetailPage() {
   const orderId = Number(params.id)
   const { accessToken } = useApiAuth()
   const [order, setOrder] = useState<OrderResponse | null>(null)
+  const [shippingInfo, setShippingInfo] = useState<{
+    recipient_name?: string;
+    phone?: string;
+    address?: string;
+  } | null>(null)
+  const [copied, setCopied] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -26,6 +32,31 @@ export default function OrderDetailPage() {
         if (!token) throw new Error('ไม่สามารถเชื่อมต่อ API ได้')
         const data = await ordersApi.get(orderId, token)
         setOrder(data)
+
+        // Parse address from notes as initial fallback
+        if (data.notes) {
+          const match = data.notes.match(/(?:ที่อยู่จัดส่ง|ที่อยู่|Shipping Address|Address):\s*([^|\n]+)/i)
+          if (match && match[1]) {
+            setShippingInfo({ address: match[1].trim() })
+          }
+        }
+
+        // Fetch shared shipping address details
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://yywymyxautnskmuvupwv.supabase.co'
+        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_L0zDWoTrfHQHPSvUBntbgA_H-kUMxgR'
+        fetch(`${supabaseUrl}/rest/v1/settings?key=eq.order_shipping_addresses&select=*`, {
+          headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+          cache: 'no-store'
+        })
+          .then(res => res.json())
+          .then(rows => {
+            if (Array.isArray(rows) && rows.length > 0) {
+              const map = typeof rows[0].value === 'string' ? JSON.parse(rows[0].value) : (rows[0].value || {})
+              const info = map[String(orderId)] || (data.order_number ? map[String(data.order_number)] : null)
+              if (info) setShippingInfo(info)
+            }
+          })
+          .catch(() => {})
       } catch (err: any) {
         setError(err.message || 'ไม่พบข้อมูลออเดอร์')
       } finally {
@@ -111,6 +142,68 @@ export default function OrderDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Shipping Address Card */}
+        {shippingInfo && (shippingInfo.address || shippingInfo.phone) && (
+          <div className="p-5 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-cyan-300 font-bold text-xs uppercase tracking-wide">
+                <MapPin className="w-4 h-4 text-[#22e5ff]" />
+                <span>ข้อมูลที่อยู่จัดส่งสินค้า (Shipping Destination)</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const textToCopy = [
+                    shippingInfo.recipient_name ? `ผู้รับ: ${shippingInfo.recipient_name}` : '',
+                    shippingInfo.phone ? `เบอร์โทร: ${shippingInfo.phone}` : '',
+                    shippingInfo.address ? `ที่อยู่: ${shippingInfo.address}` : '',
+                  ].filter(Boolean).join('\n');
+                  navigator.clipboard.writeText(textToCopy);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-[#22e5ff] text-xs font-bold border border-cyan-500/30 flex items-center gap-1.5 cursor-pointer transition"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-emerald-300">คัดลอกแล้ว!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>คัดลอกที่อยู่</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div>
+                <span className="text-[#5a6e90] text-[10px] uppercase font-bold block">ผู้รับพัสดุ:</span>
+                <span className="font-bold text-[#eef2ff]">{shippingInfo.recipient_name || order.customer_name || 'ลูกค้าทั่วไป'}</span>
+              </div>
+              <div>
+                <span className="text-[#5a6e90] text-[10px] uppercase font-bold block">เบอร์ติดต่อ:</span>
+                {shippingInfo.phone ? (
+                  <a href={`tel:${shippingInfo.phone}`} className="font-mono font-bold text-[#fbbf24] hover:underline flex items-center gap-1">
+                    <Phone className="w-3.5 h-3.5" /> {shippingInfo.phone}
+                  </a>
+                ) : (
+                  <span className="text-[#5a6e90]">-</span>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-white/5 text-xs">
+              <span className="text-[#5a6e90] text-[10px] uppercase font-bold block mb-1">ที่อยู่จัดส่ง:</span>
+              <p className="text-[#eef2ff] font-medium leading-relaxed bg-black/30 p-3 rounded-xl border border-white/5">
+                {shippingInfo.address || '- ไม่ระบุรายละเอียดที่อยู่ -'}
+              </p>
+            </div>
+          </div>
+        )}
 
         <div>
           <h3 className="text-xs font-bold text-[#5a6e90] uppercase tracking-wider mb-3">รายการสินค้าในบิล:</h3>

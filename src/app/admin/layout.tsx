@@ -7,12 +7,13 @@ import Link from 'next/link'
 import { Profile } from '@/lib/types'
 import { getRoleLabel } from '@/lib/utils'
 import { authApi } from '@/lib/api/auth'
-import { useApiAuth, ensureApiAuth } from '@/lib/store/api-auth'
+import { useApiAuth, ensureApiAuth, isTokenExpired } from '@/lib/store/api-auth'
+import { createClient } from '@/lib/supabase/client'
 import {
   BarChart3, ChevronLeft, ChevronRight, CircleUserRound, LayoutDashboard,
   LogOut, Menu, Package, QrCode, Receipt, Settings,
   ShoppingCart, Tag, UserCog, Warehouse, Wine, CreditCard, Users, Star, Clock,
-  Moon, Sun, Sparkles
+  Moon, Sun, Sparkles, Lock
 } from 'lucide-react'
 import Heartbeat from '@/components/Heartbeat'
 import AdminAIChat from '@/components/admin/AdminAIChat'
@@ -244,6 +245,64 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [desktopCollapsed, setDesktopCollapsed] = useState(false)
   const [time, setTime] = useState('')
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null)
+
+  // Strict Auth Guard: Must be logged in to view any admin data or navigate back
+  useEffect(() => {
+    if (pathname === '/admin/login') {
+      setIsAuthorized(true)
+      return
+    }
+
+    const verifyAuth = () => {
+      if (typeof window === 'undefined') return
+
+      const hasSessionCookie = document.cookie
+        .split(';')
+        .some((c) => c.trim().startsWith('bottleclub_admin_session=active'))
+      const hasLoggedInFlag = localStorage.getItem('bottleclub_logged_in') === '1'
+
+      let hasValidToken = false
+      if (accessToken && !isTokenExpired(accessToken)) {
+        hasValidToken = true
+      } else {
+        try {
+          const raw = localStorage.getItem('bottleclub-api-auth')
+          if (raw) {
+            const parsed = JSON.parse(raw)
+            const token = parsed?.state?.accessToken
+            const refresh = parsed?.state?.refreshToken
+            if ((token && !isTokenExpired(token)) || refresh) {
+              hasValidToken = true
+            }
+          }
+        } catch {}
+      }
+
+      const authorized = hasSessionCookie || hasLoggedInFlag || hasValidToken
+
+      if (!authorized) {
+        setIsAuthorized(false)
+        router.replace(`/admin/login?redirectTo=${encodeURIComponent(pathname)}`)
+      } else {
+        setIsAuthorized(true)
+      }
+    }
+
+    verifyAuth()
+
+    // Intercept back/forward navigation from browser bfcache
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        verifyAuth()
+      }
+    }
+    window.addEventListener('pageshow', handlePageShow)
+
+    return () => {
+      window.removeEventListener('pageshow', handlePageShow)
+    }
+  }, [pathname, accessToken, router])
 
   // Load theme from localStorage
   useEffect(() => {
@@ -332,11 +391,62 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const handleLogout = async () => {
     clearApiAuth()
-    router.push('/admin/login')
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('bottleclub_logged_in')
+      localStorage.removeItem('bottleclub-api-auth')
+      document.cookie = 'bottleclub_admin_session=; path=/; max-age=0; SameSite=Lax'
+    }
+    try {
+      const supabase = createClient()
+      await supabase.auth.signOut()
+    } catch {}
+    setIsAuthorized(false)
+    router.replace('/admin/login')
   }
 
   if (pathname === '/admin/login') {
     return <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>{children}</div>
+  }
+
+  // If not authorized yet, show security transition and block all data rendering
+  if (!isAuthorized) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: '#05080f',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#eef2ff',
+        fontFamily: "'Outfit', sans-serif",
+        gap: 16,
+        padding: 24,
+        textAlign: 'center',
+      }}>
+        <div style={{
+          width: 64,
+          height: 64,
+          borderRadius: 20,
+          background: 'rgba(0, 212, 255, 0.08)',
+          border: '1px solid rgba(0, 212, 255, 0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 0 35px rgba(0, 212, 255, 0.18)',
+        }}>
+          <Lock style={{ width: 28, height: 28, color: '#00d4ff' }} />
+        </div>
+        <div>
+          <h2 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 8px 0', color: '#eef2ff' }}>
+            ต้องเข้าสู่ระบบก่อนดูข้อมูล
+          </h2>
+          <p style={{ fontSize: 13, color: '#64748b', margin: 0, maxWidth: 360, lineHeight: 1.6 }}>
+            เฉพาะบัญชี CEO Super Admin ที่ได้รับอนุญาตเท่านั้น ระบบกำลังนำท่านไปยังหน้าเข้าสู่ระบบ...
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (

@@ -2,27 +2,48 @@
 
 import React, { useEffect, useState } from 'react';
 import DataTable, { Column } from '@/components/admin/DataTable';
-import { Users, Search, Eye, AlertCircle, ShieldAlert, CheckCircle2, AlertTriangle, RotateCcw, Award, Plus } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import {
+  Users,
+  Search,
+  Eye,
+  ShieldAlert,
+  CheckCircle2,
+  AlertTriangle,
+  RotateCcw,
+  Award,
+  Plus,
+  X,
+  Phone,
+  Mail,
+  User,
+  History,
+  TrendingUp,
+  TrendingDown,
+  Save,
+  Check,
+  MapPin,
+  Copy,
+} from 'lucide-react';
 import { customersApi } from '@/lib/api/customers';
 import { usersApi } from '@/lib/api/users';
 import { loyaltyApi } from '@/lib/api/loyalty';
 import { useApiAuth, ensureApiAuth } from '@/lib/store/api-auth';
-import type { CustomerResponse } from '@/lib/api/types';
+import type { CustomerResponse, LoyaltyBalanceResponse, LoyaltyTransactionResponse } from '@/lib/api/types';
 
 interface MemberRow {
   id: number;
   name: string;
+  first_name?: string;
+  last_name?: string;
   email: string;
+  phone?: string;
   points: number;
-  orderCount: number;
   isActive: boolean;
   createdAt: string;
+  address?: string | null;
 }
 
 export default function AdminMembersPage() {
-  const router = useRouter();
   const { accessToken } = useApiAuth();
 
   // State
@@ -37,6 +58,34 @@ export default function AdminMembersPage() {
 
   // Notification state
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Detail / Loyalty Modal State
+  const [selectedMember, setSelectedMember] = useState<MemberRow | null>(null);
+  const [loyaltyBalance, setLoyaltyBalance] = useState<LoyaltyBalanceResponse | null>(null);
+  const [loyaltyHistory, setLoyaltyHistory] = useState<LoyaltyTransactionResponse[]>([]);
+  const [loadingLoyalty, setLoadingLoyalty] = useState(false);
+
+  // Adjust Points Form inside Modal
+  const [pointsAction, setPointsAction] = useState<'earn' | 'redeem'>('earn');
+  const [pointsAmount, setPointsAmount] = useState<string>('');
+  const [pointsReason, setPointsReason] = useState<string>('');
+  const [submittingPoints, setSubmittingPoints] = useState(false);
+
+  // Edit Profile Form inside Modal
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Add Member Modal State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addForm, setAddForm] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+  });
+  const [addingMember, setAddingMember] = useState(false);
 
   async function loadMembers(force = false) {
     if (members.length === 0) setLoading(true);
@@ -82,7 +131,6 @@ export default function AdminMembersPage() {
           staffUsernames.has(u.username?.toLowerCase().trim()) ||
           (u.roles && u.roles.length > 0);
 
-        // If this user is NOT staff and NOT already in customers table, they registered from web (ProjectbottleClub1)
         if (!isStaff && !existingCustomerEmails.has(uEmail)) {
           registeredMembers.push({
             id: u.id,
@@ -105,17 +153,93 @@ export default function AdminMembersPage() {
         }
       }
 
+      // Fetch customer addresses and order shipping addresses from shared Supabase settings
+      let customerAddressesMap: Record<string, any> = {};
+      let orderShippingMap: Record<string, any> = {};
+      try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://yywymyxautnskmuvupwv.supabase.co';
+        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_L0zDWoTrfHQHPSvUBntbgA_H-kUMxgR';
+        const [addrRes, shipRes] = await Promise.allSettled([
+          fetch(`${supabaseUrl}/rest/v1/settings?key=eq.customer_addresses&select=*`, {
+            headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+            cache: 'no-store',
+          }),
+          fetch(`${supabaseUrl}/rest/v1/settings?key=eq.order_shipping_addresses&select=*`, {
+            headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+            cache: 'no-store',
+          }),
+        ]);
+
+        if (addrRes.status === 'fulfilled' && addrRes.value.ok) {
+          const rows = await addrRes.value.json();
+          if (Array.isArray(rows) && rows.length > 0) {
+            const rawVal = rows[0].value;
+            customerAddressesMap = typeof rawVal === 'string' ? JSON.parse(rawVal) : (rawVal || {});
+          }
+        }
+
+        if (shipRes.status === 'fulfilled' && shipRes.value.ok) {
+          const rows = await shipRes.value.json();
+          if (Array.isArray(rows) && rows.length > 0) {
+            const rawVal = rows[0].value;
+            orderShippingMap = typeof rawVal === 'string' ? JSON.parse(rawVal) : (rawVal || {});
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to load shared customer addresses in members:', e);
+      }
+
       const allCustomers = [...rawCustomers, ...registeredMembers];
 
-      const rows: MemberRow[] = allCustomers.map((c: any) => ({
-        id: c.id,
-        name: c.full_name || `${c.first_name || ''} ${c.last_name || ''}`.trim() || `Customer #${c.id}`,
-        email: c.email || c.phone || '-',
-        points: Number(c.loyalty_points_balance ?? c.total_points ?? 0),
-        orderCount: 0,
-        isActive: c.is_active ?? true,
-        createdAt: c.created_at ? new Date(c.created_at).toLocaleDateString('th-TH') : '-',
-      }));
+      const rows: MemberRow[] = allCustomers.map((c: any) => {
+        const cEmail = (c.email || '').toLowerCase().trim();
+        const cIdStr = String(c.id);
+
+        let matchedAddrList = customerAddressesMap[cIdStr] || (cEmail ? customerAddressesMap[cEmail] : null);
+        let formattedAddress: string | null = null;
+        if (Array.isArray(matchedAddrList) && matchedAddrList.length > 0) {
+          const def = matchedAddrList.find((a: any) => a.is_default_shipping) || matchedAddrList[0];
+          if (def) {
+            const parts = [
+              def.address_line,
+              def.subdistrict,
+              def.district,
+              def.province,
+              def.postal_code,
+              def.country,
+            ].filter(Boolean);
+            formattedAddress = parts.join(' ');
+          }
+        }
+
+        // Fallback: check order_shipping_addresses
+        if (!formattedAddress) {
+          const shipValues: any[] = Object.values(orderShippingMap);
+          const fullName = (c.full_name || `${c.first_name || ''} ${c.last_name || ''}`).trim().toLowerCase();
+          const matchShip = shipValues.find(
+            (s: any) =>
+              (s.customer_email && s.customer_email.toLowerCase() === cEmail) ||
+              (s.recipient_name && s.recipient_name.toLowerCase() === fullName) ||
+              (s.phone && c.phone && s.phone === c.phone)
+          );
+          if (matchShip && matchShip.address) {
+            formattedAddress = matchShip.address;
+          }
+        }
+
+        return {
+          id: c.id,
+          name: c.full_name || `${c.first_name || ''} ${c.last_name || ''}`.trim() || `Customer #${c.id}`,
+          first_name: c.first_name || '',
+          last_name: c.last_name || '',
+          email: c.email || '-',
+          phone: c.phone || '',
+          points: Number(c.loyalty_points_balance ?? c.total_points ?? 0),
+          isActive: c.is_active ?? true,
+          createdAt: c.created_at ? new Date(c.created_at).toLocaleDateString('th-TH') : '-',
+          address: formattedAddress,
+        };
+      });
 
       setMembers(rows);
     } catch (err: any) {
@@ -123,6 +247,7 @@ export default function AdminMembersPage() {
       setMembers([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }
 
@@ -132,7 +257,179 @@ export default function AdminMembersPage() {
 
   const triggerNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
-    setTimeout(() => setNotification(null), 3000);
+    setTimeout(() => setNotification(null), 3500);
+  };
+
+  const handleOpenMemberDetail = async (member: MemberRow) => {
+    setSelectedMember(member);
+    setEditFirstName(member.first_name || member.name.split(' ')[0] || '');
+    setEditLastName(member.last_name || member.name.split(' ').slice(1).join(' ') || '');
+    setEditPhone(member.phone || '');
+    setPointsAmount('');
+    setPointsReason('');
+    setLoadingLoyalty(true);
+
+    try {
+      const token = accessToken || await ensureApiAuth();
+      const [balRes, txRes] = await Promise.allSettled([
+        loyaltyApi.getBalance(member.id, token || undefined),
+        loyaltyApi.listTransactions(member.id, { per_page: 20 }, token || undefined),
+      ]);
+
+      if (balRes.status === 'fulfilled' && balRes.value) {
+        setLoyaltyBalance(balRes.value);
+        // update row points
+        setMembers(prev => prev.map(m => m.id === member.id ? { ...m, points: balRes.value.points_balance ?? balRes.value.balance ?? m.points } : m));
+      } else {
+        setLoyaltyBalance({
+          customer_id: member.id,
+          balance: member.points,
+          points_balance: member.points,
+          lifetime_points: member.points,
+          tier: 'Standard',
+          tier_multiplier: 1.0,
+        });
+      }
+
+      if (txRes.status === 'fulfilled') {
+        const val: any = txRes.value;
+        const txList = Array.isArray(val) ? val : (val?.transactions || val?.data || []);
+        setLoyaltyHistory(txList);
+      } else {
+        setLoyaltyHistory([]);
+      }
+    } catch {
+      // Fallback
+      setLoyaltyBalance({
+        customer_id: member.id,
+        balance: member.points,
+        points_balance: member.points,
+        lifetime_points: member.points,
+        tier: 'Standard',
+        tier_multiplier: 1.0,
+      });
+      setLoyaltyHistory([]);
+    } finally {
+      setLoadingLoyalty(false);
+    }
+  };
+
+  const handleAdjustPoints = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedMember) return;
+    const amount = parseInt(pointsAmount, 10);
+    if (!amount || amount <= 0) {
+      triggerNotification('error', 'กรุณาระบุจำนวนคะแนนที่ถูกต้อง (มากกว่า 0)');
+      return;
+    }
+
+    setSubmittingPoints(true);
+    try {
+      const token = accessToken || await ensureApiAuth();
+      if (!token) throw new Error('ไม่พบสิทธิ์การเข้าถึง API');
+
+      if (pointsAction === 'earn') {
+        await loyaltyApi.earn({
+          customer_id: selectedMember.id,
+          points: amount,
+          reason: pointsReason.trim() || 'Admin Adjustment (Earn)',
+        }, token);
+        triggerNotification('success', `เพิ่มคะแนน ${amount} Points ให้กับ ${selectedMember.name} สำเร็จ`);
+      } else {
+        await loyaltyApi.redeem({
+          customer_id: selectedMember.id,
+          points: amount,
+          reason: pointsReason.trim() || 'Admin Adjustment (Redeem)',
+        }, token);
+        triggerNotification('success', `ลดคะแนน ${amount} Points สำหรับ ${selectedMember.name} สำเร็จ`);
+      }
+
+      // Reload loyalty info
+      const [bal, txs] = await Promise.all([
+        loyaltyApi.getBalance(selectedMember.id, token),
+        loyaltyApi.listTransactions(selectedMember.id, { per_page: 20 }, token),
+      ]);
+      setLoyaltyBalance(bal);
+      const val: any = txs;
+      setLoyaltyHistory(Array.isArray(val) ? val : (val?.transactions || val?.data || []));
+      setMembers(prev => prev.map(m => m.id === selectedMember.id ? { ...m, points: bal.points_balance ?? bal.balance ?? m.points } : m));
+      setPointsAmount('');
+      setPointsReason('');
+    } catch (err: any) {
+      triggerNotification('error', `ปรับคะแนนไม่สำเร็จ: ${err.message}`);
+    } finally {
+      setSubmittingPoints(false);
+    }
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedMember) return;
+
+    setSavingProfile(true);
+    try {
+      const token = accessToken || await ensureApiAuth();
+      if (!token) throw new Error('ไม่พบสิทธิ์การเข้าถึง API');
+
+      await customersApi.update(selectedMember.id, {
+        first_name: editFirstName.trim(),
+        last_name: editLastName.trim() || undefined,
+        phone: editPhone.trim() || undefined,
+      }, token);
+
+      const fullName = `${editFirstName.trim()} ${editLastName.trim()}`.trim();
+      setSelectedMember(prev => prev ? {
+        ...prev,
+        name: fullName || prev.name,
+        first_name: editFirstName.trim(),
+        last_name: editLastName.trim(),
+        phone: editPhone.trim(),
+      } : null);
+
+      setMembers(prev => prev.map(m => m.id === selectedMember.id ? {
+        ...m,
+        name: fullName || m.name,
+        first_name: editFirstName.trim(),
+        last_name: editLastName.trim(),
+        phone: editPhone.trim(),
+      } : m));
+
+      triggerNotification('success', 'อัปเดตข้อมูลลูกค้าเรียบร้อยแล้ว');
+    } catch (err: any) {
+      triggerNotification('error', `บันทึกข้อมูลไม่สำเร็จ: ${err.message}`);
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleCreateMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addForm.first_name.trim()) {
+      triggerNotification('error', 'กรุณาระบุชื่อจริง');
+      return;
+    }
+
+    setAddingMember(true);
+    try {
+      const token = accessToken || await ensureApiAuth();
+      if (!token) throw new Error('ไม่พบสิทธิ์การเข้าถึง API');
+
+      const created = await customersApi.create({
+        first_name: addForm.first_name.trim(),
+        last_name: addForm.last_name.trim() || undefined,
+        email: addForm.email.trim() || undefined,
+        phone: addForm.phone.trim() || undefined,
+      }, token);
+
+      triggerNotification('success', `เพิ่มสมาชิก "${created.first_name} ${created.last_name || ''}" สำเร็จ`);
+      setIsAddModalOpen(false);
+      setAddForm({ first_name: '', last_name: '', email: '', phone: '' });
+      loadMembers(true);
+    } catch (err: any) {
+      triggerNotification('error', `เพิ่มสมาชิกไม่สำเร็จ: ${err.message}`);
+    } finally {
+      setAddingMember(false);
+    }
   };
 
   const handleToggleStatus = async (memberId: number, name: string, currentStatus: boolean) => {
@@ -142,23 +439,15 @@ export default function AdminMembersPage() {
       : `คุณต้องการระงับใช้งานบัญชีของ "${name}" ใช่หรือไม่?`;
 
     if (confirm(confirmMessage)) {
-      // Optimistic update
       setMembers(prev => prev.map(m => m.id === memberId ? { ...m, isActive: nextStatus } : m));
 
       try {
-        if (accessToken) {
-          await customersApi.update(memberId, { is_active: nextStatus }, accessToken);
-        } else {
-          const res = await fetch(`/api/admin/users/${memberId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ isActive: nextStatus })
-          });
-          if (!res.ok) throw new Error('ไม่สามารถอัปเดตสถานะบัญชีผู้ใช้ได้');
+        const token = accessToken || await ensureApiAuth();
+        if (token) {
+          await customersApi.update(memberId, { is_active: nextStatus }, token);
         }
         triggerNotification('success', `อัปเดตสถานะบัญชีของ "${name}" เรียบร้อยแล้ว`);
       } catch (err: any) {
-        // Revert
         setMembers(prev => prev.map(m => m.id === memberId ? { ...m, isActive: currentStatus } : m));
         triggerNotification('error', err.message);
       }
@@ -167,9 +456,14 @@ export default function AdminMembersPage() {
 
   // Filter members locally
   let filteredMembers = [...members];
-  if (search && !accessToken) {
+  if (search) {
     const q = search.toLowerCase();
-    filteredMembers = filteredMembers.filter(m => m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q) || m.id.toString().includes(q));
+    filteredMembers = filteredMembers.filter(m =>
+      m.name.toLowerCase().includes(q) ||
+      m.email.toLowerCase().includes(q) ||
+      (m.phone && m.phone.toLowerCase().includes(q)) ||
+      m.id.toString().includes(q)
+    );
   }
   if (statusFilter) {
     if (statusFilter === 'active') filteredMembers = filteredMembers.filter(m => m.isActive);
@@ -179,29 +473,57 @@ export default function AdminMembersPage() {
   const columns: Column<MemberRow>[] = [
     {
       header: 'รหัสสมาชิก',
-      accessor: (row) => <span className="font-extrabold text-[#22e5ff]">#{row.id}</span>,
+      accessor: (row) => <span className="font-extrabold text-[#22e5ff] font-mono text-xs">#{row.id}</span>,
       sortable: true,
       sortKey: 'id',
     },
     {
       header: 'ชื่อสมาชิก',
-      accessor: (row) => <span className="font-extrabold text-[#eef2ff]">{row.name}</span>,
+      accessor: (row) => (
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-[#22e5ff] text-xs font-bold shrink-0">
+            {row.name.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <div className="font-extrabold text-[#eef2ff] text-sm">{row.name}</div>
+            <div className="text-[11px] text-[#5a6e90]">{row.phone || 'ไม่มีเบอร์โทร'}</div>
+          </div>
+        </div>
+      ),
     },
     {
-      header: 'ข้อมูลติดต่อ',
-      accessor: (row) => <span className="text-[#94a3c4] font-medium">{row.email}</span>,
+      header: 'อีเมลติดต่อ',
+      accessor: (row) => <span className="text-[#94a3c4] font-medium text-xs">{row.email}</span>,
+    },
+    {
+      header: 'ที่อยู่ลูกค้า (Address)',
+      accessor: (row) => (
+        <div className="max-w-[240px]">
+          {row.address ? (
+            <div className="flex items-start gap-1.5 text-xs text-[#cbd5e1] leading-relaxed group">
+              <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
+              <span className="line-clamp-2 select-text font-normal" title={row.address}>
+                {row.address}
+              </span>
+            </div>
+          ) : (
+            <span className="text-[11px] text-[#5a6e90] italic">- ไม่พบที่อยู่จัดส่ง -</span>
+          )}
+        </div>
+      ),
     },
     {
       header: 'คะแนนสะสม (Loyalty)',
-      accessor: (row) => <span className="font-black text-[#fbbf24]" style={{ fontFamily: "'Outfit', sans-serif" }}>{row.points.toLocaleString()} Points</span>,
+      accessor: (row) => (
+        <div className="flex items-center gap-1.5">
+          <Award className="w-3.5 h-3.5 text-[#fbbf24]" />
+          <span className="font-black text-[#fbbf24] font-mono text-xs">
+            {row.points.toLocaleString()} Points
+          </span>
+        </div>
+      ),
       sortable: true,
       sortKey: 'points',
-    },
-    {
-      header: 'จำนวนคำสั่งซื้อ',
-      accessor: (row) => <span className="font-extrabold text-[#eef2ff]">{row.orderCount} ออเดอร์</span>,
-      sortable: true,
-      sortKey: 'orderCount',
     },
     {
       header: 'สถานะบัญชี',
@@ -230,13 +552,14 @@ export default function AdminMembersPage() {
       header: 'การจัดการ',
       accessor: (row) => (
         <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-          <Link
-            href={`/admin/members/${row.id}`}
-            className="admin-btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5 cursor-pointer"
-            style={{ textDecoration: 'none' }}
+          <button
+            onClick={() => handleOpenMemberDetail(row)}
+            className="admin-btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5 cursor-pointer font-bold"
+            title="ดูรายละเอียดและจัดการแต้มสะสม"
           >
-            <Eye className="w-3.5 h-3.5" /> รายละเอียด
-          </Link>
+            <Eye className="w-3.5 h-3.5 text-[#22e5ff]" />
+            <span>ดูข้อมูล / แต้ม</span>
+          </button>
         </div>
       ),
       className: 'text-right'
@@ -249,20 +572,30 @@ export default function AdminMembersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg sm:text-xl font-black text-[#eef2ff] flex items-center gap-2" style={{ fontFamily: "'Outfit', sans-serif" }}>
-            <Users className="w-5 h-5 text-[#22e5ff]" /> สมาชิก & แต้มสะสม (Bottle Club)
+            <Users className="w-5 h-5 text-[#22e5ff]" /> สมาชิก & แต้มสะสม (Bottle Club Members)
           </h2>
-          <p className="text-xs text-[#5a6e90] mt-0.5 font-semibold">ดูโปรไฟล์ลูกค้า เชื่อมต่อคะแนน Loyalty Points และสถานะการใช้งาน</p>
+          <p className="text-xs text-[#5a6e90] mt-0.5 font-semibold">
+            จัดการโปรไฟล์ลูกค้า เชื่อมต่อคะแนน Loyalty Points และประวัติสะสม/แลกแต้มตรงจาก FastAPI Production
+          </p>
         </div>
-        <button
-          onClick={() => loadMembers(true)}
-          disabled={refreshing}
-          className="p-2.5 px-3.5 rounded-xl transition-all duration-200 cursor-pointer disabled:opacity-50 flex items-center gap-2 text-xs font-semibold self-start sm:self-auto"
-          style={{ color: '#22e5ff', background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.2)' }}
-          title="รีเฟรชข้อมูลสมาชิก"
-        >
-          <RotateCcw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-          <span>รีเฟรชข้อมูล</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="admin-btn-primary px-4 py-2.5 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-[0_0_15px_rgba(34,229,255,0.25)]"
+          >
+            <Plus className="w-4 h-4" /> เพิ่มสมาชิกใหม่
+          </button>
+          <button
+            onClick={() => loadMembers(true)}
+            disabled={refreshing}
+            className="p-2.5 px-3.5 rounded-xl transition-all duration-200 cursor-pointer disabled:opacity-50 flex items-center gap-2 text-xs font-semibold"
+            style={{ color: '#22e5ff', background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.2)' }}
+            title="รีเฟรชข้อมูลสมาชิก"
+          >
+            <RotateCcw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+            <span>รีเฟรช API</span>
+          </button>
+        </div>
       </div>
 
       {/* Notifications */}
@@ -284,7 +617,7 @@ export default function AdminMembersPage() {
           </span>
           <input
             type="text"
-            placeholder="ค้นหาชื่อลูกค้า อีเมล หรือ รหัสสมาชิก..."
+            placeholder="ค้นหาชื่อลูกค้า, อีเมล, เบอร์โทรศัพท์ หรือ รหัสสมาชิก..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') loadMembers(); }}
@@ -305,13 +638,15 @@ export default function AdminMembersPage() {
           </select>
         </div>
         
-        {/* Refresh / Reset */}
-        <button
-          onClick={() => { setSearch(''); setStatusFilter(''); loadMembers(); }}
-          className="admin-btn-secondary px-4 py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
-        >
-          <RotateCcw className="w-3.5 h-3.5" /> รีเฟรช
-        </button>
+        {/* Reset */}
+        {(search || statusFilter) && (
+          <button
+            onClick={() => { setSearch(''); setStatusFilter(''); loadMembers(); }}
+            className="admin-btn-secondary px-4 py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shrink-0 text-[#fb7185]"
+          >
+            <RotateCcw className="w-3.5 h-3.5" /> ล้างตัวกรอง
+          </button>
+        )}
       </div>
 
       {/* Error state */}
@@ -329,9 +664,376 @@ export default function AdminMembersPage() {
         loading={loading}
         itemsPerPage={10}
         totalItems={filteredMembers.length}
-        onRowClick={(row) => router.push(`/admin/members/${row.id}`)}
-        emptyMessage="ไม่พบข้อมูลสมาชิกร้านค้าที่ค้นหา"
+        onRowClick={(row) => handleOpenMemberDetail(row)}
+        emptyMessage="ไม่พบข้อมูลสมาชิกร้านค้าในระบบ"
       />
+
+      {/* ─── Member Detail & Loyalty Drawer/Modal ───────────────── */}
+      {selectedMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in">
+          <div className="admin-modal max-w-2xl w-full max-h-[90vh] overflow-y-auto relative">
+            <button
+              onClick={() => setSelectedMember(null)}
+              className="absolute top-4 right-4 text-[#5a6e90] hover:text-[#eef2ff] p-1.5 rounded-lg hover:bg-white/5 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Header */}
+            <div className="flex items-center gap-3.5 mb-5 border-b border-[rgba(255,255,255,0.08)] pb-4">
+              <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-[#22e5ff] text-base font-black">
+                {selectedMember.name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <h3 className="text-base font-black text-[#eef2ff] flex items-center gap-2">
+                  <span>{selectedMember.name}</span>
+                  <span className="text-xs font-mono text-[#22e5ff]">#{selectedMember.id}</span>
+                </h3>
+                <p className="text-xs text-[#5a6e90]">
+                  เข้าร่วมเมื่อ {selectedMember.createdAt} • สถานะ: {selectedMember.isActive ? 'เปิดใช้งาน' : 'ระงับบัญชี'}
+                </p>
+              </div>
+            </div>
+
+            {/* Loyalty Summary Card */}
+            <div className="admin-panel p-4 rounded-xl border border-amber-500/20 bg-gradient-to-r from-amber-500/10 via-transparent to-cyan-500/10 mb-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-300">
+                    <Award className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-bold text-[#94a3c4] uppercase tracking-wider">คะแนนคงเหลือปัจจุบัน</div>
+                    <div className="text-2xl font-black text-amber-300 font-mono">
+                      {(loyaltyBalance?.points_balance ?? loyaltyBalance?.balance ?? selectedMember.points).toLocaleString()} <span className="text-sm font-sans text-[#94a3c4]">Points</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 text-xs font-mono">
+                  <div className="text-right">
+                    <div className="text-[10px] text-[#5a6e90]">ระดับสมาชิก (Tier)</div>
+                    <div className="font-extrabold text-[#22e5ff]">{loyaltyBalance?.tier || 'Standard'}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] text-[#5a6e90]">ตัวคูณแต้ม (Multiplier)</div>
+                    <div className="font-extrabold text-[#eef2ff]">{loyaltyBalance?.tier_multiplier || 1.0}x</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Delivery Address Card */}
+            <div className="admin-panel p-4 rounded-xl border border-rose-500/20 bg-rose-500/5 mb-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0 mt-0.5">
+                    <MapPin className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-bold text-rose-300 uppercase tracking-wider flex items-center gap-2">
+                      <span>ที่อยู่จัดส่ง / ที่อยู่ติดต่อ (Customer Delivery Address)</span>
+                      {selectedMember.address && (
+                        <span className="text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full font-semibold border border-rose-500/30">
+                          บันทึกล่าสุด
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-[#eef2ff] mt-1.5 leading-relaxed font-sans select-text">
+                      {selectedMember.address || 'ลูกค้ายังไม่มีประวัติบันทึกที่อยู่จัดส่งในระบบ'}
+                    </div>
+                    {selectedMember.phone && (
+                      <div className="text-[11px] text-[#94a3c4] mt-1 flex items-center gap-1 font-mono">
+                        <Phone className="w-3 h-3 text-[#22e5ff]" /> {selectedMember.phone}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {selectedMember.address && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(selectedMember.address || '');
+                      triggerNotification('success', 'คัดลอกที่อยู่ลูกค้าสำเร็จ');
+                    }}
+                    className="admin-btn-secondary text-[11px] px-2.5 py-1.5 flex items-center gap-1 shrink-0 cursor-pointer hover:border-rose-400/50"
+                    title="คัดลอกที่อยู่จัดส่ง"
+                  >
+                    <Copy className="w-3.5 h-3.5 text-rose-400" />
+                    <span>คัดลอก</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Tabs / Two Columns: Adjust Points & Update Profile */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+              {/* Adjust Points Box */}
+              <div className="admin-panel p-4 rounded-xl border border-[rgba(255,255,255,0.08)]">
+                <h4 className="text-xs font-black text-[#eef2ff] mb-3 flex items-center gap-1.5">
+                  <TrendingUp className="w-4 h-4 text-[#22e5ff]" /> ปรับคะแนนสะสม (FastAPI Loyalty)
+                </h4>
+                <form onSubmit={handleAdjustPoints} className="space-y-3">
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPointsAction('earn')}
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                        pointsAction === 'earn'
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                          : 'bg-white/5 text-[#94a3c4] border border-white/5 hover:bg-white/10'
+                      }`}
+                    >
+                      <TrendingUp className="w-3.5 h-3.5" /> เพิ่มแต้ม (+Earn)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPointsAction('redeem')}
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                        pointsAction === 'redeem'
+                          ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
+                          : 'bg-white/5 text-[#94a3c4] border border-white/5 hover:bg-white/10'
+                      }`}
+                    >
+                      <TrendingDown className="w-3.5 h-3.5" /> หักแต้ม (-Redeem)
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-[#94a3c4] uppercase">จำนวนแต้ม (Points)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="เช่น 100"
+                      value={pointsAmount}
+                      onChange={(e) => setPointsAmount(e.target.value)}
+                      className="admin-input w-full text-xs py-2 mt-1"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-[#94a3c4] uppercase">เหตุผล (Reason)</label>
+                    <input
+                      type="text"
+                      placeholder="เช่น ชดเชยออเดอร์, โปรโมชั่นพิเศษ"
+                      value={pointsReason}
+                      onChange={(e) => setPointsReason(e.target.value)}
+                      className="admin-input w-full text-xs py-2 mt-1"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={submittingPoints}
+                    className="admin-btn-primary w-full py-2 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer mt-2"
+                  >
+                    {submittingPoints ? (
+                      <RotateCcw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Check className="w-3.5 h-3.5" />
+                    )}
+                    <span>ยืนยันการปรับคะแนน</span>
+                  </button>
+                </form>
+              </div>
+
+              {/* Edit Customer Profile Box */}
+              <div className="admin-panel p-4 rounded-xl border border-[rgba(255,255,255,0.08)]">
+                <h4 className="text-xs font-black text-[#eef2ff] mb-3 flex items-center gap-1.5">
+                  <User className="w-4 h-4 text-[#22e5ff]" /> แก้ไขข้อมูลสมาชิก (FastAPI Customer)
+                </h4>
+                <form onSubmit={handleSaveProfile} className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-[#94a3c4] uppercase">ชื่อจริง</label>
+                      <input
+                        type="text"
+                        value={editFirstName}
+                        onChange={(e) => setEditFirstName(e.target.value)}
+                        className="admin-input w-full text-xs py-2 mt-1"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-[#94a3c4] uppercase">นามสกุล</label>
+                      <input
+                        type="text"
+                        value={editLastName}
+                        onChange={(e) => setEditLastName(e.target.value)}
+                        className="admin-input w-full text-xs py-2 mt-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-[#94a3c4] uppercase">เบอร์โทรศัพท์</label>
+                    <input
+                      type="text"
+                      placeholder="เช่น 0812345678"
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      className="admin-input w-full text-xs py-2 mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-[#94a3c4] uppercase">อีเมล (ล็อกอิน)</label>
+                    <input
+                      type="email"
+                      value={selectedMember.email}
+                      disabled
+                      className="admin-input w-full text-xs py-2 mt-1 opacity-60 cursor-not-allowed bg-black/20"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={savingProfile}
+                    className="admin-btn-secondary w-full py-2 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer mt-2"
+                  >
+                    {savingProfile ? (
+                      <RotateCcw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Save className="w-3.5 h-3.5" />
+                    )}
+                    <span>บันทึกข้อมูลสมาชิก</span>
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            {/* Recent Loyalty Transactions */}
+            <div className="admin-panel p-4 rounded-xl border border-[rgba(255,255,255,0.08)]">
+              <h4 className="text-xs font-black text-[#eef2ff] mb-3 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <History className="w-4 h-4 text-[#22e5ff]" /> ประวัติความเคลื่อนไหวคะแนนล่าสุด (Loyalty Transactions)
+                </span>
+                <span className="text-[10px] font-mono text-[#5a6e90]">
+                  {loyaltyHistory.length} รายการ
+                </span>
+              </h4>
+
+              {loadingLoyalty ? (
+                <div className="py-6 text-center text-xs text-[#5a6e90]">กำลังโหลดประวัติคะแนน...</div>
+              ) : loyaltyHistory.length === 0 ? (
+                <div className="py-6 text-center text-xs text-[#5a6e90]">ยังไม่มีรายการความเคลื่อนไหวคะแนน</div>
+              ) : (
+                <div className="max-h-48 overflow-y-auto divide-y divide-[rgba(255,255,255,0.05)] text-xs">
+                  {loyaltyHistory.map((tx: any, idx) => {
+                    const isEarn = tx.transaction_type === 'earn' || tx.points > 0;
+                    return (
+                      <div key={tx.id || idx} className="py-2.5 flex items-center justify-between">
+                        <div>
+                          <div className="font-bold text-[#eef2ff]">{tx.reason || (isEarn ? 'ได้รับคะแนน' : 'แลกคะแนน')}</div>
+                          <div className="text-[10px] text-[#5a6e90]">
+                            {tx.created_at ? new Date(tx.created_at).toLocaleString('th-TH') : '-'}
+                            {tx.reference_id && ` • อ้างอิง #${tx.reference_id}`}
+                          </div>
+                        </div>
+                        <div className={`font-mono font-black ${isEarn ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {isEarn ? `+${tx.points}` : `-${Math.abs(tx.points)}`} pts
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Add Member Modal ────────────────────────────────────── */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in">
+          <div className="admin-modal max-w-md w-full relative">
+            <button
+              onClick={() => setIsAddModalOpen(false)}
+              className="absolute top-4 right-4 text-[#5a6e90] hover:text-[#eef2ff] p-1.5 rounded-lg hover:bg-white/5 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-[#22e5ff]">
+                <Plus className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-[#eef2ff]">เพิ่มสมาชิกร้านค้าใหม่</h3>
+                <p className="text-xs text-[#5a6e90]">บันทึกข้อมูลลูกค้าใหม่เข้าฐานข้อมูล FastAPI</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleCreateMember} className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] font-bold text-[#94a3c4] uppercase">ชื่อจริง *</label>
+                  <input
+                    type="text"
+                    placeholder="เช่น สมชาย"
+                    value={addForm.first_name}
+                    onChange={(e) => setAddForm(prev => ({ ...prev, first_name: e.target.value }))}
+                    className="admin-input w-full text-xs py-2 mt-1"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-[#94a3c4] uppercase">นามสกุล</label>
+                  <input
+                    type="text"
+                    placeholder="เช่น ใจดี"
+                    value={addForm.last_name}
+                    onChange={(e) => setAddForm(prev => ({ ...prev, last_name: e.target.value }))}
+                    className="admin-input w-full text-xs py-2 mt-1"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-[#94a3c4] uppercase">อีเมล</label>
+                <input
+                  type="email"
+                  placeholder="somchai@example.com"
+                  value={addForm.email}
+                  onChange={(e) => setAddForm(prev => ({ ...prev, email: e.target.value }))}
+                  className="admin-input w-full text-xs py-2 mt-1"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-[#94a3c4] uppercase">เบอร์โทรศัพท์</label>
+                <input
+                  type="text"
+                  placeholder="0812345678"
+                  value={addForm.phone}
+                  onChange={(e) => setAddForm(prev => ({ ...prev, phone: e.target.value }))}
+                  className="admin-input w-full text-xs py-2 mt-1"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-[rgba(255,255,255,0.08)] mt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="admin-btn-secondary px-4 py-2 text-xs font-bold cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={addingMember}
+                  className="admin-btn-primary px-5 py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                >
+                  {addingMember ? <RotateCcw className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                  <span>สร้างสมาชิกใหม่</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

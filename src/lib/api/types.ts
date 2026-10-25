@@ -56,17 +56,181 @@ export interface StockMovementResponse { id: number; branch_id: number; product_
 export interface LowStockReportResponse { branch_id: number; branch_name?: string | null; product_id: number; product_name?: string | null; sku?: string | null; quantity: number; reorder_point: number; shortage: number }
 
 // ─── Orders ─────────────────────────────────────────────────
-export interface OrderItemCreate { product_id: number; quantity: number; unit_price: number; discount_amount?: number }
-export interface OrderCreate { customer_id?: number | null; items: OrderItemCreate[]; discount_amount?: number; notes?: string | null; coupon_code?: string | null }
-export interface OrderStatusUpdate { status: string; notes?: string | null }
-export interface OrderItemResponse { id: number; product_id: number; product_name?: string | null; quantity: number; unit_price: number; discount_amount: number; line_total: number }
-export interface OrderResponse { id: number; order_number?: string | null; branch_id?: number | null; customer_id?: number | null; customer_name?: string | null; cashier_id?: number | null; cashier_name?: string | null; status: string; subtotal: number; discount_amount: number; tax_amount?: number; total_amount: number; notes?: string | null; items?: OrderItemResponse[]; created_at: string; updated_at: string }
-export interface OrderListResponse { orders: OrderResponse[]; total: number; page: number; per_page: number }
+export type OrderSource = 'pos' | 'ecommerce' | 'qr' | 'phone'
+export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled' | 'paid' | 'held' | 'refunded'
+export type FulfillmentStatus = 'unfulfilled' | 'processing' | 'shipped' | 'delivered' | 'picked_up' | 'cancelled'
+export type ItemStatus = 'pending' | 'preparing' | 'ready' | 'served' | 'cancelled'
+
+export interface OrderItemCreate {
+  product_id: number
+  quantity: number
+  unit_price: number
+  discount_amount?: number
+}
+
+export interface OrderCreate {
+  branch_id?: number
+  customer_id?: number | null
+  shift_id?: number | null
+  register_id?: number | null
+  items: OrderItemCreate[]
+  discount_amount?: number
+  notes?: string | null
+  coupon_code?: string | null
+  idempotency_key?: string | null
+  order_source?: OrderSource
+}
+
+export interface OrderStatusUpdate {
+  status: OrderStatus | string
+  notes?: string | null
+}
+
+export interface OrderItemResponse {
+  id: number
+  product_id: number
+  product_name?: string | null
+  quantity: number
+  unit_price: number
+  discount_amount: number
+  line_total: number
+}
+
+export interface OrderResponse {
+  id: number
+  order_number?: string | null
+  branch_id?: number | null
+  customer_id?: number | null
+  customer_name?: string | null
+  user_id?: number | null
+  cashier_id?: number | null
+  cashier_name?: string | null
+  shift_id?: number | null
+  status: OrderStatus | string
+  order_source?: OrderSource | string
+  subtotal: number
+  discount_amount: number
+  tax_amount?: number
+  grand_total?: number
+  total_amount?: number
+  shipping_fee?: number
+  fulfillment_status?: FulfillmentStatus | string
+  tracking_number?: string | null
+  amount_paid?: number
+  change_amount?: number
+  loyalty_points_earned?: number
+  loyalty_points_redeemed?: number
+  notes?: string | null
+  items?: OrderItemResponse[]
+  created_at: string
+  updated_at?: string
+  completed_at?: string | null
+}
+
+export interface OrderListResponse {
+  orders: OrderResponse[]
+  total: number
+  page: number
+  per_page: number
+}
+
+// ─── Order Receipt ───────────────────────────────────────────
+export interface ReceiptOrderItem {
+  id: number
+  product_id: number
+  product_name?: string | null
+  quantity: number
+  unit_price: number
+  discount_amount: number
+  line_total: number
+}
+
+export interface ReceiptOrder {
+  id: number
+  order_number: string
+  status: string
+  subtotal: number
+  discount_amount: number
+  tax_amount: number
+  grand_total: number
+  amount_paid: number
+  change_amount: number
+  created_at: string
+  items: ReceiptOrderItem[]
+}
+
+export interface ReceiptPayment {
+  id: number
+  payment_method: string
+  amount: number
+  status: string
+  created_at: string
+}
+
+export interface ReceiptResponse {
+  order: ReceiptOrder
+  payments: ReceiptPayment[]
+}
+
+// ─── Checkout ───────────────────────────────────────────────
+export interface CheckoutPayment {
+  payment_method: string
+  amount: number
+  external_reference?: string | null
+  notes?: string | null
+}
+
+export interface CheckoutRequest {
+  payments: CheckoutPayment[]
+  redeem_points?: number
+  earn_points?: boolean
+  idempotency_key?: string | null
+}
+
+export interface CheckoutResponse {
+  id: number
+  order_number?: string | null
+  status: string
+  customer_id?: number | null
+  subtotal: number
+  discount_amount: number
+  tax_amount: number
+  grand_total: number
+  loyalty_points_redeemed: number
+  loyalty_points_earned: number
+  amount_paid: number
+  change_amount: number
+  created_at: string
+  completed_at?: string | null
+}
 
 // ─── Payments ───────────────────────────────────────────────
-export interface PaymentCreate { order_id: number; payment_method: string; amount: number; reference_number?: string | null; notes?: string | null }
-export interface PaymentRefundRequest { amount: number; reason?: string | null }
-export interface PaymentResponse { id: number; order_id: number; payment_method: string; amount: number; reference_number?: string | null; status: string; notes?: string | null; created_at: string }
+export interface PaymentCreate {
+  order_id: number
+  payment_method: string
+  amount: number
+  external_reference?: string | null
+  reference_number?: string | null
+  notes?: string | null
+}
+
+export interface PaymentRefundRequest {
+  refund_amount: number
+  refund_method: string
+  reason: string
+}
+
+export interface PaymentResponse {
+  id: number
+  order_id: number
+  payment_method: string
+  amount: number
+  reference_number?: string | null
+  external_reference?: string | null
+  status: string
+  notes?: string | null
+  created_at: string
+}
 
 // ─── Purchases ──────────────────────────────────────────────
 export interface PurchaseOrderItemCreate { product_id: number; quantity: number; unit_cost: number }
@@ -88,14 +252,15 @@ export interface StockTransferResponse { id: number; transfer_number?: string | 
 export interface StockTransferListResponse { transfers: StockTransferResponse[]; total: number; page: number; per_page: number }
 
 // ─── Returns ────────────────────────────────────────────────
-export interface ReturnItemCreate { order_item_id: number; quantity: number; reason?: string | null }
+export interface ReturnItemCreate { order_item_id: number; product_id?: number; quantity: number; return_reason?: string | null; reason?: string | null; restock?: boolean }
 export interface ReturnCreate { order_id: number; items: ReturnItemCreate[]; notes?: string | null }
 export interface ReturnItemResponse { id: number; order_item_id: number; product_name?: string | null; quantity: number; reason?: string | null }
 export interface ReturnResponse { id: number; return_number?: string | null; order_id: number; branch_id?: number | null; status: string; notes?: string | null; items?: ReturnItemResponse[]; processed_at?: string | null; created_at: string }
 export interface ReturnListResponse { returns: ReturnResponse[]; total: number; page: number; per_page: number }
 
 // ─── Refunds ────────────────────────────────────────────────
-export interface RefundResponse { id: number; payment_id?: number | null; order_id?: number | null; amount: number; reason?: string | null; status: string; created_at: string }
+export interface RefundCreate { order_id: number; refund_amount: number; refund_method: string; reason?: string | null; external_reference?: string | null }
+export interface RefundResponse { id: number; payment_id?: number | null; order_id?: number | null; amount: number; refund_amount?: number; refund_method?: string; reason?: string | null; status: string; created_at: string }
 export interface RefundListResponse { refunds: RefundResponse[]; total: number; page: number; per_page: number }
 
 // ─── Promotions ─────────────────────────────────────────────
@@ -118,10 +283,10 @@ export interface CustomerResponse { id: number; first_name: string; last_name?: 
 export interface CustomerListResponse { customers: CustomerResponse[]; total: number; page: number; per_page: number }
 
 // ─── Loyalty ────────────────────────────────────────────────
-export interface LoyaltyPointsEarn { customer_id: number; points: number; reference_type?: string | null; reference_id?: number | null; notes?: string | null }
-export interface LoyaltyPointsRedeem { customer_id: number; points: number; reference_type?: string | null; reference_id?: number | null; notes?: string | null }
-export interface LoyaltyBalanceResponse { customer_id: number; customer_name: string; balance: number; pending_expiring: number }
-export interface LoyaltyTransactionResponse { id: number; customer_id: number; transaction_type: string; points: number; reference_type?: string | null; reference_id?: number | null; notes?: string | null; created_at: string; expires_at?: string | null }
+export interface LoyaltyPointsEarn { customer_id: number; points: number; reference_type?: string | null; reference_id?: number | null; notes?: string | null; reason?: string | null; branch_id?: number | null }
+export interface LoyaltyPointsRedeem { customer_id: number; points: number; reference_type?: string | null; reference_id?: number | null; notes?: string | null; reason?: string | null }
+export interface LoyaltyBalanceResponse { customer_id: number; customer_name?: string; balance?: number; points_balance?: number; lifetime_points?: number; tier?: string; tier_multiplier?: number; pending_expiring?: number }
+export interface LoyaltyTransactionResponse { id: number; customer_id: number; transaction_type: string; points: number; reference_type?: string | null; reference_id?: number | null; notes?: string | null; reason?: string | null; created_at: string; expires_at?: string | null }
 export interface LoyaltyTransactionListResponse { transactions: LoyaltyTransactionResponse[]; total: number; page: number; per_page: number }
 
 // ─── Shifts ─────────────────────────────────────────────────
@@ -166,15 +331,98 @@ export type WebPromotionResponse = PromotionItem
 export interface WebPromotionListResponse { success?: boolean; promotions: PromotionItem[] }
 export interface WebPromotionMutationResponse { success: boolean; message?: string; promotion?: PromotionItem }
 
+// ─── Reviews ────────────────────────────────────────────────
+export type ReviewModerationStatus = 'pending' | 'approved' | 'rejected' | 'hidden'
+
+export interface ReviewCreate {
+  product_id: number
+  customer_id: number
+  rating: number
+  comment?: string | null
+  order_id?: number | null
+}
+
+export interface ReviewModerationRequest {
+  status: ReviewModerationStatus
+  notes?: string | null
+}
+
+export interface ReviewResponse {
+  id: number
+  product_id: number
+  product_name?: string | null
+  customer_id?: number | null
+  customer_name?: string | null
+  rating: number
+  title?: string | null
+  comment: string
+  status: ReviewModerationStatus | string
+  created_at: string
+}
+
+export interface ReviewListResponse {
+  reviews: ReviewResponse[]
+  total: number
+  page: number
+  per_page: number
+}
+
+// ─── Wine Products ──────────────────────────────────────────
+export interface WineProductItem {
+  id: number
+  code: string
+  product_name: string | null
+  brands: string | null
+  categories_en: string | null
+  origins_en: string | null
+  countries_en: string | null
+  quantity: string | null
+  ingredients_text: string | null
+  image_url: string | null
+  image_small_url: string | null
+  alcohol_100g: string | null
+  created_at: string
+}
+
+export interface WineProductListResponse {
+  items: WineProductItem[]
+  total: number
+  page: number
+  per_page: number
+  pages: number
+}
+
 // ─── Reports ────────────────────────────────────────────────
 export interface SalesReportResponse { total_sales: number; total_orders: number; average_order_value: number; top_products: Array<Record<string, unknown>>; sales_by_hour: Array<Record<string, unknown>>; sales_by_category: Array<Record<string, unknown>> }
 export interface DailySalesSummary { date: string; branch_id?: number | null; total_orders: number; total_revenue: number; total_refunds: number; net_sales: number }
+export interface EcommerceDashboardResponse {
+  sales_today: number
+  sales_this_month: number
+  pending_orders_count: number
+  pending_slips_count: number
+  total_members: number
+  recent_orders: any[]
+  top_selling_wines: any[]
+}
 
 // ─── Audit ──────────────────────────────────────────────────
 export interface AuditLogResponse { id: number; user_id?: number | null; user_name?: string | null; action: string; entity_type: string; entity_id?: number | null; before_data?: Record<string, unknown> | null; after_data?: Record<string, unknown> | null; ip_address?: string | null; created_at: string }
 export interface AuditLogListResponse { logs: AuditLogResponse[]; total: number; page: number; per_page: number }
 
 // ─── Slip Verification ──────────────────────────────────────
+export type VerificationStatus =
+  | 'pending'
+  | 'verified'
+  | 'rejected'
+  | 'review'
+  | 'amount_mismatch'
+  | 'duplicate_reference'
+  | 'duplicate_image'
+  | 'order_not_found'
+  | 'order_already_paid'
+  | 'ocr_failed'
+  | 'receiver_mismatch'
+
 export interface SlipVerificationResult {
   id?: number
   order_id?: number
@@ -192,12 +440,12 @@ export interface SlipVerificationResult {
   is_duplicate?: boolean
   duplicate_reference_id?: number
   ocr_raw_text?: string
-  status?: string
+  status?: VerificationStatus | string
   created_at?: string
   [key: string]: unknown
 }
 
 // ─── Misc ───────────────────────────────────────────────────
 export interface HealthResponse { status: string; [key: string]: string }
-export interface ApiError { detail?: string | Array<{ msg: string; loc?: string[] }>; message?: string; status?: number }
+export interface ApiError { detail?: string | Array<{ msg: string; loc?: string[] }>; message?: string; status?: number; code?: string; request_id?: string }
 export interface PaginationParams { page?: number; per_page?: number }
