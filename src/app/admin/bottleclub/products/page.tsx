@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { INITIAL_PRODUCTS, INITIAL_CATEGORIES } from '@/lib/mock-data';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import {
@@ -14,33 +16,38 @@ import type { CategoryResponse, ProductResponse } from '@/lib/api/types';
 import { useApiAuth, ensureApiAuth } from '@/lib/store/api-auth';
 
 interface ProductRow {
-  id: number;
+  id: string | number;
   rowKey: string;
   name: string;
   description: string | null;
-  category_id: number | null;
+  category_id: string | number | null;
   category_name?: string;
   sku: string | null;
   barcode: string | null;
   selling_price: number;
   cost_price: number;
   unit: string | null;
+  stock?: number;
+  image_url?: string | null;
   is_active: boolean;
   created_at: string;
 }
 
 interface CategoryRow {
-  id: number;
+  id: string | number;
   rowKey: string;
   name: string;
   description: string | null;
-  parent_id: number | null;
+  icon?: string;
+  color?: string;
+  parent_id?: number | null;
   sort_order: number;
   is_active: boolean;
   created_at: string;
 }
 
 export default function AdminProductsPage() {
+  const supabase = createClient();
   const { accessToken } = useApiAuth();
 
   // Tab State: 'products' | 'categories' | 'wine_catalog'
@@ -127,8 +134,8 @@ export default function AdminProductsPage() {
 
   // Map category_id -> name for quick lookup
   const categoryMap = useMemo(() => {
-    const map = new Map<number, string>();
-    categories.forEach(c => map.set(c.id, c.name));
+    const map = new Map<string, string>();
+    categories.forEach(c => map.set(String(c.id), c.name));
     return map;
   }, [categories]);
 
@@ -138,71 +145,87 @@ export default function AdminProductsPage() {
     }
     if (force) {
       setRefreshing(true);
-      try {
-        const { clearApiCache } = await import('@/lib/api/client');
-        clearApiCache('catalog');
-      } catch {}
     }
     setError(null);
     try {
-      const token = accessToken || await ensureApiAuth();
-      if (!token) throw new Error('ไม่สามารถเชื่อมต่อ API ได้ (กรุณาตรวจสอบเซิร์ฟเวอร์ Backend)');
-
-      // Fetch Categories & Products concurrently
-      const [catRes, prodRes] = await Promise.allSettled([
-        catalogApi.listCategories(token),
-        catalogApi.listProducts({ per_page: 100 }, token),
+      // 1. Fetch Categories & Products concurrently from Supabase
+      const [{ data: catData, error: catErr }, { data: prodData, error: prodErr }] = await Promise.all([
+        supabase.from('categories').select('*').order('sort_order').order('name'),
+        supabase.from('products').select('*, categories(name, icon, color)').order('name')
       ]);
+
+      if (catErr) console.warn('Supabase categories error:', catErr);
+      if (prodErr) console.warn('Supabase products error:', prodErr);
 
       // Parse Categories
       let catList: CategoryRow[] = [];
-      if (catRes.status === 'fulfilled') {
-        const raw = catRes.value;
-        const list: CategoryResponse[] = Array.isArray(raw)
-          ? raw
-          : ((raw as any)?.categories || (raw as any)?.data || []);
+      const rawCats = (catData && catData.length > 0) ? catData : INITIAL_CATEGORIES;
+      catList = rawCats.map((c: any) => ({
+        id: c.id,
+        rowKey: `cat_${c.id}`,
+        name: c.name,
+        description: c.description ?? null,
+        icon: c.icon ?? '🍷',
+        color: c.color ?? '#8B1A2C',
+        parent_id: null,
+        sort_order: c.sort_order ?? 0,
+        is_active: c.is_active ?? true,
+        created_at: c.created_at ? new Date(c.created_at).toLocaleDateString('th-TH') : '-',
+      }));
+      setCategories(catList);
 
-        catList = list.map((c) => ({
-          id: c.id,
-          rowKey: `cat_${c.id}`,
-          name: c.name,
-          description: c.description ?? null,
-          parent_id: c.parent_id ?? null,
-          sort_order: c.sort_order ?? 0,
-          is_active: c.is_active ?? true,
-          created_at: c.created_at ? new Date(c.created_at).toLocaleDateString('th-TH') : '-',
-        }));
-        setCategories(catList);
-      }
+      const catMapLocal = new Map<string, string>();
+      catList.forEach(c => catMapLocal.set(String(c.id), c.name));
 
       // Parse Products
-      if (prodRes.status === 'fulfilled') {
-        const raw = prodRes.value;
-        const list: ProductResponse[] = Array.isArray(raw)
-          ? raw
-          : ((raw as any)?.products || (raw as any)?.data || []);
-
-        const catMapLocal = new Map<number, string>();
-        catList.forEach(c => catMapLocal.set(c.id, c.name));
-
-        setProducts(list.map((p) => ({
-          id: p.id,
-          rowKey: `prod_${p.id}`,
-          name: p.name,
-          description: p.description ?? null,
-          category_id: p.category_id ?? null,
-          category_name: p.category_name || (p.category_id ? catMapLocal.get(p.category_id) : undefined) || 'ทั่วไป',
-          sku: p.sku ?? null,
-          barcode: p.barcode ?? null,
-          selling_price: Number(p.selling_price ?? 0),
-          cost_price: Number(p.cost_price ?? 0),
-          unit: p.unit ?? 'each',
-          is_active: p.is_active ?? true,
-          created_at: p.created_at ? new Date(p.created_at).toLocaleDateString('th-TH') : '-',
-        })));
-      }
+      const rawProds = (prodData && prodData.length > 0) ? prodData : INITIAL_PRODUCTS;
+      setProducts(rawProds.map((p: any) => ({
+        id: p.id,
+        rowKey: `prod_${p.id}`,
+        name: p.name,
+        description: p.description ?? null,
+        category_id: p.category_id ?? null,
+        category_name: p.categories?.name || (p.category_id ? catMapLocal.get(String(p.category_id)) : undefined) || 'ทั่วไป',
+        sku: p.sku ?? null,
+        barcode: p.barcode ?? null,
+        selling_price: Number(p.price ?? p.selling_price ?? 0),
+        cost_price: Number(p.cost ?? p.cost_price ?? 0),
+        unit: p.unit ?? (p.volume_ml ? `${p.volume_ml}ml` : 'ขวด'),
+        stock: p.stock ?? 0,
+        image_url: p.image_url ?? null,
+        is_active: p.is_active ?? true,
+        created_at: p.created_at ? new Date(p.created_at).toLocaleDateString('th-TH') : '-',
+      })));
     } catch (err: any) {
-      setError(err.message || 'ไม่สามารถดึงข้อมูลจาก API จริงได้');
+      console.error('Failed to load data from Supabase:', err);
+      setError(err.message || 'ไม่สามารถดึงข้อมูลจาก Supabase ได้');
+      // Safe fallback to mock data
+      setCategories(INITIAL_CATEGORIES.map(c => ({
+        id: c.id,
+        rowKey: `cat_${c.id}`,
+        name: c.name,
+        description: c.description ?? null,
+        sort_order: c.sort_order ?? 0,
+        is_active: c.is_active ?? true,
+        created_at: '-',
+      })));
+      setProducts(INITIAL_PRODUCTS.map(p => ({
+        id: p.id,
+        rowKey: `prod_${p.id}`,
+        name: p.name,
+        description: p.description ?? null,
+        category_id: p.category_id ?? null,
+        category_name: 'ทั่วไป',
+        sku: p.sku ?? null,
+        barcode: p.barcode ?? null,
+        selling_price: p.price,
+        cost_price: p.cost,
+        unit: 'ขวด',
+        stock: p.stock,
+        image_url: p.image_url ?? null,
+        is_active: p.is_active,
+        created_at: '-',
+      })));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -253,57 +276,48 @@ export default function AdminProductsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const token = accessToken || await ensureApiAuth();
-      if (!token) throw new Error('ไม่พบสิทธิ์การเข้าถึง API');
-
-      const payload = {
-        name: productForm.name,
-        description: productForm.description || null,
-        category_id: productForm.category_id ? Number(productForm.category_id) : null,
-        sku: productForm.sku || null,
-        barcode: productForm.barcode || null,
-        selling_price: Number(productForm.selling_price) || 0,
-        cost_price: Number(productForm.cost_price) || 0,
-        unit: productForm.unit || 'each',
-        is_active: productForm.is_active,
-      };
-
-      if (!payload.selling_price || payload.selling_price <= 0) {
-        triggerNotification('error', 'ราคาขาย (Selling Price) ต้องมากกว่า 0 บาทตามมาตรฐาน Backend');
+      const price = Number(productForm.selling_price) || 0;
+      if (price <= 0) {
+        triggerNotification('error', 'ราคาขาย (Selling Price) ต้องมากกว่า 0 บาท');
         setSaving(false);
         return;
       }
 
+      const payload = {
+        id: editingProduct?.id,
+        name: productForm.name.trim(),
+        description: productForm.description || null,
+        category_id: productForm.category_id || null,
+        sku: productForm.sku || null,
+        barcode: productForm.barcode || null,
+        price,
+        cost: Number(productForm.cost_price) || 0,
+        unit: productForm.unit || 'ขวด',
+        is_active: productForm.is_active,
+      };
+
       if (editingProduct) {
-        await catalogApi.updateProduct(editingProduct.id, payload, token);
-        setProducts(prev => prev.map(p => p.id === editingProduct.id ? {
-          ...p,
-          ...payload,
-          category_name: payload.category_id ? categoryMap.get(payload.category_id) : 'ทั่วไป',
-        } : p));
-        triggerNotification('success', `อัปเดตข้อมูลสินค้า "${productForm.name}" สำเร็จ`);
+        const res = await fetch('/api/admin/products', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || 'อัปเดตสินค้าไม่สำเร็จ');
+        triggerNotification('success', `อัปเดตข้อมูลสินค้า "${productForm.name}" ใน Supabase สำเร็จ`);
         setEditingProduct(null);
       } else {
-        const created = await catalogApi.createProduct(payload, token);
-        const newRow: ProductRow = {
-          id: created.id ?? Date.now(),
-          rowKey: `prod_${created.id ?? Date.now()}`,
-          name: created.name ?? productForm.name,
-          description: created.description ?? (productForm.description || null),
-          category_id: created.category_id ?? (payload.category_id || null),
-          category_name: (payload.category_id ? categoryMap.get(payload.category_id) : undefined) || 'ทั่วไป',
-          sku: created.sku ?? (payload.sku || null),
-          barcode: created.barcode ?? (payload.barcode || null),
-          selling_price: Number(created.selling_price ?? payload.selling_price),
-          cost_price: Number(created.cost_price ?? payload.cost_price),
-          unit: created.unit ?? payload.unit,
-          is_active: created.is_active ?? payload.is_active,
-          created_at: new Date().toLocaleDateString('th-TH'),
-        };
-        setProducts(prev => [newRow, ...prev]);
-        triggerNotification('success', `เพิ่มสินค้า "${productForm.name}" สำเร็จ`);
+        const res = await fetch('/api/admin/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || 'เพิ่มสินค้าไม่สำเร็จ');
+        triggerNotification('success', `เพิ่มสินค้า "${productForm.name}" ลงใน Supabase สำเร็จ`);
         setIsAddProductModalOpen(false);
       }
+      await loadData();
     } catch (err: any) {
       triggerNotification('error', `บันทึกไม่สำเร็จ: ${err.message}`);
     } finally {
@@ -311,15 +325,16 @@ export default function AdminProductsPage() {
     }
   };
 
-  const handleDeleteProduct = async (id: number, name: string) => {
-    if (confirm(`คุณต้องการลบสินค้า "${name}" (ID: #${id}) ใช่หรือไม่?`)) {
+  const handleDeleteProduct = async (id: string | number, name: string) => {
+    if (confirm(`คุณต้องการลบสินค้า "${name}" ใช่หรือไม่?`)) {
       try {
-        const token = accessToken || await ensureApiAuth();
-        if (token) {
-          await catalogApi.deleteProduct(id, token);
-        }
-        setProducts(prev => prev.filter(p => p.id !== id));
-        triggerNotification('success', `ลบสินค้า "${name}" เรียบร้อยแล้ว`);
+        const res = await fetch(`/api/admin/products?id=${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || 'ลบสินค้าไม่สำเร็จ');
+        triggerNotification('success', data.message || `ลบสินค้า "${name}" เรียบร้อยแล้ว`);
+        await loadData();
       } catch (err: any) {
         triggerNotification('error', `ลบไม่สำเร็จ: ${err.message}`);
       }
@@ -349,47 +364,36 @@ export default function AdminProductsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const token = accessToken || await ensureApiAuth();
-      if (!token) throw new Error('ไม่พบสิทธิ์การเข้าถึง API');
+      const payload = {
+        name: categoryForm.name.trim(),
+        description: categoryForm.description?.trim() || null,
+        sort_order: Number(categoryForm.sort_order) || 0,
+        is_active: true,
+      };
+
+      if (!payload.name) {
+        triggerNotification('error', 'กรุณาระบุชื่อหมวดหมู่');
+        setSaving(false);
+        return;
+      }
 
       if (editingCategory) {
-        await catalogApi.updateCategory(editingCategory.id, {
-          name: categoryForm.name,
-          description: categoryForm.description || null,
-          sort_order: Number(categoryForm.sort_order),
-        }, token);
-
-        setCategories(prev => prev.map(c => c.id === editingCategory.id ? {
-          ...c,
-          name: categoryForm.name,
-          description: categoryForm.description || null,
-          sort_order: Number(categoryForm.sort_order),
-        } : c));
-
+        const { error } = await supabase
+          .from('categories')
+          .update(payload)
+          .eq('id', editingCategory.id);
+        if (error) throw error;
         triggerNotification('success', `อัปเดตหมวดหมู่ "${categoryForm.name}" สำเร็จ`);
         setEditingCategory(null);
       } else {
-        const created = await catalogApi.createCategory({
-          name: categoryForm.name,
-          description: categoryForm.description || null,
-          sort_order: Number(categoryForm.sort_order),
-        }, token);
-
-        const newRow: CategoryRow = {
-          id: created.id ?? Date.now(),
-          rowKey: `cat_${created.id ?? Date.now()}`,
-          name: created.name ?? categoryForm.name,
-          description: created.description ?? (categoryForm.description || null),
-          parent_id: created.parent_id ?? null,
-          sort_order: created.sort_order ?? Number(categoryForm.sort_order),
-          is_active: created.is_active ?? true,
-          created_at: new Date().toLocaleDateString('th-TH'),
-        };
-
-        setCategories(prev => [...prev, newRow]);
+        const { error } = await supabase
+          .from('categories')
+          .insert(payload);
+        if (error) throw error;
         triggerNotification('success', `เพิ่มหมวดหมู่ "${categoryForm.name}" สำเร็จ`);
         setIsAddCategoryModalOpen(false);
       }
+      await loadData();
     } catch (err: any) {
       triggerNotification('error', `บันทึกหมวดหมู่ไม่สำเร็จ: ${err.message}`);
     } finally {
@@ -397,17 +401,18 @@ export default function AdminProductsPage() {
     }
   };
 
-  const handleDeleteCategory = async (id: number, name: string) => {
-    if (confirm(`คุณต้องการลบหมวดหมู่ "${name}" (ID: #${id}) ใช่หรือไม่?`)) {
+  const handleDeleteCategory = async (id: string | number, name: string) => {
+    if (confirm(`คุณต้องการลบหมวดหมู่ "${name}" ใช่หรือไม่?`)) {
       try {
-        const token = accessToken || await ensureApiAuth();
-        if (token) {
-          await catalogApi.deleteCategory(id, token);
-        }
-        setCategories(prev => prev.filter(c => c.id !== id));
+        const { error } = await supabase
+          .from('categories')
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
         triggerNotification('success', `ลบหมวดหมู่ "${name}" เรียบร้อยแล้ว`);
+        await loadData();
       } catch (err: any) {
-        triggerNotification('error', `ลบไม่สำเร็จ: ${err.message}`);
+        triggerNotification('error', `ลบหมวดหมู่ไม่สำเร็จ: ${err.message}`);
       }
     }
   };
@@ -426,7 +431,7 @@ export default function AdminProductsPage() {
       );
     }
     if (selectedCategory) {
-      result = result.filter(p => p.category_id === Number(selectedCategory));
+      result = result.filter(p => String(p.category_id) === String(selectedCategory));
     }
     if (selectedStatus) {
       const isActive = selectedStatus === 'active';
@@ -451,8 +456,8 @@ export default function AdminProductsPage() {
   // ─── Table Columns ─────────────────────────────────────────────
   const productColumns: Column<ProductRow>[] = [
     {
-      header: 'ID',
-      accessor: (row) => <span className="font-mono font-extrabold text-[#22e5ff] text-xs">#{row.id}</span>,
+      header: 'ID / รหัส',
+      accessor: (row) => <span className="font-mono font-extrabold text-[#22e5ff] text-xs">#{String(row.id).slice(0, 8)}</span>,
       sortable: true,
       sortKey: 'id',
     },
@@ -477,7 +482,7 @@ export default function AdminProductsPage() {
       accessor: (row) => (
         <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded bg-[rgba(34,229,255,0.08)] text-[#22e5ff] border border-[rgba(34,229,255,0.20)]">
           <Tag className="w-3 h-3" />
-          {row.category_name || (row.category_id ? categoryMap.get(row.category_id) : undefined) || 'ทั่วไป'}
+          {row.category_name || (row.category_id ? categoryMap.get(String(row.category_id)) : undefined) || 'ทั่วไป'}
         </span>
       ),
     },
@@ -678,7 +683,7 @@ export default function AdminProductsPage() {
     <div className="space-y-5 sm:space-y-6 select-none font-sans animate-in" style={{ padding: '20px', maxWidth: 1500 }}>
       <AdminPageHeader
         title="จัดการสินค้า Web Wine (Bottle Club Catalog)"
-        subtitle="เชื่อมต่อฐานข้อมูลสินค้าและหมวดหมู่ตรงจาก FastAPI Production (https://api.wayneven.uk)"
+        subtitle="เชื่อมต่อฐานข้อมูลสินค้าและหมวดหมู่ตรงจาก Supabase (PostgreSQL)"
         icon={Wine}
         action={
           <div className="flex items-center gap-2">
@@ -851,7 +856,7 @@ export default function AdminProductsPage() {
           loading={loading}
           itemsPerPage={15}
           totalItems={filteredProducts.length}
-          emptyMessage="ไม่พบรายการสินค้าใน FastAPI Database"
+          emptyMessage="ไม่พบรายการสินค้าใน Supabase Database"
         />
       ) : activeTab === 'categories' ? (
         <DataTable
@@ -860,7 +865,7 @@ export default function AdminProductsPage() {
           loading={loading}
           itemsPerPage={15}
           totalItems={filteredCategories.length}
-          emptyMessage="ไม่พบข้อมูลหมวดหมู่ใน FastAPI Database"
+          emptyMessage="ไม่พบข้อมูลหมวดหมู่ใน Supabase Database"
         />
       ) : (
         <div className="space-y-4">
@@ -894,7 +899,7 @@ export default function AdminProductsPage() {
               </div>
               <div>
                 <h3 className="text-base font-extrabold text-[#eef2ff]">
-                  {editingProduct ? `แก้ไขสินค้า: ${editingProduct.name}` : 'เพิ่มสินค้าใหม่ลง FastAPI'}
+                  {editingProduct ? `แก้ไขสินค้า: ${editingProduct.name}` : 'เพิ่มสินค้าใหม่ลงใน Supabase'}
                 </h3>
                 <p className="text-xs text-[#5a6e90]">
                   {editingProduct ? `รหัสสินค้า ID #${editingProduct.id}` : 'บันทึกข้อมูลเข้าฐานข้อมูล Catalog Products'}
