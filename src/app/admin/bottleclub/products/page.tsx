@@ -96,24 +96,166 @@ export default function AdminProductsPage() {
 
   type WineProductRow = WineProductItem;
 
+  const MOCK_WINE_CATALOG: WineProductItem[] = [
+    {
+      id: 1,
+      code: '3011360001018',
+      product_name: 'Château Margaux Premier Grand Cru Classé',
+      brands: 'Château Margaux',
+      countries_en: 'France',
+      categories_en: 'Red Wine (Bordeaux)',
+      origins_en: 'Bordeaux',
+      ingredients_text: 'Grape, Sulphites',
+      image_small_url: null,
+      created_at: '2026-01-01T00:00:00Z',
+      alcohol_100g: '13.5',
+      quantity: '750 ml',
+      image_url: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 2,
+      code: '8002270001025',
+      product_name: 'Sassicaia Tenuta San Guido Bolgheri',
+      brands: 'Tenuta San Guido',
+      countries_en: 'Italy',
+      categories_en: 'Super Tuscan Red Wine',
+      origins_en: 'Tuscany',
+      ingredients_text: 'Cabernet Sauvignon, Cabernet Franc',
+      image_small_url: null,
+      created_at: '2026-01-01T00:00:00Z',
+      alcohol_100g: '14.0',
+      quantity: '750 ml',
+      image_url: 'https://images.unsplash.com/photo-1586370434639-0fe43b2d32e6?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 3,
+      code: '3185370001032',
+      product_name: 'Dom Pérignon Vintage Brut Champagne',
+      brands: 'Moët & Chandon',
+      countries_en: 'France',
+      categories_en: 'Champagne & Sparkling',
+      origins_en: 'Champagne',
+      ingredients_text: 'Chardonnay, Pinot Noir',
+      image_small_url: null,
+      created_at: '2026-01-01T00:00:00Z',
+      alcohol_100g: '12.5',
+      quantity: '750 ml',
+      image_url: 'https://images.unsplash.com/photo-1569919659476-f0852f6834b7?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 4,
+      code: '9414430001049',
+      product_name: 'Cloudy Bay Sauvignon Blanc Marlborough',
+      brands: 'Cloudy Bay',
+      countries_en: 'New Zealand',
+      categories_en: 'White Wine',
+      origins_en: 'Marlborough',
+      ingredients_text: 'Sauvignon Blanc',
+      image_small_url: null,
+      created_at: '2026-01-01T00:00:00Z',
+      alcohol_100g: '13.0',
+      quantity: '750 ml',
+      image_url: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 5,
+      code: '9311043001056',
+      product_name: 'Penfolds Bin 389 Cabernet Shiraz',
+      brands: 'Penfolds',
+      countries_en: 'Australia',
+      categories_en: 'Red Wine (South Australia)',
+      origins_en: 'Barossa Valley',
+      ingredients_text: 'Cabernet Sauvignon, Shiraz',
+      image_small_url: null,
+      created_at: '2026-01-01T00:00:00Z',
+      alcohol_100g: '14.5',
+      quantity: '750 ml',
+      image_url: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 6,
+      code: '0887770001063',
+      product_name: 'Opus One Napa Valley Red Wine',
+      brands: 'Opus One Winery',
+      countries_en: 'United States',
+      categories_en: 'Bordeaux Blend (Napa Valley)',
+      origins_en: 'Oakville, California',
+      ingredients_text: 'Cabernet Sauvignon, Petit Verdot, Merlot',
+      image_small_url: null,
+      created_at: '2026-01-01T00:00:00Z',
+      alcohol_100g: '14.5',
+      quantity: '750 ml',
+      image_url: 'https://images.unsplash.com/photo-1558001373-7b93ee48ffa0?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 7,
+      code: '3760050001070',
+      product_name: 'Château d\'Esclans Whispering Angel Rosé',
+      brands: 'Château d\'Esclans',
+      countries_en: 'France',
+      categories_en: 'Rosé Wine (Côtes de Provence)',
+      origins_en: 'Provence',
+      ingredients_text: 'Grenache, Cinsault, Rolle',
+      image_small_url: null,
+      created_at: '2026-01-01T00:00:00Z',
+      alcohol_100g: '13.0',
+      quantity: '750 ml',
+      image_url: 'https://images.unsplash.com/photo-1558001373-7b93ee48ffa0?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 8,
+      code: '8001110001087',
+      product_name: 'Barolo DOCG Pio Cesare Piedmont',
+      brands: 'Pio Cesare',
+      countries_en: 'Italy',
+      categories_en: 'Red Wine (Nebbiolo)',
+      origins_en: 'Piedmont',
+      ingredients_text: 'Nebbiolo 100%',
+      image_small_url: null,
+      created_at: '2026-01-01T00:00:00Z',
+      alcohol_100g: '14.0',
+      quantity: '750 ml',
+      image_url: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=600&q=80',
+    }
+  ];
+
   // 🍷 Wine Reference Catalog State (Section 13 /api/v1/wine-products/)
-  const [wineProducts, setWineProducts] = useState<WineProductRow[]>([]);
+  const [wineProducts, setWineProducts] = useState<WineProductRow[]>(MOCK_WINE_CATALOG);
   const [wineLoading, setWineLoading] = useState(false);
-  const [wineTotal, setWineTotal] = useState(0);
+  const [wineTotal, setWineTotal] = useState(MOCK_WINE_CATALOG.length);
   const [winePage, setWinePage] = useState(1);
 
   async function loadWineCatalog(page = 1, searchQuery = '') {
     setWineLoading(true);
     try {
       const res = await wineProductsApi.list({ page, per_page: 15, search: searchQuery || undefined });
-      setWineProducts((res.items || []).map((item, idx) => ({ ...item, id: item.id ?? idx + 1 })));
-      setWineTotal(res.total || 0);
-      setWinePage(page);
+      if (res && res.items && res.items.length > 0) {
+        setWineProducts((res.items || []).map((item, idx) => ({ ...item, id: item.id ?? idx + 1 })));
+        setWineTotal(res.total || 0);
+        setWinePage(page);
+        return;
+      }
     } catch (err) {
       console.warn('Failed to load wine reference catalog:', err);
     } finally {
       setWineLoading(false);
     }
+
+    // Fallback filter
+    let filtered = [...MOCK_WINE_CATALOG];
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      filtered = filtered.filter(w =>
+        (w.product_name && w.product_name.toLowerCase().includes(q)) ||
+        (w.brands && w.brands.toLowerCase().includes(q)) ||
+        (w.countries_en && w.countries_en.toLowerCase().includes(q)) ||
+        (w.categories_en && w.categories_en.toLowerCase().includes(q)) ||
+        (w.code && w.code.includes(q))
+      );
+    }
+    setWineProducts(filtered);
+    setWineTotal(filtered.length);
+    setWinePage(page);
   }
 
   const handleImportWineProduct = (wp: WineProductItem) => {

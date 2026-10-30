@@ -476,9 +476,9 @@ function LoadingSkeleton() {
 /* ─── Main Page ─── */
 export default function AdminReportsPage() {
   const supabase = useMemo(() => createClient(), []);
-  const [data, setData] = useState<SalesReportData | null>(null);
-  const [ecomDashboard, setEcomDashboard] = useState<EcommerceDashboardResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<SalesReportData | null>(INITIAL_SALES_REPORT);
+  const [ecomDashboard, setEcomDashboard] = useState<EcommerceDashboardResponse | null>(INITIAL_ECOM_DASHBOARD);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
