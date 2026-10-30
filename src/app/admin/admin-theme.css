@@ -1919,4 +1919,69 @@ th[style*="color:#1e2d48"],
   color: #0f172a !important;
 }
 
+/* ==========================================================================
+   🖨️ Global Admin Print Styles
+   ========================================================================== */
+@media print {
+  @page {
+    size: auto;
+    margin: 8mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Completely hide all Admin Chrome and navigation */
+  aside,
+  header,
+  nav,
+  .sidebar-desktop,
+  .sidebar-mobile-overlay,
+  .sidebar-mobile-drawer,
+  .sidebar-collapse-btn,
+  .admin-topbar-profile,
+  .admin-clock-pill,
+  .admin-topbar-icon-btn,
+  .admin-ai-chat,
+  #admin-ai-chat-btn,
+  #admin-ai-chat-window,
+  #heartbeat-indicator,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Reset outer shell */
+  .admin-shell-container {
+    display: block !important;
+    min-height: auto !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .admin-shell-container > div:first-child {
+    display: none !important;
+  }
+
+  main {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+}
+
+
 
