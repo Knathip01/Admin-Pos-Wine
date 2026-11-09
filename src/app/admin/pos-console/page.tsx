@@ -7,7 +7,7 @@ import Link from 'next/link'
 import {
   TrendingUp, ShoppingBag, Users, Package,
   AlertTriangle, Wine, ArrowUpRight, ArrowDownRight, Loader2, Clock, Receipt,
-  ChevronRight, Flame, RefreshCw
+  ChevronRight, Flame, RefreshCw, Warehouse, BarChart3, Settings
 } from 'lucide-react'
 import {
   ResponsiveContainer, LineChart, Line, Area, AreaChart, Tooltip, YAxis, XAxis
@@ -276,7 +276,7 @@ export default function StandalonePosConsolePage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
           <div>
             <h1 style={{ fontSize: 'clamp(18px, 4vw, 26px)', fontWeight: 800, color: 'var(--admin-text, #fff)', margin: 0 }}>
-              📊 ภาพรวม POS Console (Project POS)
+              ภาพรวม POS Console (Project POS)
             </h1>
             <p style={{ color: 'var(--admin-text-muted, #94a3b8)', fontSize: 12, margin: '2px 0 0' }}>
               {new Date().toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -300,8 +300,9 @@ export default function StandalonePosConsolePage() {
 
         {/* ── Error ── */}
         {errorMsg && (
-          <div style={{ padding: '14px 16px', borderRadius: 12, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#f87171', marginBottom: 16, fontSize: 13 }}>
-            ⚠️ {errorMsg}
+          <div style={{ padding: '14px 16px', borderRadius: 12, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#f87171', marginBottom: 16, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <AlertTriangle size={16} />
+            <span>{errorMsg}</span>
           </div>
         )}
 
@@ -407,28 +408,31 @@ export default function StandalonePosConsolePage() {
               <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--admin-text-muted, #94a3b8)', margin: '0 0 10px', letterSpacing: '0.05em' }}>เมนูด่วน POS</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                 {[
-                  { label: 'สินค้า', icon: '📦', href: '/admin/products' },
-                  { label: 'สต็อก', icon: '🏭', href: '/admin/inventory' },
-                  { label: 'รายงาน', icon: '📈', href: '/admin/reports' },
-                  { label: 'รับชำระ', icon: '💳', href: '/admin/billing' },
-                  { label: 'ผู้ใช้', icon: '👥', href: '/admin/users' },
-                  { label: 'ตั้งค่า', icon: '⚙️', href: '/admin/settings' },
-                ].map(item => (
-                  <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
-                    <div style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                      gap: 4, padding: '10px 4px', borderRadius: 10,
-                      background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
-                      cursor: 'pointer', transition: 'all 0.15s'
-                    }}
-                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)'}
-                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)'}
-                    >
-                      <span style={{ fontSize: 20 }}>{item.icon}</span>
-                      <span style={{ fontSize: 11, color: 'var(--admin-text-muted, #94a3b8)', fontWeight: 600 }}>{item.label}</span>
-                    </div>
-                  </Link>
-                ))}
+                  { label: 'สินค้า', icon: Package, href: '/admin/products' },
+                  { label: 'สต็อก', icon: Warehouse, href: '/admin/inventory' },
+                  { label: 'รายงาน', icon: BarChart3, href: '/admin/reports' },
+                  { label: 'รับชำระ', icon: Receipt, href: '/admin/billing' },
+                  { label: 'ผู้ใช้', icon: Users, href: '/admin/users' },
+                  { label: 'ตั้งค่า', icon: Settings, href: '/admin/settings' },
+                ].map(item => {
+                  const Icon = item.icon
+                  return (
+                    <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
+                      <div style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        gap: 6, padding: '10px 4px', borderRadius: 10,
+                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                        cursor: 'pointer', transition: 'all 0.15s'
+                      }}
+                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)'}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)'}
+                      >
+                        <Icon size={18} style={{ color: '#22e5ff' }} />
+                        <span style={{ fontSize: 11, color: 'var(--admin-text-muted, #94a3b8)', fontWeight: 600 }}>{item.label}</span>
+                      </div>
+                    </Link>
+                  )
+                })}
               </div>
             </div>
 
@@ -459,7 +463,7 @@ export default function StandalonePosConsolePage() {
 
         {/* ── Bottom Section ── */}
         <div style={{ display: 'flex', gap: 4, padding: '4px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, marginBottom: 14 }} className="sm:hidden">
-          {([['overview', '🏆 สินค้าขายดี'], ['stock', '⚠️ สต็อกต่ำ'], ['staff', '👥 พนักงาน']] as const).map(([tab, label]) => (
+          {([['overview', 'สินค้าขายดี'], ['stock', 'สต็อกต่ำ'], ['staff', 'พนักงาน']] as const).map(([tab, label]) => (
             <button key={tab} className={`tab-btn ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>
               {label}
             </button>
@@ -477,7 +481,7 @@ export default function StandalonePosConsolePage() {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--admin-text, #fff)', margin: 0 }}>🏆 สินค้าขายดีสุด</h4>
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--admin-text, #fff)', margin: 0 }}>สินค้าขายดีสุด</h4>
               <span style={{ fontSize: 11, color: '#d4af37', fontWeight: 600 }}>Top 5</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -488,11 +492,10 @@ export default function StandalonePosConsolePage() {
                 </div>
               ) : (
                 topProducts.map((p, idx) => {
-                  const icons = ['🍷', '🥂', '🍾', '🍇', '🍹']
                   return (
                     <div key={idx} className="product-row">
                       <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--admin-text-muted, #94a3b8)', width: 14, flexShrink: 0 }}>#{idx + 1}</span>
-                      <span style={{ fontSize: 18, flexShrink: 0 }}>{icons[idx % icons.length]}</span>
+                      <Wine size={16} style={{ color: '#22e5ff', flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--admin-text, #fff)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {p.name}
@@ -513,7 +516,7 @@ export default function StandalonePosConsolePage() {
           {/* ── Low Stock ── */}
           <div className="dash-card" style={{ padding: 18 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--admin-text, #fff)', margin: 0 }}>⚠️ สต็อกต่ำ</h4>
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--admin-text, #fff)', margin: 0 }}>สต็อกต่ำ</h4>
               <Link href="/admin/inventory" style={{ fontSize: 11, color: '#b02238', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
                 ดูทั้งหมด <ChevronRight size={12} />
               </Link>
@@ -521,7 +524,7 @@ export default function StandalonePosConsolePage() {
             {lowStockProducts.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--admin-text-muted, #94a3b8)' }}>
                 <Package size={24} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
-                <p style={{ fontSize: 12, margin: 0 }}>สต็อกปกติทุกรายการ ✓</p>
+                <p style={{ fontSize: 12, margin: 0 }}>สต็อกปกติทุกรายการ</p>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -534,8 +537,8 @@ export default function StandalonePosConsolePage() {
                         <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--admin-text, #f3f7fb)', margin: 0, flex: 1, paddingRight: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {p.name}
                         </p>
-                        <span className="stock-chip" style={{ background: isOut ? 'rgba(239,68,68,0.15)' : 'rgba(251,191,36,0.1)', color: isOut ? '#f87171' : '#fbbf24', flexShrink: 0 }}>
-                          {isOut ? '🔴 หมด' : `🟡 ${p.stock}`}
+                        <span className="stock-chip" style={{ background: isOut ? 'rgba(239,68,68,0.15)' : 'rgba(251,191,36,0.1)', color: isOut ? '#f87171' : '#fbbf24', flexShrink: 0, fontWeight: 700 }}>
+                          {isOut ? 'หมด' : p.stock}
                         </span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -554,7 +557,7 @@ export default function StandalonePosConsolePage() {
           {/* ── Staff Status ── */}
           <div className="dash-card" style={{ padding: 18 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--admin-text, #fff)', margin: 0 }}>👥 สถานะพนักงาน</h4>
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--admin-text, #fff)', margin: 0 }}>สถานะพนักงาน</h4>
               <Link href="/admin/users" style={{ fontSize: 11, color: '#60a5fa', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
                 จัดการ <ChevronRight size={12} />
               </Link>
@@ -565,12 +568,11 @@ export default function StandalonePosConsolePage() {
               ) : (
                 staffUsers.map(u => {
                   const isOnline = u.is_active && u.updated_at && (new Date().getTime() - new Date(u.updated_at).getTime() < 60000)
-                  const roleIcons: Record<string, string> = { super_admin: '👑', manager: '🏢', cashier: '💰', stock_staff: '📦', kitchen: '🍳', bar: '🍸' }
                   const roleLabels: Record<string, string> = { super_admin: 'Super Admin', manager: 'Manager', cashier: 'Cashier', stock_staff: 'Stock Staff', kitchen: 'Kitchen', bar: 'Bar' }
                   return (
                     <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.02)' }}>
-                      <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>
-                        {roleIcons[u.role] || '👤'}
+                      <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: isOnline ? '#34d399' : '#94a3b8', flexShrink: 0 }}>
+                        {u.full_name ? u.full_name.charAt(0).toUpperCase() : 'U'}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--admin-text, #f3f7fb)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

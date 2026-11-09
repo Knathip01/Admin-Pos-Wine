@@ -39,7 +39,7 @@ export default function StandalonePosConsoleLayout({ children }: { children: Rea
               <ArrowLeft size={14} /> กลับ Super Admin Hub
             </Link>
             <div className="w-8 h-8 rounded-xl bg-blue-900/80 border border-blue-500 flex items-center justify-center text-blue-300 font-black">
-              🖥️
+              <Wine size={16} />
             </div>
             <div>
               <p className="text-sm font-black tracking-tight text-white leading-none">THE BOTTLE CLUB POS</p>

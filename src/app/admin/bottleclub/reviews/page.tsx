@@ -404,7 +404,7 @@ export default function AdminReviewsPage() {
         }
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-            <span>⏳ รอการอนุมัติ (Pending)</span>
+            <span>รอการอนุมัติ (Pending)</span>
           </span>
         );
       },
@@ -512,11 +512,11 @@ export default function AdminReviewsPage() {
               className="admin-select w-full py-2.5 text-xs"
             >
               <option value="">คะแนนทั้งหมด (1-5 ดาว)</option>
-              <option value="5">5 ดาว (★★★★★)</option>
-              <option value="4">4 ดาว (★★★★)</option>
-              <option value="3">3 ดาว (★★★)</option>
-              <option value="2">2 ดาว (★★)</option>
-              <option value="1">1 ดาว (★)</option>
+              <option value="5">5 ดาว</option>
+              <option value="4">4 ดาว</option>
+              <option value="3">3 ดาว</option>
+              <option value="2">2 ดาว</option>
+              <option value="1">1 ดาว</option>
             </select>
           </div>
 

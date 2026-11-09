@@ -475,7 +475,7 @@ export default function CheckoutModal({ onClose, onSuccess }: CheckoutModalProps
               {cart.customer && (
                 <div style={{ marginTop: 12, padding: '8px 12px', borderRadius: 10, background: 'rgba(242,198,92,0.08)', border: '1px solid rgba(242,198,92,0.2)' }}>
                   <span style={{ fontSize: 12, color: 'var(--gold-400)' }}>
-                    ✨ {cart.customer.full_name} {isPending ? 'จะได้รับ' : 'ได้รับ'} {Math.floor(receipt.total / 100)} แต้ม
+                    {cart.customer.full_name} {isPending ? 'จะได้รับ' : 'ได้รับ'} {Math.floor(receipt.total / 100)} แต้ม
                   </span>
                 </div>
               )}
@@ -568,7 +568,7 @@ export default function CheckoutModal({ onClose, onSuccess }: CheckoutModalProps
                   padding: '5px 10px', borderRadius: 20,
                   background: 'rgba(242,198,92,0.1)', border: '1px solid rgba(242,198,92,0.2)',
                   fontSize: 11, color: 'var(--gold-400)', whiteSpace: 'nowrap',
-                }}>🌟 +{Math.floor(total / 100)} แต้ม</div>
+                }}>+{Math.floor(total / 100)} แต้ม</div>
               )}
             </div>
             {cart.discount_amount > 0 && (
@@ -897,7 +897,7 @@ export default function CheckoutModal({ onClose, onSuccess }: CheckoutModalProps
                 padding: 16
               }}>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 10 }}>
-                  📸 ถ่ายภาพสลิปจากลูกค้า (โอนเงิน / สแกน QR)
+                  ถ่ายภาพสลิปจากลูกค้า (โอนเงิน / สแกน QR)
                 </label>
 
                 {isCameraActive ? (
@@ -929,7 +929,7 @@ export default function CheckoutModal({ onClose, onSuccess }: CheckoutModalProps
                           fontSize: 12, fontWeight: 700, cursor: 'pointer'
                         }}
                       >
-                        กดถ่ายภาพ 📸
+                        กดถ่ายภาพ
                       </button>
                       <button
                         type="button"

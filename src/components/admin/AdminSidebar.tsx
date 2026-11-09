@@ -152,7 +152,7 @@ export default function AdminSidebar({ admin = { name: 'Super Admin', email: 'ad
                   ? '1px solid rgba(245,158,11,0.35)'
                   : '1px solid rgba(0,212,255,0.30)',
               }}>
-                {admin?.role === 'superadmin' ? '⚡ Super Admin' : '● Staff'}
+                {admin?.role === 'superadmin' ? 'Super Admin' : 'Staff'}
               </span>
             </div>
           </div>

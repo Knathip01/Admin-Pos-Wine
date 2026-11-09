@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Product, Category, FoodWinePairing } from '@/lib/types'
 import { formatCurrency } from '@/lib/utils'
 import {
-  Wine, Plus, Edit3, Trash2, CheckCircle2, AlertCircle,
+  Wine, Utensils, Plus, Edit3, Trash2, CheckCircle2, AlertCircle,
   Sparkles, Tag, Percent, X, Loader2, Search, ArrowRight, Check
 } from 'lucide-react'
 
@@ -470,7 +470,7 @@ export default function FoodWinePairingManager({ onPairingsChange }: { onPairing
                         background: pairing.is_active ? 'rgba(16,185,129,0.15)' : 'rgba(100,116,139,0.2)',
                         color: pairing.is_active ? '#34d399' : '#94a3b8'
                       }}>
-                        {pairing.is_active ? '🟢 อนุมัติแล้ว (ขายหน้าร้าน)' : '⚪ ปิดใช้งาน (ยังไม่อนุมัติ)'}
+                        {pairing.is_active ? 'อนุมัติแล้ว (ขายหน้าร้าน)' : 'ปิดใช้งาน (ยังไม่อนุมัติ)'}
                       </span>
                     </div>
                     <h4 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--admin-text)' }} className="truncate">
@@ -543,7 +543,7 @@ export default function FoodWinePairingManager({ onPairingsChange }: { onPairing
                       {food?.image_url ? (
                         <img src={food.image_url} alt={food.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
-                        <span style={{ fontSize: 32 }}>🍽️</span>
+                        <Utensils size={32} style={{ color: 'var(--admin-text-muted)' }} />
                       )}
                     </div>
                     <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: 'var(--admin-text)' }} className="line-clamp-1">
@@ -575,7 +575,7 @@ export default function FoodWinePairingManager({ onPairingsChange }: { onPairing
                       {wine?.image_url ? (
                         <img src={wine.image_url} alt={wine.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
-                        <span style={{ fontSize: 32 }}>🍷</span>
+                        <Wine size={32} style={{ color: '#f43f5e' }} />
                       )}
                     </div>
                     <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: 'var(--admin-text)' }} className="line-clamp-1">
@@ -602,7 +602,7 @@ export default function FoodWinePairingManager({ onPairingsChange }: { onPairing
                       background: 'rgba(244,63,94,0.15)', border: '1px solid rgba(244,63,94,0.3)',
                       color: '#fb7185'
                     }}>
-                      🏷️ ลด {pairing.discount_type === 'percent' ? `${pairing.discount_value}%` : formatCurrency(pairing.discount_value)}
+                      ลด {pairing.discount_type === 'percent' ? `${pairing.discount_value}%` : formatCurrency(pairing.discount_value)}
                     </span>
                     <span style={{ fontSize: 12, color: 'var(--admin-text-muted)', textDecoration: 'line-through', fontWeight: 600 }}>
                       {formatCurrency(combined)}
@@ -681,7 +681,7 @@ export default function FoodWinePairingManager({ onPairingsChange }: { onPairing
               {/* 1. ตัวเลือกรายการอาหาร (กรองเฉพาะหมวดอาหาร) */}
               <div>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--admin-text-sec)', marginBottom: 6 }}>
-                  🍽️ เลือกรายการอาหาร (Food Item) *
+                  เลือกรายการอาหาร (Food Item) *
                 </label>
                 <select
                   value={pairingFoodId}
@@ -709,7 +709,7 @@ export default function FoodWinePairingManager({ onPairingsChange }: { onPairing
               {/* 2. ตัวเลือกรายการไวน์/เครื่องดื่ม (กรองเฉพาะหมวดไวน์/เครื่องดื่ม) */}
               <div>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--admin-text-sec)', marginBottom: 6 }}>
-                  🍷 เลือกรายการไวน์ / เครื่องดื่ม (Wine Item) *
+                  เลือกรายการไวน์ / เครื่องดื่ม (Wine Item) *
                 </label>
                 <select
                   value={pairingWineId}

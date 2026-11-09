@@ -49,14 +49,14 @@ export default function QRCodePage() {
     setPrintMode('single')
     setTimeout(() => {
       window.print()
-    }, 120)
+    }, 200)
   }
 
   const handlePrintAll = () => {
     setPrintMode('all')
     setTimeout(() => {
       window.print()
-    }, 120)
+    }, 200)
   }
 
   const handleDownloadQR = (tableNo: number) => {
@@ -114,7 +114,7 @@ export default function QRCodePage() {
               fontFamily: 'sans-serif'
             }}
           >
-            <span>✂️ ตัดตามขอบเพื่อใส่แท่นวางอะคริลิค (Cut along border for Acrylic Stand)</span>
+            <span>ตัดตามขอบเพื่อใส่แท่นวางอะคริลิค (Cut along border for Acrylic Stand)</span>
           </div>
         )}
 
@@ -329,8 +329,8 @@ export default function QRCodePage() {
               marginBottom: 4
             }}
           >
-            <span>📶 Wi-Fi: TheBottleClub_Guest</span>
-            <span>🔔 มีข้อสงสัยเรียกพนักงานได้เลย</span>
+            <span>Wi-Fi: TheBottleClub_Guest</span>
+            <span>มีข้อสงสัยเรียกพนักงานได้เลย</span>
           </div>
           <div
             style={{
@@ -376,7 +376,7 @@ export default function QRCodePage() {
               </span>
             </div>
             <h1 style={{ fontFamily: "'Outfit', sans-serif", fontSize: '1.5rem', fontWeight: 900, color: '#eef2ff', letterSpacing: '-0.025em', margin: 0 }}>
-              📱 พิมพ์ QR Code แท่นวางบนโต๊ะอาหาร (โต๊ะ 1 - 10)
+              พิมพ์ QR Code แท่นวางบนโต๊ะอาหาร (โต๊ะ 1 - 10)
             </h1>
             <p style={{ color: '#94a3b8', fontSize: 13, fontWeight: 500, marginTop: 4 }}>
               พิมพ์ป้าย QR Code ขนาดมาตรฐานสำหรับใส่แท่นอะคริลิคตั้งโต๊ะ เพื่อให้ลูกค้าสแกนสั่งอาหารและไวน์ได้อย่างแม่นยำ
@@ -480,7 +480,7 @@ export default function QRCodePage() {
             {/* URL & Action Tools */}
             <div className="admin-panel" style={{ padding: 22, borderRadius: 20 }}>
               <h3 style={{ color: '#eef2ff', fontWeight: 800, fontSize: 13, marginBottom: 14, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                🔗 ลิงก์เมนูออนไลน์สำหรับโต๊ะ {selectedTable}
+                ลิงก์เมนูออนไลน์สำหรับโต๊ะ {selectedTable}
               </h3>
 
               {/* URL Display Box */}
@@ -627,7 +627,7 @@ export default function QRCodePage() {
           {/* RIGHT: Live Stand Mockup Preview */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6, color: '#94a3b8', fontSize: 12, fontWeight: 700 }}>
-              <span>🔍 ตัวอย่างแท่นวางขนาดจริง (Live Stand Preview)</span>
+              <span>ตัวอย่างแท่นวางขนาดจริง (Live Stand Preview)</span>
             </div>
 
             {/* Stand Outer Mockup Frame */}
@@ -724,20 +724,69 @@ export default function QRCodePage() {
         @media print {
           @page {
             size: auto;
-            margin: 10mm;
+            margin: 8mm;
           }
 
-          /* Hide on-screen interface completely */
+          /* Hide on-screen interface, admin header, and navigation completely */
+          header,
+          aside,
+          nav,
+          .admin-topbar,
+          .sidebar-desktop,
+          .sidebar-mobile-overlay,
+          .sidebar-mobile-drawer,
+          .sidebar-collapse-btn,
+          .admin-topbar-profile,
+          .admin-clock-pill,
+          .admin-topbar-icon-btn,
+          .admin-ai-chat,
+          #admin-ai-chat-btn,
+          #admin-ai-chat-window,
+          #heartbeat-indicator,
+          .no-print,
           .qr-screen-ui {
             display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            min-height: 0 !important;
+            max-height: 0 !important;
+            overflow: hidden !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+          }
+
+          /* Reset page body and admin wrappers so nothing gets clipped */
+          html,
+          body,
+          .admin-shell-container,
+          .admin-main-wrap,
+          .admin-main-content,
+          main {
+            display: block !important;
+            min-height: auto !important;
+            height: auto !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            overflow: visible !important;
+            overflow-x: visible !important;
+            overflow-y: visible !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
 
           /* Ensure print container is shown cleanly */
           .qr-print-container {
             display: block !important;
+            visibility: visible !important;
             width: 100% !important;
             background: #ffffff !important;
-            margin: 0 !important;
+            margin: 0 auto !important;
             padding: 0 !important;
           }
 
@@ -746,8 +795,8 @@ export default function QRCodePage() {
             flex-direction: column !important;
             align-items: center !important;
             justify-content: center !important;
-            min-height: 94vh !important;
             padding: 20px 0 !important;
+            margin: 0 auto !important;
             box-sizing: border-box !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
@@ -758,10 +807,19 @@ export default function QRCodePage() {
             break-after: page !important;
           }
 
-          .qr-stand-card.is-print {
+          .qr-stand-card {
             border: 2px solid #0f172a !important;
             box-shadow: none !important;
-            margin: auto !important;
+            margin: 10px auto !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          .qr-stand-card * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
         }
       `}</style>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Customer } from '@/lib/types'
-import { Search, X, User, Plus, Loader2, Phone } from 'lucide-react'
+import { Search, X, User, Plus, Loader2, Phone, Star } from 'lucide-react'
 import { getMemberLevelColor, getMemberLevelLabel } from '@/lib/utils'
 
 interface CustomerSearchModalProps {
@@ -96,8 +96,8 @@ export default function CustomerSearchModal({ onClose, onSelect }: CustomerSearc
                     <p className="font-medium text-white text-sm">{c.full_name}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       {c.phone && <span className="text-xs flex items-center gap-1" style={{ color: 'var(--text-muted)' }}><Phone size={10} />{c.phone}</span>}
-                      <span className={`text-xs font-medium ${getMemberLevelColor(c.member_level)}`}>
-                        ⭐ {getMemberLevelLabel(c.member_level)}
+                      <span className={`text-xs font-medium inline-flex items-center gap-1 ${getMemberLevelColor(c.member_level)}`}>
+                        <Star size={11} /> {getMemberLevelLabel(c.member_level)}
                       </span>
                     </div>
                   </div>

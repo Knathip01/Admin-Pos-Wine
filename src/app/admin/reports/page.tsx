@@ -351,7 +351,7 @@ export default function ReportsPage() {
         <div>
           <div className="flex items-center gap-2.5 flex-wrap">
             <h1 style={{ fontFamily: "'Outfit', sans-serif", fontSize: '1.4rem', fontWeight: 900, color: '#eef2ff', letterSpacing: '-0.025em', margin: 0 }}>
-              📈 รายงานยอดขายและสถิติ
+              รายงานยอดขายและสถิติ
             </h1>
           </div>
           <p style={{ color: '#3d4d6a', fontSize: 13, fontWeight: 600, marginTop: 4 }}>
@@ -576,7 +576,7 @@ export default function ReportsPage() {
                   padding: '8px 16px 12px', marginBottom: -10
                 }}
               >
-                👥 วิเคราะห์พนักงาน (Staff)
+                วิเคราะห์พนักงาน (Staff)
               </button>
               <button
                 onClick={() => setBottomTab('arrivals')}
@@ -587,7 +587,7 @@ export default function ReportsPage() {
                   padding: '8px 16px 12px', marginBottom: -10
                 }}
               >
-                📦 สินค้าเข้าใหม่ (Arrivals)
+                สินค้าเข้าใหม่ (Arrivals)
               </button>
               <button
                 onClick={() => setBottomTab('readiness')}
@@ -598,7 +598,7 @@ export default function ReportsPage() {
                   padding: '8px 16px 12px', marginBottom: -10
                 }}
               >
-                📋 รายงานความเรียบร้อย (Readiness)
+                รายงานความเรียบร้อย (Readiness)
               </button>
             </div>
           </div>
@@ -796,10 +796,10 @@ export default function ReportsPage() {
 
                         <div className="flex items-center gap-2 text-[10px] font-bold pt-2.5 border-t border-white/5">
                           <span className="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                            ✓ รับทราบ {ackCount}
+                            รับทราบ {ackCount}
                           </span>
                           <span className="text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
-                            ⏳ รอดำเนินการ {pendCount}
+                            รอดำเนินการ {pendCount}
                           </span>
                         </div>
                       </button>
@@ -812,7 +812,7 @@ export default function ReportsPage() {
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
                     <div>
                       <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 16, fontWeight: 900, color: '#f1f5f9', margin: 0 }}>
-                        📋 รายงานความเรียบร้อยประจำแผนก
+                        รายงานความเรียบร้อยประจำแผนก
                       </h2>
                       <p style={{ color: '#64748b', fontSize: 12, fontWeight: 500, marginTop: 4 }}>
                         รายงานสถานะและการจัดเตรียมความพร้อมของ Cashier, Stock Staff, Kitchen, Bar ({filteredReports.length} รายการ)
@@ -829,7 +829,7 @@ export default function ReportsPage() {
                           ? { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', boxShadow: '0 2px 8px rgba(99,102,241,0.30)' }
                           : { color: '#64748b', background: 'transparent' }}
                       >
-                        🌟 ทั้งหมด ({shopReports.length})
+                        ทั้งหมด ({shopReports.length})
                       </button>
                       {(Object.entries(READINESS_ROLE_CONFIG) as [keyof typeof READINESS_ROLE_CONFIG, typeof READINESS_ROLE_CONFIG['cashier']][]).map(([key, cfg]) => {
                         const RoleIcon = cfg.icon
@@ -905,7 +905,7 @@ export default function ReportsPage() {
                                       className="text-xs px-2.5 py-1.5 rounded-lg font-bold hover:brightness-110 cursor-pointer"
                                       style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.28)' }}
                                     >
-                                      📷 ดูรูปภาพ ({imageCount})
+                                      ดูรูปภาพ ({imageCount})
                                     </button>
                                   ) : (
                                     <span className="text-xs" style={{ color: '#475569' }}>ไม่มีรูป</span>
@@ -918,7 +918,7 @@ export default function ReportsPage() {
                                     className={reportItem.status === 'acknowledged' ? 'badge-delivered' : 'badge-pending'}
                                     style={{ padding: '4px 10px', borderRadius: 100, fontSize: 11, fontWeight: 700 }}
                                   >
-                                    {reportItem.status === 'acknowledged' ? '✓ รับทราบแล้ว' : '⏳ รอดำเนินการ'}
+                                    {reportItem.status === 'acknowledged' ? 'รับทราบแล้ว' : 'รอดำเนินการ'}
                                   </span>
                                 </td>
 

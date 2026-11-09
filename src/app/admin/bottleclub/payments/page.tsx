@@ -390,7 +390,7 @@ function SlipModal({
                     ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                     : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
                 }`}>
-                  {ocrResult.is_duplicate ? '⚠️ สลิปซ้ำ' : ocrResult.is_valid !== false ? '✓ สลิปถูกต้อง' : '✕ ไม่ถูกต้อง'}
+                  {ocrResult.is_duplicate ? 'สลิปซ้ำ' : ocrResult.is_valid !== false ? 'สลิปถูกต้อง' : 'ไม่ถูกต้อง'}
                 </span>
               ) : order.hasSlip ? (
                 <span className="text-[10px] text-amber-400 font-semibold bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">รอตรวจเช็ค</span>
@@ -540,7 +540,7 @@ function PaymentRow({
               {order.customerName || order.customerEmail} · {order.date}
             </p>
             {order.adminNote && (
-              <p className="text-[11px] text-[#94a3c4] mt-1 italic font-medium">📝 {order.adminNote}</p>
+              <p className="text-[11px] text-[#94a3c4] mt-1 italic font-medium">หมายเหตุ: {order.adminNote}</p>
             )}
           </div>
         </div>

@@ -607,7 +607,7 @@ export default function AdminPromotionsPage() {
         </div>
       </div>
 
-      {/* ── 👑 ส่วนที่ 1: แบนเนอร์ใหญ่หน้าแรก (Hero Section Banner) ── */}
+      {/* ส่วนที่ 1: แบนเนอร์ใหญ่หน้าแรก (Hero Section Banner) */}
       <div className="space-y-4 p-4 sm:p-6 rounded-3xl bg-slate-900/60 border border-white/10 backdrop-blur-xl shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-white/10">
           <div>
@@ -660,7 +660,7 @@ export default function AdminPromotionsPage() {
                 <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                   heroBanner.is_active ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'
                 }`}>
-                  {heroBanner.is_active ? '✓ เปิดแสดงผล' : '✕ ปิดใช้งาน'}
+                  {heroBanner.is_active ? 'เปิดแสดงผล' : 'ปิดใช้งาน'}
                 </span>
               </div>
 
@@ -773,7 +773,7 @@ export default function AdminPromotionsPage() {
         )}
       </div>
 
-      {/* ── 📰 ส่วนที่ 2: การ์ดข่าวสารและโปรโมชั่นลดราคา (News & Promotion Cards) ── */}
+      {/* ส่วนที่ 2: การ์ดข่าวสารและโปรโมชั่นลดราคา (News & Promotion Cards) */}
       <div className="space-y-4 pt-2">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
@@ -1456,9 +1456,9 @@ export default function AdminPromotionsPage() {
 
                           {/* Service badges mini */}
                           <div className="flex items-center gap-2 pt-1 text-[10px] text-white/80">
-                            <span className="px-2 py-0.5 rounded-md bg-white/10 border border-white/10">🚚 จัดส่งรวดเร็ว</span>
-                            <span className="px-2 py-0.5 rounded-md bg-white/10 border border-white/10">✨ คัดสรรโดยผู้เชี่ยวชาญ</span>
-                            <span className="px-2 py-0.5 rounded-md bg-white/10 border border-white/10">🔒 ชำระเงินปลอดภัย</span>
+                            <span className="px-2 py-0.5 rounded-md bg-white/10 border border-white/10">จัดส่งรวดเร็ว</span>
+                            <span className="px-2 py-0.5 rounded-md bg-white/10 border border-white/10">คัดสรรโดยผู้เชี่ยวชาญ</span>
+                            <span className="px-2 py-0.5 rounded-md bg-white/10 border border-white/10">ชำระเงินปลอดภัย</span>
                           </div>
                         </div>
                       </div>
@@ -1476,7 +1476,7 @@ export default function AdminPromotionsPage() {
                           <h4 className="text-sm font-bold text-white line-clamp-1">{title || 'ชื่อแคมเปญโปรโมชั่น'}</h4>
                           <p className="text-slate-400 text-xs line-clamp-1 mt-0.5">{description || 'รายละเอียดโปรโมชั่น'}</p>
                           <div className="mt-3 pt-2 border-t border-white/10 flex justify-between items-center text-xs">
-                            <span className="text-rose-400 font-bold">{ctaText || 'ดูข้อเสนอ'} ➜</span>
+                            <span className="text-rose-400 font-bold">{ctaText || 'ดูข้อเสนอ'}</span>
                             <span className="text-[10px] text-slate-500">{validUntil}</span>
                           </div>
                         </div>

@@ -317,9 +317,9 @@ export default function BillingPage() {
       {/* Workflow Tabs */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 24, borderBottom: '1px solid var(--border-color)', paddingBottom: 12 }}>
         {([
-          { key: 'pending', label: '⏳ รอตรวจสอบ/ชำระเงิน' },
-          { key: 'paid', label: '🍷 กำลังเตรียมสินค้า (Cashier)' },
-          { key: 'completed', label: '✅ เสิร์ฟเสร็จสิ้น' }
+          { key: 'pending', label: 'รอตรวจสอบ/ชำระเงิน' },
+          { key: 'paid', label: 'กำลังเตรียมสินค้า (Cashier)' },
+          { key: 'completed', label: 'เสิร์ฟเสร็จสิ้น' }
         ] as { key: 'pending' | 'paid' | 'completed'; label: string }[]).map(t => (
           <button
             key={t.key}
@@ -348,7 +348,7 @@ export default function BillingPage() {
         <div className="flex items-center gap-3 p-4 rounded-2xl mb-6 animate-in"
           style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.4)' }}>
           <BadgeCheck size={22} style={{ color: '#4ade80' }} />
-          <p style={{ color: '#4ade80', fontWeight: 600 }}>✅ รับชำระเงินสำเร็จ! ตัดสต๊อกเรียบร้อย</p>
+          <p style={{ color: '#4ade80', fontWeight: 600 }}>รับชำระเงินสำเร็จ! ตัดสต๊อกเรียบร้อย</p>
         </div>
       )}
 
@@ -378,28 +378,28 @@ export default function BillingPage() {
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, flexWrap: 'wrap' }}>
                         {sale.status === 'pending' && (
-                          <span className="badge" style={{ background: 'rgba(245,158,11,0.15)', color: '#fcd34d', borderColor: 'rgba(245,158,11,0.3)', fontSize: 11 }}>⏳ รอชำระ</span>
+                          <span className="badge" style={{ background: 'rgba(245,158,11,0.15)', color: '#fcd34d', borderColor: 'rgba(245,158,11,0.3)', fontSize: 11 }}>รอชำระ</span>
                         )}
                         {sale.status === 'paid' && !parseNote(sale.note).isServed && (
-                          <span className="badge" style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', borderColor: 'rgba(34,197,94,0.3)', fontSize: 11 }}>🟢 กำลังเตรียม</span>
+                          <span className="badge" style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', borderColor: 'rgba(34,197,94,0.3)', fontSize: 11 }}>กำลังเตรียม</span>
                         )}
                         {sale.status === 'paid' && parseNote(sale.note).isServed && (
-                          <span className="badge" style={{ background: 'rgba(56,189,248,0.15)', color: '#38bdf8', borderColor: 'rgba(56,189,248,0.3)', fontSize: 11 }}>🔵 เสิร์ฟแล้ว</span>
+                          <span className="badge" style={{ background: 'rgba(56,189,248,0.15)', color: '#38bdf8', borderColor: 'rgba(56,189,248,0.3)', fontSize: 11 }}>เสิร์ฟแล้ว</span>
                         )}
                         
                         {sale.table_no ? (
                           <span className="badge" style={{ background: 'rgba(139,26,44,0.25)', color: 'var(--gold-400)', borderColor: 'rgba(212,175,55,0.4)', fontSize: 11, fontWeight: 700 }}>
-                            🍷 โต๊ะ {sale.table_no}
+                            โต๊ะ {sale.table_no}
                           </span>
                         ) : (
                           <span className="badge" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)', borderColor: 'var(--border-color)', fontSize: 11 }}>
-                            🛍 หน้าร้าน
+                            หน้าร้าน
                           </span>
                         )}
 
                         {slipUrl && (
                           <span className="badge" style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', borderColor: 'rgba(34,197,94,0.3)', fontSize: 11, fontWeight: 600 }}>
-                            📎 แนบสลิปแล้ว
+                            แนบสลิปแล้ว
                           </span>
                         )}
 
@@ -418,7 +418,7 @@ export default function BillingPage() {
                       </div>
                     </div>
                   )}
-                  {cleanNote && <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8, fontStyle: 'italic' }}>📝 {cleanNote}</p>}
+                  {cleanNote && <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8, fontStyle: 'italic' }}>หมายเหตุ: {cleanNote}</p>}
                 </div>
 
                 <button onClick={() => setExpandedId(expandedId === sale.id ? null : sale.id)}
@@ -446,7 +446,7 @@ export default function BillingPage() {
 
                     {slipUrl && (
                       <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border-color)' }}>
-                        <p style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600, marginBottom: 8 }}>📄 สลิปการชำระเงินที่แนบมา (คลิกดูรูปใหญ่):</p>
+                        <p style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600, marginBottom: 8 }}>สลิปการชำระเงินที่แนบมา (คลิกดูรูปใหญ่):</p>
                         <div style={{ borderRadius: 12, overflow: 'hidden', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', display: 'inline-block', padding: 8 }}>
                           <img
                             src={slipUrl}
@@ -464,7 +464,7 @@ export default function BillingPage() {
                   <div style={{ padding: '0 20px 6px 20px' }}>
                     <button onClick={() => setActiveSlipUrl(slipUrl)}
                       style={{ width: '100%', padding: '10px', borderRadius: 12, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.08)', color: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                      📄 ตรวจสอบรูปภาพสลิป
+                      ตรวจสอบรูปภาพสลิป
                     </button>
                   </div>
                 )}
@@ -483,11 +483,11 @@ export default function BillingPage() {
                     </>
                   ) : (sale.status === 'paid' && !parseNote(sale.note).isServed) ? (
                     <div style={{ width: '100%', padding: '10px 14px', borderRadius: 12, fontSize: 13, fontWeight: 600, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', color: '#fcd34d', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                      ⏳ กำลังเตรียมสินค้า (รอ Cashier ดำเนินการเสิร์ฟ)
+                      กำลังเตรียมสินค้า (รอ Cashier ดำเนินการเสิร์ฟ)
                     </div>
                   ) : (
                     <div style={{ width: '100%', padding: '10px 14px', borderRadius: 12, fontSize: 13, fontWeight: 600, background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.2)', color: '#38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                      ✅ ส่งโต๊ะและทำรายการเสร็จสิ้นแล้ว
+                      ส่งโต๊ะและทำรายการเสร็จสิ้นแล้ว
                     </div>
                   )}
                 </div>
@@ -555,7 +555,7 @@ export default function BillingPage() {
                   />
                   {cashAmt >= selectedSale.total_amount && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderRadius: 12, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', marginTop: 14 }}>
-                      <span style={{ color: '#86efac', fontSize: 14, fontWeight: 500 }}>🪙 เงินทอน</span>
+                      <span style={{ color: '#86efac', fontSize: 14, fontWeight: 500 }}>เงินทอน</span>
                       <span style={{ color: '#4ade80', fontWeight: 900, fontSize: 24 }}>{formatCurrency(changeAmt)}</span>
                     </div>
                   )}

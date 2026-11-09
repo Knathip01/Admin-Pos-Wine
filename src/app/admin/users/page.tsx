@@ -306,7 +306,7 @@ export default function UsersPage() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
             <h1 style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif", fontSize: '1.4rem', fontWeight: 900, color: 'var(--admin-text, #f1f5f9)', letterSpacing: '-0.025em', margin: 0 }}>
-              👥 ผู้ใช้งานพนักงาน (POS Store)
+              ผู้ใช้งานพนักงาน (POS Store)
             </h1>
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px',
@@ -314,7 +314,7 @@ export default function UsersPage() {
               background: 'rgba(16, 185, 129, 0.15)', color: '#34d399',
               border: '1px solid rgba(16, 185, 129, 0.3)'
             }}>
-              🟢 ฐานข้อมูล Supabase
+              ฐานข้อมูล Supabase
             </span>
           </div>
           <p style={{ color: 'var(--admin-text-muted, #94a3b8)', fontSize: 13, fontWeight: 500, margin: 0 }}>
@@ -340,7 +340,7 @@ export default function UsersPage() {
       {/* DB Error Alert */}
       {dbError && (
         <div style={{ padding: '12px 16px', borderRadius: 12, background: 'rgba(244,63,94,0.10)', border: '1px solid rgba(244,63,94,0.30)', color: '#fb7185', marginBottom: 20, fontSize: 13 }}>
-          ⚠️ Supabase Notice: {dbError}
+          Supabase Notice: {dbError}
         </div>
       )}
 

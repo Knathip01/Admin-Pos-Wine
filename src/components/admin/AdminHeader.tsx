@@ -5,16 +5,16 @@ import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Search, ChevronRight, Home, X, Zap } from 'lucide-react';
 
-const sectionMap: Record<string, { label: string; emoji: string }> = {
-  bottleclub: { label: 'ภาพรวม E-Commerce', emoji: '🍷' },
-  orders:    { label: 'คำสั่งซื้อออนไลน์',  emoji: '🛒' },
-  products:  { label: 'จัดการสินค้า POS',   emoji: '📦' },
-  members:   { label: 'สมาชิก & แต้มสะสม', emoji: '👥' },
-  reviews:   { label: 'รีวิวสินค้า',        emoji: '⭐' },
-  pos:       { label: 'จุดขายหน้าร้าน (POS)', emoji: '🖥️' },
-  reports:   { label: 'รายงานยอดขาย',       emoji: '📈' },
-  settings:  { label: 'ตั้งค่าร้านค้า',     emoji: '⚙️' },
-  payments:  { label: 'ตรวจสอบการชำระเงิน', emoji: '💳' },
+const sectionMap: Record<string, { label: string }> = {
+  bottleclub: { label: 'ภาพรวม E-Commerce' },
+  orders:    { label: 'คำสั่งซื้อออนไลน์' },
+  products:  { label: 'จัดการสินค้า POS' },
+  members:   { label: 'สมาชิก & แต้มสะสม' },
+  reviews:   { label: 'รีวิวสินค้า' },
+  pos:       { label: 'จุดขายหน้าร้าน (POS)' },
+  reports:   { label: 'รายงานยอดขาย' },
+  settings:  { label: 'ตั้งค่าร้านค้า' },
+  payments:  { label: 'ตรวจสอบการชำระเงิน' },
 };
 
 function useCurrentTime() {
@@ -97,7 +97,7 @@ export default function AdminHeader() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             >
-              {current ? `${current.emoji} ${current.label}` : '🚀 Admin Panel'}
+              {current ? current.label : 'Admin Panel'}
             </motion.h1>
           </AnimatePresence>
         </div>

@@ -5,37 +5,37 @@ export const PROMOTION_IMAGE_PRESETS = [
     name: 'Wine Cellar',
     label: 'ห้องเก็บบ่มไวน์หรู (Cellar)',
     url: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=1200&auto=format&fit=crop',
-    icon: '🍷',
+    icon: '',
   },
   {
     name: 'Wine Pouring',
     label: 'การรินไวน์แดง (Pouring)',
     url: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?q=80&w=1200&auto=format&fit=crop',
-    icon: '🍾',
+    icon: '',
   },
   {
     name: 'Food & Wine Pairing',
     label: 'อาหารคู่ไวน์ & สเต๊ก (Pairing)',
     url: 'https://images.unsplash.com/photo-1558001373-7b93ee48ffa0?q=80&w=1200&auto=format&fit=crop',
-    icon: '🥩',
+    icon: '',
   },
   {
     name: 'Champagne Cheers',
     label: 'แชมเปญเฉลิมฉลอง (Celebration)',
     url: 'https://images.unsplash.com/photo-1549416878-b9ca95e26903?q=80&w=1200&auto=format&fit=crop',
-    icon: '🥂',
+    icon: '',
   },
   {
     name: 'Vineyard Sunset',
     label: 'ไร่องุ่นยามเย็น (Vineyard)',
     url: 'https://images.unsplash.com/photo-1504279577054-acfeccf8fc52?q=80&w=1200&auto=format&fit=crop',
-    icon: '🍇',
+    icon: '',
   },
   {
     name: 'Luxury Glass & Bottle',
     label: 'ไวน์บาร์พรีเมียม (Bar & Glasses)',
     url: 'https://images.unsplash.com/photo-1474722883778-792e7990302f?q=80&w=1200&auto=format&fit=crop',
-    icon: '✨',
+    icon: '',
   },
 ]
 

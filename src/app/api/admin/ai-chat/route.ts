@@ -218,8 +218,8 @@ function buildContext(ctx: Awaited<ReturnType<typeof fetchAdminContext>>) {
 
   // Low stock warning
   const lowStockText = ctx.supabase.lowStock.length > 0
-    ? ctx.supabase.lowStock.map(p => `⚠️ ${p.name}: เหลือเพียง ${p.stock} ชิ้น (จุดเตือน ${p.min_stock})`).join('\n')
-    : '✅ สต็อกสินค้าทุกรายการอยู่ในระดับปลอดภัย';
+    ? ctx.supabase.lowStock.map(p => `• [เตือนสต็อกต่ำ] ${p.name}: เหลือเพียง ${p.stock} ชิ้น (จุดเตือน ${p.min_stock})`).join('\n')
+    : '• สต็อกสินค้าทุกรายการอยู่ในระดับปลอดภัย';
 
   // Web Wine Products (API)
   const webProdText = ctx.api.products.length > 0
@@ -237,31 +237,31 @@ function buildContext(ctx: Awaited<ReturnType<typeof fetchAdminContext>>) {
 
   return [
     `================================================================`,
-    `🖥️ 1. ข้อมูลระบบหน้าร้าน POS STORE (ฐานข้อมูล SUPABASE)`,
+    `1. ข้อมูลระบบหน้าร้าน POS STORE (ฐานข้อมูล SUPABASE)`,
     `================================================================`,
     `สถานะการเชื่อมต่อ: ${ctx.supabase.status}`,
     `ยอดขายหน้าร้านรวม: ${thb(ctx.supabase.totalRevenue)} (ทั้งหมด ${ctx.supabase.totalSales} บิล)`,
     ``,
-    `📊 สรุปยอดขายแยกตามแคชเชียร์และช่องทางรับชำระ:`,
+    `สรุปยอดขายแยกตามแคชเชียร์และช่องทางรับชำระ:`,
     cashierText,
     ``,
-    `🏆 สินค้าขายดีหน้าร้าน:`,
+    `สินค้าขายดีหน้าร้าน:`,
     topSellerText,
     ``,
-    `📦 รายการสินค้าและสต็อกคงเหลือหน้าร้าน (${ctx.supabase.totalProducts} รายการ):`,
+    `รายการสินค้าและสต็อกคงเหลือหน้าร้าน (${ctx.supabase.totalProducts} รายการ):`,
     posProdText,
     ``,
-    `🚨 แจ้งเตือนสถานะสต็อก:`,
+    `แจ้งเตือนสถานะสต็อก:`,
     lowStockText,
     ``,
-    `👥 รายชื่อพนักงานและตำแหน่งในระบบ (${ctx.supabase.totalStaff} คน):`,
+    `รายชื่อพนักงานและตำแหน่งในระบบ (${ctx.supabase.totalStaff} คน):`,
     staffText,
     ``,
-    `📋 รายงานความเรียบร้อย 4 แผนก (รายงานล่าสุดในระบบ):`,
+    `รายงานความเรียบร้อย 4 แผนก (รายงานล่าสุดในระบบ):`,
     reportsText,
     ``,
     `================================================================`,
-    `🍷 2. ข้อมูลระบบออนไลน์ WEB WINE E-COMMERCE (WAYNEVEN BACKEND API)`,
+    `2. ข้อมูลระบบออนไลน์ WEB WINE E-COMMERCE (WAYNEVEN BACKEND API)`,
     `================================================================`,
     `สถานะการเชื่อมต่อ: ${ctx.api.status}`,
     `ยอดขายออนไลน์: ${thb(ctx.api.totalRevenue)} (${ctx.api.totalOrders} คำสั่งซื้อ)`,
@@ -274,7 +274,7 @@ function buildContext(ctx: Awaited<ReturnType<typeof fetchAdminContext>>) {
     `จำนวนลูกค้า/สมาชิกออนไลน์: ${ctx.api.totalCustomers} คน`,
     ``,
     `================================================================`,
-    `🌐 3. สรุปภาพรวมธุรกิจทั้ง 2 ช่องทาง (OMNICHANNEL OVERVIEW)`,
+    `3. สรุปภาพรวมธุรกิจทั้ง 2 ช่องทาง (OMNICHANNEL OVERVIEW)`,
     `================================================================`,
     `ยอดขายรวมทั้งร้าน: ${thb(ctx.omnichannel.totalRevenue)}`,
     `- สัดส่วนหน้าร้าน POS: ${thb(ctx.supabase.totalRevenue)} (${ctx.supabase.totalSales} บิล)`,
@@ -297,21 +297,21 @@ function generateLocalSmartResponse(question: string, ctx: Awaited<ReturnType<ty
     );
 
     const reportLines = cashierReports.length > 0
-      ? cashierReports.map(r => `• **${r.title}** (สถานะ: ${r.status === 'acknowledged' ? '✓ รับทราบแล้ว' : '⏳ รอดำเนินการ'}) — บันทึก: ${r.note || 'ไม่มีบันทึกเพิ่มเติม'}`).join('\n')
+      ? cashierReports.map(r => `• **${r.title}** (สถานะ: ${r.status === 'acknowledged' ? 'รับทราบแล้ว' : 'รอดำเนินการ'}) — บันทึก: ${r.note || 'ไม่มีบันทึกเพิ่มเติม'}`).join('\n')
       : '• ยังไม่มีบันทึกรายงานความเรียบร้อยรอบล่าสุด';
 
     return [
-      `👤 **สรุปข้อมูลและรายงานของแคชเชียร์ (Cashier Operations Report):**`,
+      `**สรุปข้อมูลและรายงานของแคชเชียร์ (Cashier Operations Report):**`,
       ``,
-      `📋 **1. รายงานความเรียบร้อยของแคชเชียร์:**`,
+      `**1. รายงานความเรียบร้อยของแคชเชียร์:**`,
       reportLines,
       ``,
-      `💰 **2. ผลงานและยอดขายที่แคชเชียร์รับผิดชอบ:**`,
+      `**2. ผลงานและยอดขายที่แคชเชียร์รับผิดชอบ:**`,
       `• จำนวนบิลที่ออก: **${cashierSales.count} บิล** (จากบิลทั้งร้าน ${ctx.supabase.totalSales} บิล)`,
       `• ยอดเงินรวมที่รับชำระ: **${thb(cashierSales.total)}**`,
       `• รูปแบบการรับเงิน: **เงินสด (Cash) 100%**`,
       ``,
-      `💡 **ข้อเสนอแนะสำหรับ Super Admin:**`,
+      `**ข้อเสนอแนะสำหรับ Super Admin:**`,
       `1. ควรตรวจสอบยอดเงินสดจริงในลิ้นชัก (Cash Drawer Count) ให้ตรงกับยอดบิล **${thb(cashierSales.total)}**`,
       `2. หากต้องการให้แคชเชียร์ส่งรายงานปิดกะ/เปิดร้านเพิ่มเติม สามารถให้แคชเชียร์บันทึกผ่านเมนูรายงานความเรียบร้อยได้ทันที`,
       `3. แนะนำส่งเสริมให้รับชำระผ่าน QR Code หน้าร้านมากขึ้น เพื่อลดความเสี่ยงจากการเก็บเงินสดจำนวนมาก`
@@ -321,19 +321,19 @@ function generateLocalSmartResponse(question: string, ctx: Awaited<ReturnType<ty
   // 2. ถามเรื่องยอดขาย / รายรับ / การเงิน
   if (q.includes('ยอดขาย') || q.includes('รายรับ') || q.includes('รายได้') || q.includes('กำไร') || q.includes('เงิน') || q.includes('revenue') || q.includes('sales')) {
     return [
-      `💰 **สรุปยอดขายทั้ง 2 ช่องทาง (Executive Sales Overview):**`,
+      `**สรุปยอดขายทั้ง 2 ช่องทาง (Executive Sales Overview):**`,
       ``,
       `• **ยอดขายรวมทั้งหมด:** **${thb(ctx.omnichannel.totalRevenue)}** (${ctx.omnichannel.totalTransactions} รายการ)`,
       ``,
-      `🖥️ **1. ฝั่ง POS Store (หน้าร้าน - Supabase):**`,
+      `**1. ฝั่ง POS Store (หน้าร้าน - Supabase):**`,
       `- ยอดขายรวม: **${thb(ctx.supabase.totalRevenue)}** (${ctx.supabase.totalSales} บิล)`,
       `- แยกตามผู้รับชำระ:`,
       ...Object.entries(ctx.supabase.salesByCashier).map(([name, d]) => `  • ${name}: ${d.count} บิล = ${thb(d.total)}`),
       ``,
-      `🍷 **2. ฝั่ง Web Wine E-Com (ออนไลน์ - Wayneven API):**`,
+      `**2. ฝั่ง Web Wine E-Com (ออนไลน์ - Wayneven API):**`,
       `- ยอดขายออนไลน์: **${thb(ctx.api.totalRevenue)}** (${ctx.api.totalOrders} ออเดอร์)`,
       ``,
-      `💡 **ข้อเสนอแนะสำหรับ Super Admin:** สินค้าหน้าร้านสร้างยอดขายหลัก แนะนำจัดแคมเปญกระตุ้นยอดขายออนไลน์คู่ขนานเพื่อขยายฐานลูกค้า`
+      `**ข้อเสนอแนะสำหรับ Super Admin:** สินค้าหน้าร้านสร้างยอดขายหลัก แนะนำจัดแคมเปญกระตุ้นยอดขายออนไลน์คู่ขนานเพื่อขยายฐานลูกค้า`
     ].join('\n');
   }
 
@@ -341,15 +341,15 @@ function generateLocalSmartResponse(question: string, ctx: Awaited<ReturnType<ty
   if (q.includes('ความเรียบร้อย') || q.includes('รายงาน') || q.includes('readiness') || q.includes('ตรวจ') || q.includes('ครัว') || q.includes('บาร์') || q.includes('แผนก')) {
     const repList = ctx.supabase.readinessReports.map(r => {
       const rep = (r.profiles as any)?.full_name || (r.profiles as any)?.role || 'ไม่ระบุ';
-      return `• [${r.status === 'acknowledged' ? '✓ รับทราบแล้ว' : '⏳ รอดำเนินการ'}] **${r.title}** (ผู้ส่ง: ${rep}) — ${r.note || 'ไม่มีบันทึก'}`;
+      return `• [${r.status === 'acknowledged' ? 'รับทราบแล้ว' : 'รอดำเนินการ'}] **${r.title}** (ผู้ส่ง: ${rep}) — ${r.note || 'ไม่มีบันทึก'}`;
     }).join('\n');
 
     return [
-      `📋 **รายงานความเรียบร้อย 4 แผนก (Department Readiness Reports):**`,
+      `**รายงานความเรียบร้อย 4 แผนก (Department Readiness Reports):**`,
       ``,
       repList || '• ยังไม่มีรายงานส่งเข้ามา',
       ``,
-      `💡 **ข้อเสนอแนะสำหรับ Super Admin:** แผนกครัวและบาร์ส่งรายงานความเรียบร้อยเรียบร้อยแล้ว ส่วนแคชเชียร์มีรายงานล่าสุด 'เรียบร้อย' อยู่ระหว่างรอดำเนินการตรวจสอบ`
+      `**ข้อเสนอแนะสำหรับ Super Admin:** แผนกครัวและบาร์ส่งรายงานความเรียบร้อยเรียบร้อยแล้ว ส่วนแคชเชียร์มีรายงานล่าสุด 'เรียบร้อย' อยู่ระหว่างรอดำเนินการตรวจสอบ`
     ].join('\n');
   }
 
@@ -359,25 +359,25 @@ function generateLocalSmartResponse(question: string, ctx: Awaited<ReturnType<ty
     const topList = ctx.supabase.topSellers.map((item, i) => `${i + 1}. **${item.name}** (${item.qty} ชิ้น - ${thb(item.revenue)})`).join('\n');
 
     return [
-      `📦 **วิเคราะห์สินค้าและสต็อก (Inventory & Product Performance):**`,
+      `**วิเคราะห์สินค้าและสต็อก (Inventory & Product Performance):**`,
       ``,
-      `🏆 **สินค้าขายดีอันดับต้นๆ:**`,
+      `**สินค้าขายดีอันดับต้นๆ:**`,
       topList || '• ยังไม่มีสถิติสินค้าขายดี',
       ``,
-      `🖥️ **สินค้าหน้าร้าน POS (${ctx.supabase.totalProducts} รายการ):**`,
+      `**สินค้าหน้าร้าน POS (${ctx.supabase.totalProducts} รายการ):**`,
       posList,
       ``,
-      `🍷 **สินค้าออนไลน์ Web Wine (${ctx.api.totalProducts} รายการ):** มีสินค้าไวน์ เบียร์ สุรา และของทานเล่นครบ 5 หมวดหมู่`,
+      `**สินค้าออนไลน์ Web Wine (${ctx.api.totalProducts} รายการ):** มีสินค้าไวน์ เบียร์ สุรา และของทานเล่นครบ 5 หมวดหมู่`,
       ``,
-      `💡 **ข้อเสนอแนะสำหรับ Super Admin:** สินค้า 'kawpat' (เหลือ 6 ชิ้น) และ 'gg' (เหลือ 5 ชิ้น) ควรเตรียมสั่งซื้อเพิ่มเพื่อป้องกันสินค้าขาดมือ`
+      `**ข้อเสนอแนะสำหรับ Super Admin:** สินค้า 'kawpat' (เหลือ 6 ชิ้น) และ 'gg' (เหลือ 5 ชิ้น) ควรเตรียมสั่งซื้อเพิ่มเพื่อป้องกันสินค้าขาดมือ`
     ].join('\n');
   }
 
   // Default General Super Admin greeting & overview
   return [
-    `✨ **ยินดีรับใช้ครับ Super Admin! ผมคือ Bottle Club AI ผู้ช่วยมือขวาของคุณ:**`,
+    `**ยินดีรับใช้ครับ Super Admin ผมคือ Bottle Club AI ผู้ช่วยส่วนตัวของคุณ:**`,
     ``,
-    `📊 **สรุปสถานะธุรกิจปัจจุบัน:**`,
+    `**สรุปสถานะธุรกิจปัจจุบัน:**`,
     `• **ยอดขายรวม 2 ช่องทาง:** **${thb(ctx.omnichannel.totalRevenue)}** (หน้าร้าน ${thb(ctx.supabase.totalRevenue)} | ออนไลน์ ${thb(ctx.api.totalRevenue)})`,
     `• **สินค้าในระบบ:** หน้าร้าน ${ctx.supabase.totalProducts} รายการ | ออนไลน์ ${ctx.api.totalProducts} รายการ`,
     `• **พนักงาน:** ทั้งหมด ${ctx.supabase.totalStaff} คน (แคชเชียร์, สต็อก, ครัว, บาร์, ผู้จัดการ)`,
@@ -415,8 +415,8 @@ export async function POST(request: NextRequest) {
 【บทบาทและตัวตนของคุณ】
 1. คุณคือ "ผู้ช่วยส่วนตัวระดับบริหารของ Super Admin" ที่ฉลาด รอบรู้ มีวิสัยทัศน์ และพร้อมเคียงข้าง Super Admin เสมอ
 2. คุณเข้าใจระบบครบทุกมิติ:
-   - 🖥️ POS Store (หน้าร้าน - ดึงข้อมูลสดจาก Supabase): ยอดขายรายบิล, ยอดแยกตามแคชเชียร์, สินค้า, สต็อก, ต้นทุน, กำไร, รายชื่อพนักงาน, รายงานความเรียบร้อย 4 แผนก (แคชเชียร์, สต็อก, ครัว, บาร์)
-   - 🍷 Web Wine E-Commerce (ออนไลน์ - ดึงข้อมูลสดจาก Wayneven Backend API): 17 สินค้าไวน์และเครื่องดื่ม, 5 หมวดหมู่, คำสั่งซื้อออนไลน์, ลูกค้าสมาชิก
+   - POS Store (หน้าร้าน - ดึงข้อมูลสดจาก Supabase): ยอดขายรายบิล, ยอดแยกตามแคชเชียร์, สินค้า, สต็อก, ต้นทุน, กำไร, รายชื่อพนักงาน, รายงานความเรียบร้อย 4 แผนก (แคชเชียร์, สต็อก, ครัว, บาร์)
+   - Web Wine E-Commerce (ออนไลน์ - ดึงข้อมูลสดจาก Wayneven Backend API): 17 สินค้าไวน์และเครื่องดื่ม, 5 หมวดหมู่, คำสั่งซื้อออนไลน์, ลูกค้าสมาชิก
 3. คุณตอบได้ "ทุกคำถาม" ที่ Super Admin ต้องการ ไม่ว่าจะเป็น:
    - ตรวจสอบข้อมูลในระบบ (Data Lookups & Queries)
    - สรุปและวิเคราะห์เชิงลึก (Deep Business & Sales Analytics)
@@ -434,7 +434,7 @@ export async function POST(request: NextRequest) {
 1. ตอบเป็นภาษาไทยอย่างสุภาพ เป็นมืออาชีพ ฉลาด คล่องแคล่ว และกระตือรือร้น
 2. จัดโครงสร้างให้อ่านง่าย: ใช้หัวข้อ, ตัวหนา, และ Bullet Points
 3. สรุปตัวเลขให้เห็นภาพชัดเจน
-4. เมื่อเหมาะสม ให้ปิดท้ายด้วยส่วน "💡 ข้อเสนอแนะสำหรับ Super Admin" เสมอ เพื่อช่วยให้ Super Admin ตัดสินใจได้ทันที
+4. เมื่อเหมาะสม ให้ปิดท้ายด้วยส่วน "ข้อเสนอแนะสำหรับ Super Admin" เสมอ เพื่อช่วยให้ Super Admin ตัดสินใจได้ทันที
 5. ไม่ตอบปัดว่า "ไม่มีข้อมูล" สั้นๆ — หากข้อมูลส่วนใดยังรอการบันทึก ให้รายงานข้อมูลรอบข้างที่เกี่ยวข้องและให้คำแนะนำขั้นตอนถัดไปแก่ Super Admin อย่างสร้างสรรค์
 
 ข้อมูลสดจากทั้งระบบ ณ ปัจจุบัน:

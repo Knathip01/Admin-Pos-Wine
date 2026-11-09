@@ -1,5 +1,5 @@
 /* ==========================================================================
-   🍷 Admin Panel — Clean Premium Dark 2027
+   Admin Panel - Clean Premium Dark 2027
    Background:  #0f1117  |  Surface: #161b27 / #1c2232
    Primary:     Indigo #6366f1  |  Violet: #8b5cf6
    Accent:      Cyan #06b6d4   |  Emerald: #10b981
@@ -1920,7 +1920,7 @@ th[style*="color:#1e2d48"],
 }
 
 /* ==========================================================================
-   🖨️ Global Admin Print Styles
+   Global Admin Print Styles
    ========================================================================== */
 @media print {
   @page {
@@ -1944,6 +1944,7 @@ th[style*="color:#1e2d48"],
   aside,
   header,
   nav,
+  .admin-topbar,
   .sidebar-desktop,
   .sidebar-mobile-overlay,
   .sidebar-mobile-drawer,
@@ -1957,29 +1958,38 @@ th[style*="color:#1e2d48"],
   #heartbeat-indicator,
   .no-print {
     display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
   }
 
-  /* Reset outer shell */
-  .admin-shell-container {
+  /* Reset outer shell and inner containers */
+  .admin-shell-container,
+  .admin-main-wrap,
+  .admin-main-content,
+  main {
     display: block !important;
     min-height: auto !important;
+    height: auto !important;
     background: #ffffff !important;
     color: #000000 !important;
     padding: 0 !important;
     margin: 0 !important;
+    border: none !important;
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    max-width: 100% !important;
+    width: 100% !important;
   }
 
   .admin-shell-container > div:first-child {
     display: none !important;
-  }
-
-  main {
-    display: block !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    overflow: visible !important;
-    max-width: 100% !important;
-    width: 100% !important;
   }
 }
 

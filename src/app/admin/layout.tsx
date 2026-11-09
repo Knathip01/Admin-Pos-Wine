@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 import Heartbeat from '@/components/Heartbeat'
 import AdminAIChat from '@/components/admin/AdminAIChat'
-// 🍷 Section 1: ProjectbottleClub1 (E-Commerce Web Store Admin)
+// Section 1: ProjectbottleClub1 (E-Commerce Web Store Admin)
 const bottleClubNavItems = [
   { href: '/admin/bottleclub',          icon: LayoutDashboard, label: 'Dashboard Web Wine',     roles: ['super_admin', 'manager'] },
   { href: '/admin/promotions',          icon: Sparkles,        label: 'จัดการโปรโมชั่น Web Wine', roles: ['super_admin', 'manager'] },
@@ -30,7 +30,7 @@ const bottleClubNavItems = [
   { href: '/admin/bottleclub/settings', icon: Settings,        label: 'ตั้งค่าร้านค้า e-Com',   roles: ['super_admin', 'manager'] },
 ]
 
-// 🖥️ Section 2: Admin Project POS (Store Cashier & Operations)
+// Section 2: Admin Project POS (Store Cashier & Operations)
 const posNavItems = [
   { href: '/admin',            icon: LayoutDashboard, label: 'Dashboard POS',        roles: ['super_admin', 'manager'] },
   { href: '/admin/pos',        icon: ShoppingCart,    label: 'หน้าขาย (POS Terminal)', roles: ['super_admin', 'manager', 'cashier'] },
@@ -71,7 +71,7 @@ function SidebarContent({ onLogout, onNavigate, pathname, profile, collapsed = f
           <div style={{ minWidth: 0, flex: 1 }}>
             <p className="sidebar-brand-name">The Bottle Club</p>
             <span className="sidebar-brand-role">
-              {profile?.role === 'super_admin' || !profile ? '⚡ Super Admin' : '● Staff'}
+              {profile?.role === 'super_admin' || !profile ? 'Super Admin' : 'Staff'}
             </span>
           </div>
         )}
@@ -112,11 +112,11 @@ function SidebarContent({ onLogout, onNavigate, pathname, profile, collapsed = f
           </>
         )}
 
-        {/* ── 🍷 WEB E-COM SECTION ── */}
+        {/* WEB E-COM SECTION */}
         <div style={{ marginBottom: 4 }}>
           {!collapsed && (
             <div className="sidebar-section-header">
-              <span className="sidebar-section-title ecom">🍷 ตั้งค่า Web Wine</span>
+              <span className="sidebar-section-title ecom">ตั้งค่า Web Wine</span>
               <span className="sidebar-section-badge ecom">WEB E-COM</span>
             </div>
           )}
@@ -157,11 +157,11 @@ function SidebarContent({ onLogout, onNavigate, pathname, profile, collapsed = f
         {/* Divider */}
         <div className="sidebar-section-divider" />
 
-        {/* ── 🖥️ STORE POS SECTION ── */}
+        {/* STORE POS SECTION */}
         <div style={{ marginBottom: 12 }}>
           {!collapsed && (
             <div className="sidebar-section-header">
-              <span className="sidebar-section-title pos">🖥️ ตั้งค่า POS</span>
+              <span className="sidebar-section-title pos">ตั้งค่า POS</span>
               <span className="sidebar-section-badge pos">STORE POS</span>
             </div>
           )}
@@ -469,7 +469,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }} />
 
       {/* ══ DESKTOP SIDEBAR (lg+) ══ */}
-      <aside className={`sidebar-desktop${desktopCollapsed ? ' collapsed' : ''}`}>
+      <aside className={`sidebar-desktop${desktopCollapsed ? ' collapsed' : ''} no-print`}>
         <SidebarContent
           onLogout={handleLogout}
           onNavigate={() => {}}
@@ -490,8 +490,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* ══ MOBILE OVERLAY + DRAWER ══ */}
       {mobileSidebarOpen && (
-        <div className="sidebar-mobile-overlay" onClick={() => setMobileSidebarOpen(false)}>
-          <div className="sidebar-mobile-drawer" onClick={e => e.stopPropagation()}>
+        <div className="sidebar-mobile-overlay no-print" onClick={() => setMobileSidebarOpen(false)}>
+          <div className="sidebar-mobile-drawer no-print" onClick={e => e.stopPropagation()}>
             <SidebarContent
               onLogout={handleLogout}
               onNavigate={() => setMobileSidebarOpen(false)}
@@ -504,10 +504,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}
 
       {/* ══ MAIN CONTENT AREA ══ */}
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1, overflowX: 'clip', maxWidth: '100%' }}>
+      <div className="admin-main-wrap" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1, overflowX: 'clip', maxWidth: '100%' }}>
 
         {/* Top Header — Clean Premium style */}
-        <header style={{
+        <header className="admin-topbar no-print" style={{
           position: 'sticky', top: 0, zIndex: 30,
           height: 60, display: 'flex', alignItems: 'center',
           justifyContent: 'space-between', gap: 12,
@@ -548,7 +548,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Page breadcrumb — desktop */}
             <div className="hidden lg:flex items-center gap-2">
               <span style={{ fontSize: 12, color: 'var(--admin-text-muted, #64748b)', fontWeight: 500 }}>
-                {pathname.startsWith('/admin/bottleclub') ? '🍷 Web Wine' : '🖥️ POS Store'}
+                {pathname.startsWith('/admin/bottleclub') ? 'Web Wine' : 'POS Store'}
               </span>
               <span style={{ color: 'var(--admin-border-strong, #334155)', fontSize: 12 }}>/</span>
               <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--admin-text-sec, #94a3b8)' }}>
@@ -632,14 +632,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   {profile?.full_name || 'superadmin'}
                 </div>
                 <div style={{ fontSize: 10, color: '#818cf8', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                  {profile?.role === 'super_admin' ? '⚡ Super Admin' : '● Staff'}
+                  {profile?.role === 'super_admin' ? 'Super Admin' : 'Staff'}
                 </div>
               </div>
             </div>
           </div>
         </header>
 
-        <main style={{ flex: 1, minWidth: 0, padding: 'clamp(8px, 3vw, 20px)', overflowX: 'clip', maxWidth: '100%' }}>
+        <main className="admin-main-content" style={{ flex: 1, minWidth: 0, padding: 'clamp(8px, 3vw, 20px)', overflowX: 'clip', maxWidth: '100%' }}>
           <Heartbeat />
           {children}
           <AdminAIChat />

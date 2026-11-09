@@ -12,6 +12,7 @@ import {
   Package,
   Save,
   UtensilsCrossed,
+  Utensils,
   Wine,
   X,
   Sparkles,
@@ -39,20 +40,20 @@ function classifyCategoryType(name?: string): 'food' | 'drink' {
 }
 
 const FOOD_PRESETS = [
-  { name: 'อาหารจานหลัก', icon: '🍲', color: '#fb923c', desc: 'อาหารจานเดียว, สเต๊ก, เมนูหลัก' },
-  { name: 'ของทานเล่น / กับแกล้ม', icon: '🍟', color: '#f2c65c', desc: 'ของทอด, ของทานเล่นคู่เครื่องดื่ม' },
-  { name: 'สเต๊ก & ปิ้งย่าง', icon: '🥩', color: '#fb7185', desc: 'สเต๊กเนื้อ, หมู, ซี่โครงย่าง' },
-  { name: 'สลัด & ยำ', icon: '🥗', color: '#16a39b', desc: 'สลัดผักสด, ยำรสเด็ด' },
-  { name: 'ต้ม & แกง', icon: '🥘', color: '#ea580c', desc: 'ต้มยำ, แกงเผ็ด, ซุป' },
-  { name: 'ของหวาน & เบเกอรี่', icon: '🍰', color: '#a78bfa', desc: 'ของหวาน, เค้ก, ไอศกรีม' },
+  { name: 'อาหารจานหลัก', icon: '', color: '#fb923c', desc: 'อาหารจานเดียว, สเต๊ก, เมนูหลัก' },
+  { name: 'ของทานเล่น / กับแกล้ม', icon: '', color: '#f2c65c', desc: 'ของทอด, ของทานเล่นคู่เครื่องดื่ม' },
+  { name: 'สเต๊ก & ปิ้งย่าง', icon: '', color: '#fb7185', desc: 'สเต๊กเนื้อ, หมู, ซี่โครงย่าง' },
+  { name: 'สลัด & ยำ', icon: '', color: '#16a39b', desc: 'สลัดผักสด, ยำรสเด็ด' },
+  { name: 'ต้ม & แกง', icon: '', color: '#ea580c', desc: 'ต้มยำ, แกงเผ็ด, ซุป' },
+  { name: 'ของหวาน & เบเกอรี่', icon: '', color: '#a78bfa', desc: 'ของหวาน, เค้ก, ไอศกรีม' },
 ]
 
 const DRINK_PRESETS = [
-  { name: 'Red Wine', icon: '🍷', color: '#be185d', desc: 'ไวน์แดงคุณภาพสูง' },
-  { name: 'White Wine', icon: '🥂', color: '#f2c65c', desc: 'ไวน์ขาวรสเลิศ' },
-  { name: 'Sparkling & Champagne', icon: '🍾', color: '#38bdf8', desc: 'สปาร์กลิ้งไวน์และแชมเปญ' },
-  { name: 'Cocktails & Spirits', icon: '🍸', color: '#a78bfa', desc: 'ค็อกเทลและสุราพรีเมียม' },
-  { name: 'Beer & Craft Beer', icon: '🍺', color: '#fb923c', desc: 'เบียร์สดและเบียร์คราฟต์' },
+  { name: 'Red Wine', icon: '', color: '#be185d', desc: 'ไวน์แดงคุณภาพสูง' },
+  { name: 'White Wine', icon: '', color: '#f2c65c', desc: 'ไวน์ขาวรสเลิศ' },
+  { name: 'Sparkling & Champagne', icon: '', color: '#38bdf8', desc: 'สปาร์กลิ้งไวน์และแชมเปญ' },
+  { name: 'Cocktails & Spirits', icon: '', color: '#a78bfa', desc: 'ค็อกเทลและสุราพรีเมียม' },
+  { name: 'Beer & Craft Beer', icon: '', color: '#fb923c', desc: 'เบียร์สดและเบียร์คราฟต์' },
 ]
 
 export default function CategoriesPage() {
@@ -111,7 +112,7 @@ export default function CategoriesPage() {
     if (category) {
       setDraft({ ...category })
     } else {
-      const defaultIcon = mode === 'food' ? '🍽️' : mode === 'drink' ? '🍷' : '🏷️'
+      const defaultIcon = ''
       const defaultColor = mode === 'food' ? '#fb923c' : mode === 'drink' ? '#be185d' : '#16a39b'
       setDraft({
         ...EMPTY_CATEGORY,
@@ -199,7 +200,7 @@ export default function CategoriesPage() {
             }}
           >
             <UtensilsCrossed size={16} />
-            เพิ่มหมวดหมู่อาหาร 🍽️
+            เพิ่มหมวดหมู่อาหาร
           </button>
           <button
             type="button"
@@ -225,7 +226,7 @@ export default function CategoriesPage() {
               color: typeFilter === 'all' ? '#ffffff' : 'var(--text-secondary)',
             }}
           >
-            ✨ ทั้งหมด ({categories.filter(c => showInactive || c.is_active).length})
+            ทั้งหมด ({categories.filter(c => showInactive || c.is_active).length})
           </button>
           <button
             type="button"
@@ -237,7 +238,7 @@ export default function CategoriesPage() {
               color: typeFilter === 'food' ? '#fb923c' : 'var(--text-secondary)',
             }}
           >
-            🍽️ อาหาร ({foodCount})
+            อาหาร ({foodCount})
           </button>
           <button
             type="button"
@@ -249,7 +250,7 @@ export default function CategoriesPage() {
               color: typeFilter === 'drink' ? '#f472b6' : 'var(--text-secondary)',
             }}
           >
-            🍷 เครื่องดื่ม & ไวน์ ({drinkCount})
+            เครื่องดื่ม & ไวน์ ({drinkCount})
           </button>
         </div>
 
@@ -301,7 +302,7 @@ export default function CategoriesPage() {
                       className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-xl"
                       style={{ background: `${category.color || (isFood ? '#fb923c' : '#be185d')}20`, color: category.color || (isFood ? '#fb923c' : '#be185d') }}
                     >
-                      {category.icon || (isFood ? '🍽️' : '🍷')}
+                      {category.icon ? category.icon : (isFood ? <Utensils size={18} /> : <Wine size={18} />)}
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
@@ -317,7 +318,7 @@ export default function CategoriesPage() {
                             border: `1px solid ${isFood ? 'rgba(249,115,22,0.25)' : 'rgba(190,24,93,0.25)'}`
                           }}
                         >
-                          {isFood ? '🍽️ อาหาร' : '🍷 เครื่องดื่ม'}
+                          {isFood ? 'อาหาร' : 'เครื่องดื่ม'}
                         </span>
                       </div>
                     </div>
@@ -388,13 +389,13 @@ export default function CategoriesPage() {
                     border: `1px solid ${editorMode === 'food' ? 'rgba(249,115,22,0.35)' : 'rgba(139,26,44,0.35)'}`
                   }}
                 >
-                  {editorMode === 'food' ? '🍽️' : '🍷'}
+                  {editorMode === 'food' ? <Utensils size={18} style={{ color: '#fb923c' }} /> : <Wine size={18} style={{ color: '#be185d' }} />}
                 </div>
                 <div>
                   <h2 id="category-editor-title" className="text-lg font-bold text-white">
                     {draft.id
                       ? `แก้ไขหมวดหมู่ ${draft.name}`
-                      : editorMode === 'food' ? 'เพิ่มหมวดหมู่อาหาร 🍽️' : 'เพิ่มหมวดหมู่ Wine & เครื่องดื่ม 🍷'}
+                      : editorMode === 'food' ? 'เพิ่มหมวดหมู่อาหาร' : 'เพิ่มหมวดหมู่ Wine & เครื่องดื่ม'}
                   </h2>
                   <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                     {editorMode === 'food' ? 'จัดหมวดหมู่อาหารสำหรับส่งคิวให้ห้องครัว (Kitchen)' : 'จัดหมวดหมู่เครื่องดื่มสำหรับบาร์และแคชเชียร์'}
@@ -432,7 +433,7 @@ export default function CategoriesPage() {
                           color: draft.name === preset.name ? '#ffffff' : 'var(--text-secondary)',
                         }}
                       >
-                        <span>{preset.icon}</span>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: preset.color }} />
                         <span>{preset.name}</span>
                       </button>
                     ))}
@@ -457,7 +458,7 @@ export default function CategoriesPage() {
                     className="wine-input mt-2 text-center"
                     value={draft.icon || ''}
                     onChange={event => setDraft(current => current ? { ...current, icon: event.target.value } : current)}
-                    placeholder={editorMode === 'food' ? '🍽️' : '🍷'}
+                    placeholder="ไอคอน"
                     maxLength={4}
                   />
                 </label>

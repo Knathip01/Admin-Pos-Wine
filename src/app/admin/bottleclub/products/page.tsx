@@ -219,7 +219,7 @@ export default function AdminProductsPage() {
     }
   ];
 
-  // 🍷 Wine Reference Catalog State (Section 13 /api/v1/wine-products/)
+  // Wine Reference Catalog State (Section 13 /api/v1/wine-products/)
   const [wineProducts, setWineProducts] = useState<WineProductRow[]>(MOCK_WINE_CATALOG);
   const [wineLoading, setWineLoading] = useState(false);
   const [wineTotal, setWineTotal] = useState(MOCK_WINE_CATALOG.length);
@@ -307,7 +307,7 @@ export default function AdminProductsPage() {
         rowKey: `cat_${c.id}`,
         name: c.name,
         description: c.description ?? null,
-        icon: c.icon ?? '🍷',
+        icon: c.icon ?? '',
         color: c.color ?? '#8B1A2C',
         parent_id: null,
         sort_order: c.sort_order ?? 0,

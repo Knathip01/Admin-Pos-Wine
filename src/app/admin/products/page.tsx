@@ -569,7 +569,7 @@ export default function ProductsPage() {
                     background: isFoodMode ? 'rgba(245,158,11,0.15)' : 'rgba(0,212,255,0.12)',
                     border: `1px solid ${isFoodMode ? 'rgba(245,158,11,0.30)' : 'rgba(0,212,255,0.25)'}`
                   }}>
-                    {isFoodMode ? '🍽️' : '🍷'}
+                    {isFoodMode ? <Utensils size={20} className="text-amber-400" /> : <Wine size={20} className="text-cyan-400" />}
                   </div>
                   <div>
                     <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: 18, fontWeight: 900, color: 'var(--admin-text, #eef2ff)', margin: 0 }}>
@@ -590,7 +590,7 @@ export default function ProductsPage() {
             <div className="p-6">
               <div className="mb-6">
                 <label className="block text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#22e5ff' }}>
-                  📸 รูปภาพสินค้า
+                  รูปภาพสินค้า
                 </label>
                 <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                   <div
@@ -649,7 +649,7 @@ export default function ProductsPage() {
                       <button
                         onClick={() => { setPreviewUrl(null); setEditingProduct(prev => prev ? { ...prev, image_url: '' } : prev) }}
                         style={{ fontSize: 11, color: '#fb7185', background: 'none', border: 'none', cursor: 'pointer', marginTop: 6, fontWeight: 700 }}>
-                        ✕ ลบรูป
+                        ลบรูป
                       </button>
                     )}
                   </div>
@@ -679,7 +679,7 @@ export default function ProductsPage() {
                     }
                   </select>
                   {isFoodMode && foodCategories.length === 0 && (
-                    <p style={{ fontSize: 11, color: '#fbbf24', marginTop: 4 }}>⚠ ยังไม่มีหมวดหมู่อาหาร — ไปเพิ่มที่ <strong>จัดการหมวดหมู่</strong> ก่อน</p>
+                    <p style={{ fontSize: 11, color: '#fbbf24', marginTop: 4 }}>ยังไม่มีหมวดหมู่อาหาร — ไปเพิ่มที่ <strong>จัดการหมวดหมู่</strong> ก่อน</p>
                   )}
                 </div>
 
@@ -703,7 +703,7 @@ export default function ProductsPage() {
                 {isWineMode && (
                   <>
                     <div style={{ gridColumn: '1 / -1', borderTop: '1px solid rgba(0,212,255,0.15)', paddingTop: '14px', marginTop: '4px' }}>
-                      <p className="text-xs font-bold" style={{ color: '#22e5ff' }}>🍷 ข้อมูลเฉพาะไวน์ / เครื่องดื่ม</p>
+                      <p className="text-xs font-bold" style={{ color: '#22e5ff' }}>ข้อมูลเฉพาะไวน์ / เครื่องดื่ม</p>
                     </div>
                     <div>
                       <label className="block text-xs font-bold mb-1.5" style={{ color: '#5a6e90' }}>ประเทศ</label>
@@ -745,7 +745,7 @@ export default function ProductsPage() {
                 {isFoodMode && (
                   <>
                     <div style={{ gridColumn: '1 / -1', borderTop: '1px solid rgba(245,158,11,0.2)', paddingTop: '14px', marginTop: '4px', background: 'rgba(245,158,11,0.03)', borderRadius: 10, padding: '14px' }}>
-                      <p className="text-xs font-bold" style={{ color: '#fbbf24' }}>🍽️ ข้อมูลเพิ่มเติมอาหาร</p>
+                      <p className="text-xs font-bold" style={{ color: '#fbbf24' }}>ข้อมูลเพิ่มเติมอาหาร</p>
                     </div>
                     <div>
                       <label className="block text-xs font-bold mb-1.5" style={{ color: '#5a6e90' }}>แบรนด์ / ชื่อร้าน (ถ้ามี)</label>
@@ -769,7 +769,7 @@ export default function ProductsPage() {
                     onClick={() => setEditingProduct({ ...editingProduct, is_active: !editingProduct.is_active })}
                     className={`cursor-pointer ${editingProduct.is_active ? 'badge-delivered' : 'badge-rejected'}`}
                     style={{ padding: '6px 16px', borderRadius: 100, fontSize: 12, fontWeight: 700 }}>
-                    {editingProduct.is_active ? '✓ ขายอยู่' : '✕ หยุดขาย'}
+                    {editingProduct.is_active ? 'เปิดขาย' : 'ระงับการขาย'}
                   </button>
                 </div>
               </div>
@@ -866,7 +866,7 @@ export default function ProductsPage() {
                         }}
                         style={{ color: '#fb7185', fontWeight: 'bold', cursor: 'pointer', padding: '0 2px', background: 'none', border: 'none' }}
                       >
-                        ✕
+                        <X size={12} />
                       </button>
                     </span>
                   ))}
@@ -914,7 +914,7 @@ export default function ProductsPage() {
               </div>
 
               {saveSuccess && (
-                <p className="text-xs text-center text-emerald-400 font-bold mb-2">✓ บันทึกสำเร็จ</p>
+                <p className="text-xs text-center text-emerald-400 font-bold mb-2">บันทึกสำเร็จ</p>
               )}
 
               <button

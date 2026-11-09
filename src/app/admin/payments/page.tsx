@@ -248,7 +248,7 @@ function OrderCard({
               {order.customerName || order.customerEmail} · {order.date}
             </p>
             {order.adminNote && (
-              <p className="text-[11px] text-[#94a3c4] mt-1 italic font-medium">📝 {order.adminNote}</p>
+              <p className="text-[11px] text-[#94a3c4] mt-1 italic font-medium">หมายเหตุ: {order.adminNote}</p>
             )}
           </div>
         </div>

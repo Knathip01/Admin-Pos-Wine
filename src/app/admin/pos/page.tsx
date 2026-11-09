@@ -300,7 +300,7 @@ export default function POSPage() {
                 }}>
                   {item.product.image_url
                     ? <img src={item.product.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : <span style={{ fontSize: 18 }}>🍾</span>
+                    : <Wine size={18} className="text-blue-400" />
                   }
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -389,7 +389,7 @@ export default function POSPage() {
                   color: isPairingDiscount ? '#fb7185' : '#4ade80',
                   fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6
                 }}>
-                  {isPairingDiscount ? '🍷' : <Percent size={11} />}
+                  {isPairingDiscount ? <Wine size={12} /> : <Percent size={11} />}
                   {cart.discount_note || 'ส่วนลด'}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -409,7 +409,7 @@ export default function POSPage() {
                       cursor: 'pointer', fontSize: 13, fontWeight: 800, padding: 0, lineHeight: 1
                     }}
                   >
-                    ✕
+                    <X size={13} />
                   </button>
                 </div>
               </div>
@@ -499,7 +499,7 @@ export default function POSPage() {
                         color: '#f87171', cursor: 'pointer', transition: 'all 150ms'
                       }}
                     >
-                      ✕ ยกเลิกส่วนลด
+                      ยกเลิกส่วนลด
                     </button>
                   )}
                 </div>
@@ -628,7 +628,7 @@ export default function POSPage() {
                 </span>
               </button>
 
-              {/* 🍷 จับคู่สุดคุ้ม Category Pill */}
+              {/* จับคู่สุดคุ้ม Category Pill */}
               {pairings.filter(p => p.is_active).length > 0 && (
                 <button
                   className={`cat-pill ${selectedCategory === 'pairings' ? 'cat-active' : ''}`}
@@ -640,7 +640,7 @@ export default function POSPage() {
                   }}
                 >
                   <Wine size={12} />
-                  🍷 จับคู่สุดคุ้ม
+                  จับคู่สุดคุ้ม
                   <span style={{
                     marginLeft: 2, fontSize: 10, fontWeight: 700,
                     background: selectedCategory === 'pairings' ? 'rgba(255,255,255,0.25)' : 'rgba(244,63,94,0.2)',
@@ -729,7 +729,7 @@ export default function POSPage() {
                   <div style={{ marginBottom: 18 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: 16 }}>🍷</span>
+                        <Wine size={16} className="text-rose-400" />
                         <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)' }}>
                           เซ็ตจับคู่อาหาร & ไวน์แนะนำ
                         </span>
@@ -816,7 +816,7 @@ export default function POSPage() {
           <div className="cart-sheet-panel">
             <div className="cart-sheet-handle" />
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px 0', flexShrink: 0 }}>
-              <span style={{ fontWeight: 800, fontSize: 16 }}>🛒 ตะกร้าสินค้า</span>
+              <span style={{ fontWeight: 800, fontSize: 16 }}>ตะกร้าสินค้า</span>
               <button
                 onClick={() => setShowMobileCart(false)}
                 style={{
@@ -1111,7 +1111,7 @@ function ProductCard({ product, onAdd }: { product: Product; onAdd: () => void }
           <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6
           }}>
-            <span style={{ fontSize: 36, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}>🍾</span>
+            <Wine size={32} className="text-slate-500 opacity-60" />
           </div>
         )}
 
@@ -1295,7 +1295,7 @@ function PairingCard({
               {food?.image_url ? (
                 <img src={food.image_url} alt={food?.name || 'อาหาร'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
-                <span style={{ fontSize: 26 }}>🍽️</span>
+                <Utensils size={24} className="text-slate-400" />
               )}
             </div>
             <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-primary)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -1327,7 +1327,7 @@ function PairingCard({
               {wine?.image_url ? (
                 <img src={wine.image_url} alt={wine?.name || 'ไวน์'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
-                <span style={{ fontSize: 26 }}>🍷</span>
+                <Wine size={24} className="text-rose-400" />
               )}
             </div>
             <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-primary)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -1351,7 +1351,7 @@ function PairingCard({
             boxShadow: '0 2px 8px rgba(239,68,68,0.35)',
             whiteSpace: 'nowrap'
           }}>
-            🏷️ ลด {pairing.discount_type === 'percent' ? `${pairing.discount_value}%` : formatCurrency(pairing.discount_value)}
+            ลด {pairing.discount_type === 'percent' ? `${pairing.discount_value}%` : formatCurrency(pairing.discount_value)}
           </span>
           <span style={{ fontSize: 11, color: 'var(--text-muted)', textDecoration: 'line-through', fontWeight: 600, marginTop: 2 }}>
             {formatCurrency(combined)}

@@ -199,7 +199,7 @@ export default function AdminReviewsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 style={{ fontFamily: "'Outfit', sans-serif", fontSize: '1.4rem', fontWeight: 900, color: '#eef2ff', letterSpacing: '-0.025em', margin: 0 }}>
-            💬 ตรวจสอบรีวิวสินค้า (Moderation)
+            ตรวจสอบรีวิวสินค้า (Moderation)
           </h1>
           <p style={{ color: '#3d4d6a', fontSize: 13, fontWeight: 600, marginTop: 4 }}>
             อนุมัติและลบรีวิวสินค้าที่ไม่พึงประสงค์ เพื่อความโปร่งใสของร้านค้า
@@ -229,11 +229,11 @@ export default function AdminReviewsPage() {
             className="admin-select w-full py-2.5 text-xs"
           >
             <option value="">ทั้งหมด (จำนวนดาว)</option>
-            <option value="5">5 ดาว (★★★★★)</option>
-            <option value="4">4 ดาว (★★★★)</option>
-            <option value="3">3 ดาว (★★★)</option>
-            <option value="2">2 ดาว (★★)</option>
-            <option value="1">1 ดาว (★)</option>
+            <option value="5">5 ดาว</option>
+            <option value="4">4 ดาว</option>
+            <option value="3">3 ดาว</option>
+            <option value="2">2 ดาว</option>
+            <option value="1">1 ดาว</option>
           </select>
         </div>
 

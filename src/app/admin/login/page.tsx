@@ -102,7 +102,7 @@ export default function AdminLoginPage() {
       const cleanEmail = email.trim()
       const cleanPass = password.trim()
 
-      // 🔒 Exclusive access check: Only superadmin@thebottleclub.com with postthebottleclub is allowed
+      // Exclusive access check: Only superadmin@thebottleclub.com with postthebottleclub is allowed
       const isAllowedCeo = (cleanEmail.toLowerCase() === 'superadmin@thebottleclub.com' || cleanEmail.toLowerCase() === 'superadmin') && cleanPass === 'postthebottleclub'
       
       if (!isAllowedCeo) {

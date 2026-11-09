@@ -9,7 +9,8 @@ import {
   Search, ShoppingBag, Plus, Minus, Trash2,
   X, ArrowLeft, Loader2, CheckCircle2, ChevronRight,
   Upload, Star, Key, Sparkles, Package, Shield, QrCode,
-  UtensilsCrossed, Wine, Tag, Percent, Flame, Utensils
+  UtensilsCrossed, Wine, Tag, Percent, Flame, Utensils,
+  Check, AlertCircle
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 
@@ -613,7 +614,7 @@ function CustomerMenuContent() {
                 color: '#93c5fd', padding: '6px 18px', borderRadius: 999, fontSize: 13,
                 fontWeight: 800, marginBottom: 18
               }}>
-                🍽️ โต๊ะ {tableParam}
+                <Utensils size={14} /> โต๊ะ {tableParam}
               </div>
             )}
             <div style={{
@@ -636,8 +637,10 @@ function CustomerMenuContent() {
               <div style={{
                 width: 44, height: 44, borderRadius: 12, flexShrink: 0,
                 background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.25)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22
-              }}>🍳</div>
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <Utensils size={20} style={{ color: '#f97316' }} />
+              </div>
               <div>
                 <p style={{ margin: 0, fontWeight: 700, color: 'white', fontSize: 14 }}>ส่งออเดอร์ไปครัวแล้ว!</p>
                 <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>ห้องครัวกำลังรับรายการ — จะเสิร์ฟถึงโต๊ะโดยเร็ว</p>
@@ -675,8 +678,9 @@ function CustomerMenuContent() {
                 <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(34,197,94,0.3)', marginBottom: 10 }}>
                   <img src={slipUrl} alt="Payment Slip" style={{ width: '100%', display: 'block' }} />
                 </div>
-                <p style={{ margin: 0, color: '#4ade80', fontSize: 13, fontWeight: 600, textAlign: 'center' }}>
-                  ✅ แนบสลิปเรียบร้อย เจ้าหน้าที่จะรีบดำเนินการส่งอาหาร/เครื่องดื่ม
+                <p style={{ margin: 0, color: '#4ade80', fontSize: 13, fontWeight: 600, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  <Check size={16} />
+                  <span>แนบสลิปเรียบร้อย เจ้าหน้าที่จะรีบดำเนินการส่งอาหาร/เครื่องดื่ม</span>
                 </p>
               </div>
             ) : (
@@ -697,7 +701,7 @@ function CustomerMenuContent() {
                     : <><Upload size={24} style={{ color: '#93c5fd' }} /><span style={{ fontSize: 13, color: 'white', fontWeight: 600 }}>แตะที่นี่เพื่ออัปโหลดสลิป</span><span style={{ fontSize: 11, color: 'var(--text-muted)' }}>รองรับ JPG, PNG</span></>
                   }
                 </label>
-                {uploadError && <p style={{ color: '#fca5a5', fontSize: 12, marginTop: 8, textAlign: 'center' }}>⚠ {uploadError}</p>}
+                {uploadError && <p style={{ color: '#fca5a5', fontSize: 12, marginTop: 8, textAlign: 'center' }}>{uploadError}</p>}
               </div>
             )}
           </div>
@@ -750,7 +754,8 @@ function CustomerMenuContent() {
               fontSize: 13, fontWeight: 800, marginBottom: 16
             }}>
               <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 6px #4ade80' }} />
-              🍽️ เสิร์ฟที่ โต๊ะ {tableParam || '1'}
+              <Utensils size={14} style={{ display: 'inline' }} />
+              <span>เสิร์ฟที่ โต๊ะ {tableParam || '1'}</span>
             </div>
 
             <p style={{ margin: '0 0 14px', fontWeight: 700, color: 'white', fontSize: 14 }}>รายการสั่ง ({cartCount} รายการ)</p>
@@ -760,7 +765,9 @@ function CustomerMenuContent() {
                 return (
                   <div key={item.product.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 18 }}>{isFood ? '🍽️' : '🍷'}</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                        {isFood ? <Utensils size={16} className="text-amber-400" /> : <Wine size={16} className="text-rose-400" />}
+                      </span>
                       <div>
                         <p style={{ margin: 0, fontSize: 14, color: 'white', fontWeight: 600 }}>{item.product.name}</p>
                         <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)' }}>{formatCurrency(item.product.price)} × {item.quantity}</p>
@@ -787,7 +794,10 @@ function CustomerMenuContent() {
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     fontSize: 13, color: '#fecdd3', background: 'rgba(244,63,94,0.1)', padding: '6px 10px', borderRadius: 8
                   }}>
-                    <span>🍷 {d.title} {d.sets > 1 ? `(×${d.sets} เซ็ต)` : ''}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <Wine size={13} style={{ color: '#fb7185' }} />
+                      <span>{d.title} {d.sets > 1 ? `(×${d.sets} เซ็ต)` : ''}</span>
+                    </span>
                     <span style={{ fontWeight: 800, color: '#fda4af' }}>-{formatCurrency(d.totalDiscount)}</span>
                   </div>
                 ))}
@@ -806,7 +816,10 @@ function CustomerMenuContent() {
               )}
               {pairingDiscountTotal > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
-                  <span style={{ color: '#fb7185', fontWeight: 700 }}>🍷 ส่วนลดเซ็ตคู่พิเศษ</span>
+                  <span style={{ color: '#fb7185', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <Wine size={13} />
+                    <span>ส่วนลดเซ็ตคู่พิเศษ</span>
+                  </span>
                   <span style={{ color: '#fb7185', fontWeight: 800 }}>-{formatCurrency(pairingDiscountTotal)}</span>
                 </div>
               )}
@@ -883,7 +896,10 @@ function CustomerMenuContent() {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 6px #4ade80' }} />
-              <span style={{ fontSize: 13, fontWeight: 800, color: '#93c5fd' }}>🍽️ เสิร์ฟที่ โต๊ะ {tableParam || '1'}</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: '#93c5fd', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <Utensils size={14} />
+                <span>เสิร์ฟที่ โต๊ะ {tableParam || '1'}</span>
+              </span>
             </div>
             <button
               onClick={() => setStep('menu')}
@@ -910,7 +926,10 @@ function CustomerMenuContent() {
               </div>
               {activePairingDiscounts.map(d => (
                 <div key={d.pairing.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, color: '#fecdd3', margin: '4px 0' }}>
-                  <span>🍷 {d.title} {d.sets > 1 ? `(${d.sets} เซ็ต)` : ''}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                    <Wine size={13} style={{ color: '#fb7185' }} />
+                    <span>{d.title} {d.sets > 1 ? `(${d.sets} เซ็ต)` : ''}</span>
+                  </span>
                   <span style={{ fontWeight: 800, color: '#fda4af' }}>-{formatCurrency(d.totalDiscount)}</span>
                 </div>
               ))}
@@ -947,7 +966,7 @@ function CustomerMenuContent() {
                       }}>
                         {item.product.image_url
                           ? <img src={item.product.image_url} alt={item.product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          : <span style={{ fontSize: 28 }}>{isFood ? '🍽️' : '🍷'}</span>}
+                          : <span style={{ display: 'inline-flex', alignItems: 'center' }}>{isFood ? <Utensils size={24} className="text-amber-400" /> : <Wine size={24} className="text-rose-400" />}</span>}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ margin: 0, color: 'white', fontWeight: 600, fontSize: 14 }}>{item.product.name}</p>
@@ -1072,7 +1091,7 @@ function CustomerMenuContent() {
                 borderRadius: 16, padding: '20px', marginBottom: 24
               }}>
                 <p style={{ margin: '0 0 4px', color: 'var(--text-secondary)', fontSize: 13 }}>คะแนนสะสมทั้งหมด</p>
-                <p style={{ margin: 0, color: 'var(--gold-400)', fontSize: 36, fontWeight: 900 }}>⭐ {loggedInMember.points}</p>
+                <p style={{ margin: 0, color: 'var(--gold-400)', fontSize: 36, fontWeight: 900 }}>{loggedInMember.points}</p>
                 <p style={{ margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: 12 }}>แต้ม</p>
               </div>
 
@@ -1099,8 +1118,8 @@ function CustomerMenuContent() {
                   <label style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 6, fontWeight: 600 }}>รหัสผ่าน PIN (4-6 หลัก)</label>
                   <input className="premium-input" type="password" placeholder="••••" maxLength={6} value={memberPin} onChange={e => setMemberPin(e.target.value)} style={{ fontSize: 20, letterSpacing: 10, textAlign: 'center' }} />
                 </div>
-                {orderError && <p style={{ color: '#fca5a5', fontSize: 13, margin: 0 }}>⚠ {orderError}</p>}
-                {success && <p style={{ color: '#86efac', fontSize: 13, margin: 0 }}>✅ {success}</p>}
+                {orderError && <p style={{ color: '#fca5a5', fontSize: 13, margin: 0 }}>{orderError}</p>}
+                {success && <p style={{ color: '#86efac', fontSize: 13, margin: 0 }}>{success}</p>}
                 <button onClick={handleLogin} disabled={submitting} className="pos-btn-gradient-blue" style={{
                   width: '100%', padding: '15px', borderRadius: 14, marginTop: 4, border: 'none',
                   fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
@@ -1157,7 +1176,7 @@ function CustomerMenuContent() {
               fontSize: 13, fontWeight: 800
             }}>
               <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 8px #4ade80' }} />
-              <span>🍽️ โต๊ะ {tableParam || '1'}</span>
+              <span>โต๊ะ {tableParam || '1'}</span>
             </div>
 
             {availablePairings.length > 0 && (
@@ -1331,7 +1350,7 @@ function CustomerMenuContent() {
                     cursor: 'pointer', transition: 'all 150ms', backdropFilter: 'blur(8px)'
                   }}
                 >
-                  <span>{cat.icon || (menuTab === 'food' ? '🍽️' : '🍷')}</span> {cat.name}
+                  <span>{cat.icon ? cat.icon : (menuTab === 'food' ? <Utensils size={13} style={{ display: 'inline' }} /> : <Wine size={13} style={{ display: 'inline' }} />)}</span> {cat.name}
                 </button>
               )
             })}
@@ -1395,7 +1414,15 @@ function CustomerMenuContent() {
           border: menuTab === 'pairings' ? '1px solid rgba(244,63,94,0.35)' : undefined
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 22 }}>{menuTab === 'food' ? '🍽️' : menuTab === 'drinks' ? '🍷' : '✨'}</span>
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: menuTab === 'food' ? 'rgba(249,115,22,0.18)' : menuTab === 'drinks' ? 'rgba(168,85,247,0.18)' : 'rgba(244,63,94,0.18)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: menuTab === 'food' ? '#fb923c' : menuTab === 'drinks' ? '#c084fc' : '#fda4af',
+              flexShrink: 0
+            }}>
+              {menuTab === 'food' ? <Utensils size={18} /> : menuTab === 'drinks' ? <Wine size={18} /> : <Sparkles size={18} />}
+            </div>
             <div>
               <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'white', letterSpacing: '-0.2px' }}>
                 {menuTab === 'food' ? 'รายการอาหาร' : menuTab === 'drinks' ? 'รายการเครื่องดื่ม & ไวน์' : 'ชุดจับคู่อาหาร & ไวน์พรีเมียม'}
@@ -1511,7 +1538,7 @@ function CustomerMenuContent() {
                           {food.image_url ? (
                             <img src={food.image_url} alt={food.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           ) : (
-                            <span style={{ fontSize: 36 }}>🍽️</span>
+                            <Utensils size={36} className="text-amber-400" />
                           )}
                           <span style={{
                             position: 'absolute', bottom: 4, left: 4,
@@ -1550,7 +1577,7 @@ function CustomerMenuContent() {
                           {wine.image_url ? (
                             <img src={wine.image_url} alt={wine.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           ) : (
-                            <span style={{ fontSize: 36 }}>🍷</span>
+                            <Wine size={36} className="text-rose-400" />
                           )}
                           <span style={{
                             position: 'absolute', bottom: 4, left: 4,
@@ -1577,7 +1604,7 @@ function CustomerMenuContent() {
                         borderRadius: 12, padding: '8px 12px', marginBottom: 14
                       }}>
                         <p style={{ margin: 0, fontSize: 11, color: '#fef08a', fontStyle: 'italic', lineHeight: 1.4 }}>
-                          💡 “{p.description || p.pairing_notes}”
+                          “{p.description || p.pairing_notes}”
                         </p>
                       </div>
                     )}
@@ -1612,7 +1639,7 @@ function CustomerMenuContent() {
                             display: 'flex', alignItems: 'center', gap: 6
                           }}
                         >
-                          <Plus size={15} /> สั่งเซ็ตคู่นี้ 🍷
+                          <Plus size={15} /> สั่งเซ็ตคู่นี้
                         </button>
                       ) : (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1694,7 +1721,7 @@ function CustomerMenuContent() {
                       }}>
                         {product.image_url
                           ? <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          : <span style={{ fontSize: 28 }}>{isFood ? '🍽️' : '🍷'}</span>}
+                          : <span style={{ display: 'inline-flex', alignItems: 'center' }}>{isFood ? <Utensils size={28} className="text-amber-400" /> : <Wine size={28} className="text-rose-400" />}</span>}
                       </div>
 
                       {/* Info */}
@@ -1789,7 +1816,7 @@ function CustomerMenuContent() {
                 <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: 'white' }}>ดูรายการที่เลือก</span>
                 {pairingDiscountTotal > 0 && (
                   <span style={{ display: 'block', fontSize: 11, color: '#fecdd3', fontWeight: 600 }}>
-                    ✨ ส่วนลดโปรคู่ -{formatCurrency(pairingDiscountTotal)}
+                    ส่วนลดโปรคู่ -{formatCurrency(pairingDiscountTotal)}
                   </span>
                 )}
               </div>

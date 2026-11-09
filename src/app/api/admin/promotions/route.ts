@@ -11,7 +11,7 @@ function getSupabaseAdmin() {
   })
 }
 
-// 🌐 Helper: ซิงค์ข้อมูลโปรโมชั่นไปยัง ProjectbottleClub1 โดยตรง
+// Helper: ซิงค์ข้อมูลโปรโมชั่นไปยัง ProjectbottleClub1 โดยตรง
 async function syncToProjectbottleClub1(promotions: Promotion[]) {
   try {
     const fs = await import('fs')

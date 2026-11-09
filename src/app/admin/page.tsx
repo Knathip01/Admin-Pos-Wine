@@ -7,7 +7,7 @@ import Link from 'next/link'
 import {
   TrendingUp, ShoppingBag, Users, Package,
   AlertTriangle, Wine, ArrowUpRight, ArrowDownRight, Loader2, Clock, Receipt,
-  ChevronRight, Flame, RefreshCw, User, Mail, Phone
+  ChevronRight, Flame, RefreshCw, User, Mail, Phone, Warehouse, BarChart3, Settings
 } from 'lucide-react'
 import {
   ResponsiveContainer, LineChart, Line, Area, AreaChart, Tooltip, YAxis, XAxis
@@ -317,7 +317,7 @@ export default function AdminDashboard() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12, position: 'relative', zIndex: 1 }}>
           <div>
             <h1 style={{ fontSize: 'clamp(18px, 4vw, 26px)', fontWeight: 900, color: 'var(--admin-text, #eef2ff)', margin: 0, fontFamily: "'Outfit', sans-serif" }}>
-              📊 แดชบอร์ด
+              แดชบอร์ด
             </h1>
             <p style={{ color: 'var(--admin-text-muted, #94a3b8)', fontSize: 12, margin: '2px 0 0', fontFamily: 'monospace' }}>
               {new Date().toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -339,10 +339,10 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        {/* ── Error ── */}
         {errorMsg && (
-          <div style={{ padding: '14px 16px', borderRadius: 12, background: 'rgba(244,63,94,0.10)', border: '1px solid rgba(244,63,94,0.28)', color: '#fb7185', marginBottom: 16, fontSize: 13 }}>
-            ⚠️ {errorMsg}
+          <div style={{ padding: '14px 16px', borderRadius: 12, background: 'rgba(244,63,94,0.10)', border: '1px solid rgba(244,63,94,0.28)', color: '#fb7185', marginBottom: 16, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <AlertTriangle size={16} />
+            <span>{errorMsg}</span>
           </div>
         )}
 
@@ -461,28 +461,31 @@ export default function AdminDashboard() {
               <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--admin-text-muted, #94a3b8)', margin: '0 0 10px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>เมนูด่วน</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                 {[
-                  { label: 'สินค้า', icon: '📦', href: '/admin/products' },
-                  { label: 'สต็อก', icon: '🏭', href: '/admin/inventory' },
-                  { label: 'รายงาน', icon: '📈', href: '/admin/reports' },
-                  { label: 'รับชำระ', icon: '💳', href: '/admin/billing' },
-                  { label: 'ผู้ใช้', icon: '👥', href: '/admin/users' },
-                  { label: 'ตั้งค่า', icon: '⚙️', href: '/admin/settings' },
-                ].map(item => (
-                  <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
-                    <div style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                      gap: 4, padding: '10px 4px', borderRadius: 10,
-                      background: 'rgba(0,212,255,0.04)', border: '1px solid rgba(0,212,255,0.10)',
-                      cursor: 'pointer', transition: 'all 0.15s'
-                    }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(0,212,255,0.09)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,212,255,0.28)'; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(0,212,255,0.04)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,212,255,0.10)'; }}
-                    >
-                      <span style={{ fontSize: 20 }}>{item.icon}</span>
-                      <span style={{ fontSize: 11, color: 'var(--admin-text-muted, #94a3b8)', fontWeight: 600 }}>{item.label}</span>
-                    </div>
-                  </Link>
-                ))}
+                  { label: 'สินค้า', icon: Package, href: '/admin/products' },
+                  { label: 'สต็อก', icon: Warehouse, href: '/admin/inventory' },
+                  { label: 'รายงาน', icon: BarChart3, href: '/admin/reports' },
+                  { label: 'รับชำระ', icon: Receipt, href: '/admin/billing' },
+                  { label: 'ผู้ใช้', icon: Users, href: '/admin/users' },
+                  { label: 'ตั้งค่า', icon: Settings, href: '/admin/settings' },
+                ].map(item => {
+                  const Icon = item.icon
+                  return (
+                    <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
+                      <div style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        gap: 6, padding: '10px 4px', borderRadius: 10,
+                        background: 'rgba(0,212,255,0.04)', border: '1px solid rgba(0,212,255,0.10)',
+                        cursor: 'pointer', transition: 'all 0.15s'
+                      }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(0,212,255,0.09)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,212,255,0.28)'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(0,212,255,0.04)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,212,255,0.10)'; }}
+                      >
+                        <Icon size={18} style={{ color: '#22e5ff' }} />
+                        <span style={{ fontSize: 11, color: 'var(--admin-text-muted, #94a3b8)', fontWeight: 600 }}>{item.label}</span>
+                      </div>
+                    </Link>
+                  )
+                })}
               </div>
             </div>
 
@@ -513,7 +516,7 @@ export default function AdminDashboard() {
 
         {/* ── Bottom Section with Tabs on Mobile ── */}
         <div style={{ display: 'flex', gap: 4, padding: '4px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, marginBottom: 14 }} className="sm:hidden">
-          {([['overview', '🏆 สินค้าขายดี'], ['stock', '⚠️ สต็อกต่ำ'], ['staff', '👥 พนักงาน']] as const).map(([tab, label]) => (
+          {([['overview', 'สินค้าขายดี'], ['stock', 'สต็อกต่ำ'], ['staff', 'พนักงาน']] as const).map(([tab, label]) => (
             <button key={tab} className={`tab-btn ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>
               {label}
             </button>
@@ -528,7 +531,7 @@ export default function AdminDashboard() {
             style={{ padding: 18 }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--admin-text, #eef2ff)', margin: 0 }}>🏆 สินค้าขายดีสุด</h4>
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--admin-text, #eef2ff)', margin: 0 }}>สินค้าขายดีสุด</h4>
               <span style={{ fontSize: 11, color: '#fbbf24', fontWeight: 600 }}>Top 5</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -539,11 +542,10 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 topProducts.map((p, idx) => {
-                  const icons = ['🍷', '🥂', '🍾', '🍇', '🍹']
                   return (
                     <div key={idx} className="product-row">
                       <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--admin-text-muted, #94a3b8)', width: 14, flexShrink: 0 }}>#{idx + 1}</span>
-                      <span style={{ fontSize: 18, flexShrink: 0 }}>{icons[idx % icons.length]}</span>
+                      <Wine size={16} style={{ color: '#22e5ff', flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--admin-text, #eef2ff)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {p.name}
@@ -567,7 +569,7 @@ export default function AdminDashboard() {
             style={{ padding: 18 }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--admin-text, #eef2ff)', margin: 0 }}>⚠️ สต็อกต่ำ</h4>
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--admin-text, #eef2ff)', margin: 0 }}>สต็อกต่ำ</h4>
               <Link href="/admin/inventory" style={{ fontSize: 11, color: '#fb7185', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
                 ดูทั้งหมด <ChevronRight size={12} />
               </Link>
@@ -575,7 +577,7 @@ export default function AdminDashboard() {
             {lowStockProducts.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--admin-text-muted, #94a3b8)' }}>
                 <Package size={24} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
-                <p style={{ fontSize: 12, margin: 0 }}>สต็อกปกติทุกรายการ ✓</p>
+                <p style={{ fontSize: 12, margin: 0 }}>สต็อกปกติทุกรายการ</p>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -588,8 +590,8 @@ export default function AdminDashboard() {
                         <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--admin-text, #eef2ff)', margin: 0, flex: 1, paddingRight: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {p.name}
                         </p>
-                        <span className="stock-chip" style={{ background: isOut ? 'rgba(244,63,94,0.15)' : 'rgba(251,191,36,0.10)', color: isOut ? '#fb7185' : '#fbbf24', flexShrink: 0 }}>
-                          {isOut ? '🔴 หมด' : `🟡 ${p.stock}`}
+                        <span className="stock-chip" style={{ background: isOut ? 'rgba(244,63,94,0.15)' : 'rgba(251,191,36,0.10)', color: isOut ? '#fb7185' : '#fbbf24', flexShrink: 0, fontWeight: 700 }}>
+                          {isOut ? 'หมด' : p.stock}
                         </span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -612,7 +614,7 @@ export default function AdminDashboard() {
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <div>
-                <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--admin-text, #eef2ff)', margin: 0 }}>👥 สถานะพนักงาน</h4>
+                <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--admin-text, #eef2ff)', margin: 0 }}>สถานะพนักงาน</h4>
                 <p style={{ fontSize: 11, color: '#64748b', margin: '2px 0 0', fontWeight: 600 }}>
                   ออนไลน์ {staffUsers.filter(u => u.is_active && u.updated_at && (new Date().getTime() - new Date(u.updated_at).getTime() < 120000)).length} / ทั้งหมด {staffUsers.length} คน
                 </p>
@@ -630,7 +632,6 @@ export default function AdminDashboard() {
               ) : (
                 staffUsers.map(u => {
                   const isOnline = u.is_active && u.updated_at && (new Date().getTime() - new Date(u.updated_at).getTime() < 120000)
-                  const roleIcons: Record<string, string> = { super_admin: '👑', manager: '🏢', cashier: '💰', stock_staff: '📦', kitchen: '🍳', bar: '🍸' }
                   const roleLabels: Record<string, string> = { super_admin: 'Super Admin', manager: 'Manager', cashier: 'Cashier', stock_staff: 'Stock Staff', kitchen: 'Kitchen', bar: 'Bar' }
                   const roleColors: Record<string, string> = { super_admin: '#fbbf24', manager: '#22d3ee', cashier: '#34d399', stock_staff: '#c084fc', kitchen: '#fb7185', bar: '#818cf8' }
                   return (
@@ -652,9 +653,9 @@ export default function AdminDashboard() {
                         background: isOnline ? 'rgba(52,211,153,0.12)' : 'rgba(255,255,255,0.05)',
                         border: `1px solid ${isOnline ? 'rgba(52,211,153,0.3)' : 'rgba(255,255,255,0.08)'}`,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 16, flexShrink: 0
+                        fontSize: 13, fontWeight: 800, color: isOnline ? '#34d399' : '#94a3b8', flexShrink: 0
                       }}>
-                        {roleIcons[u.role] || '👤'}
+                        {u.full_name ? u.full_name.charAt(0).toUpperCase() : 'U'}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
