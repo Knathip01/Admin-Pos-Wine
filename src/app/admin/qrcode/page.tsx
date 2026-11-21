@@ -8,20 +8,15 @@ import {
   Copy,
   Check,
   ExternalLink,
-  QrCode,
   Grid,
   Sparkles,
-  CheckCircle2,
-  Wine,
   Layers,
   Info,
-  Smartphone
 } from 'lucide-react'
 
 export default function QRCodePage() {
   const [selectedTable, setSelectedTable] = useState(1)
   const [copiedTable, setCopiedTable] = useState<number | null>(null)
-  const [printMode, setPrintMode] = useState<'single' | 'all'>('single')
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
@@ -44,19 +39,104 @@ export default function QRCodePage() {
     } catch {}
   }
 
+  const buildPrintHtml = (tables: number[]) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://admin-pos-wine.vercel.app'
+    const cards = tables.map((tableNo, index) => {
+      const formattedTable = tableNo < 10 ? `0${tableNo}` : `${tableNo}`
+      const menuUrl = `${origin}/menu?table=${tableNo}`
+      const pageBreak = index < tables.length - 1 ? 'page-break-after:always;' : ''
+      return `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 0;${pageBreak}">
+          <div style="position:relative;margin-top:24px;">
+            <div style="position:absolute;top:-20px;left:0;right:0;font-size:9px;color:#64748b;text-align:center;font-family:sans-serif;">
+              ตัดตามขอบเพื่อใส่แท่นวางอะคริลิค (Cut along border for Acrylic Stand)
+            </div>
+            <div style="width:360px;background:#ffffff;color:#0f172a;border-radius:22px;padding:24px 22px;box-sizing:border-box;text-align:center;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;border:2px solid #0f172a;">
+              <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;">
+                <img src="${origin}/thebottleclub.jpg" alt="The Bottle Club" style="width:36px;height:36px;border-radius:10px;object-fit:contain;border:1.5px solid #0f172a;background:#0f172a;flex-shrink:0;" onerror="this.style.display='none'" />
+                <div style="text-align:left;">
+                  <div style="font-size:16px;font-weight:900;letter-spacing:0.04em;color:#0f172a;line-height:1.1;text-transform:uppercase;">The Bottle Club</div>
+                  <div style="font-size:9px;font-weight:700;letter-spacing:0.12em;color:#64748b;text-transform:uppercase;margin-top:2px;">Wine Bar &amp; Smart Dining</div>
+                </div>
+              </div>
+              <div style="background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);color:#ffffff;border-radius:14px;padding:8px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;border:1px solid #334155;">
+                <div style="text-align:left;">
+                  <span style="font-size:9px;font-weight:800;letter-spacing:0.1em;color:#94a3b8;text-transform:uppercase;display:block;">TABLE NO.</span>
+                  <span style="font-size:13px;font-weight:900;color:#f8fafc;">โต๊ะอาหาร</span>
+                </div>
+                <div style="font-size:34px;font-weight:900;letter-spacing:-0.03em;color:#fbbf24;line-height:1;">${formattedTable}</div>
+              </div>
+              <div style="display:inline-flex;align-items:center;justify-content:center;background:#ffffff;padding:12px;border-radius:16px;border:1.5px solid #cbd5e1;margin-bottom:14px;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&ecc=H&data=${encodeURIComponent(menuUrl)}" width="200" height="200" alt="QR Code Table ${tableNo}" style="display:block;" />
+              </div>
+              <div style="margin-bottom:12px;">
+                <div style="font-size:15px;font-weight:800;color:#0f172a;line-height:1.2;">สแกนเพื่อสั่งอาหารและเครื่องดื่ม</div>
+                <div style="font-size:11px;font-weight:600;color:#64748b;margin-top:3px;">Scan QR Code to View Menu &amp; Order</div>
+              </div>
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;margin-bottom:14px;text-align:left;">
+                <div style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;color:#334155;margin-bottom:6px;">
+                  <span style="width:18px;height:18px;border-radius:99px;background:#0f172a;color:#ffffff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0;">1</span>
+                  <span>เปิดกล้องมือถือ หรือ LINE สแกน QR</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;color:#334155;margin-bottom:6px;">
+                  <span style="width:18px;height:18px;border-radius:99px;background:#0f172a;color:#ffffff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0;">2</span>
+                  <span>เลือกอาหาร เครื่องดื่ม และไวน์ที่ชอบ</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;color:#334155;">
+                  <span style="width:18px;height:18px;border-radius:99px;background:#0f172a;color:#ffffff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0;">3</span>
+                  <span>กดยืนยันออเดอร์ บริการเสิร์ฟตรงถึงโต๊ะนี้</span>
+                </div>
+              </div>
+              <div style="border-top:1px dashed #cbd5e1;padding-top:10px;text-align:center;">
+                <div style="display:flex;align-items:center;justify-content:space-between;font-size:10px;font-weight:700;color:#475569;margin-bottom:4px;">
+                  <span>Wi-Fi: TheBottleClub_Guest</span>
+                  <span>มีข้อสงสัยเรียกพนักงานได้เลย</span>
+                </div>
+                <div style="font-size:9px;color:#94a3b8;word-break:break-all;text-align:center;">${menuUrl}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `
+    })
+
+    return `<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>QR Code - The Bottle Club</title>
+  <style>
+    @page { size: auto; margin: 8mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #ffffff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  </style>
+</head>
+<body>
+  ${cards.join('')}
+  <script>
+    window.onload = function() {
+      setTimeout(function() { window.print(); window.close(); }, 300);
+    };
+  </script>
+</body>
+</html>`
+  }
+
   const handlePrintSingle = (tableNo: number) => {
-    setSelectedTable(tableNo)
-    setPrintMode('single')
-    setTimeout(() => {
-      window.print()
-    }, 200)
+    const html = buildPrintHtml([tableNo])
+    const popup = window.open('', '_blank', 'width=600,height=800')
+    if (!popup) return
+    popup.document.write(html)
+    popup.document.close()
   }
 
   const handlePrintAll = () => {
-    setPrintMode('all')
-    setTimeout(() => {
-      window.print()
-    }, 200)
+    const tables = Array.from({ length: 10 }, (_, i) => i + 1)
+    const html = buildPrintHtml(tables)
+    const popup = window.open('', '_blank', 'width=600,height=800')
+    if (!popup) return
+    popup.document.write(html)
+    popup.document.close()
   }
 
   const handleDownloadQR = (tableNo: number) => {
@@ -673,29 +753,7 @@ export default function QRCodePage() {
 
       </div>
 
-      {/* ══════════════════════════════════════════════════
-          2. PRINT-ONLY CONTAINER (Rendered only on print)
-          ══════════════════════════════════════════════════ */}
-      <div className="qr-print-container">
-        {printMode === 'single' ? (
-          <div className="qr-stand-page">
-            <TableStandCard tableNo={selectedTable} isPrint={true} />
-          </div>
-        ) : (
-          Array.from({ length: 10 }, (_, i) => i + 1).map((tableNo, index) => (
-            <div
-              key={tableNo}
-              className={`qr-stand-page ${index < 9 ? 'page-break' : ''}`}
-            >
-              <TableStandCard tableNo={tableNo} isPrint={true} />
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* ══════════════════════════════════════════════════
-          3. HIDDEN CANVASES FOR PNG DOWNLOAD
-          ══════════════════════════════════════════════════ */}
+      {/* HIDDEN CANVASES FOR PNG DOWNLOAD */}
       {isMounted && (
         <div style={{ display: 'none' }} aria-hidden="true">
           {Array.from({ length: 10 }, (_, i) => i + 1).map(num => (
@@ -710,119 +768,6 @@ export default function QRCodePage() {
           ))}
         </div>
       )}
-
-      {/* ══════════════════════════════════════════════════
-          4. PRINT STYLES
-          ══════════════════════════════════════════════════ */}
-      <style>{`
-        @media screen {
-          .qr-print-container {
-            display: none !important;
-          }
-        }
-
-        @media print {
-          @page {
-            size: auto;
-            margin: 8mm;
-          }
-
-          /* Hide on-screen interface, admin header, and navigation completely */
-          header,
-          aside,
-          nav,
-          .admin-topbar,
-          .sidebar-desktop,
-          .sidebar-mobile-overlay,
-          .sidebar-mobile-drawer,
-          .sidebar-collapse-btn,
-          .admin-topbar-profile,
-          .admin-clock-pill,
-          .admin-topbar-icon-btn,
-          .admin-ai-chat,
-          #admin-ai-chat-btn,
-          #admin-ai-chat-window,
-          #heartbeat-indicator,
-          .no-print,
-          .qr-screen-ui {
-            display: none !important;
-            visibility: hidden !important;
-            height: 0 !important;
-            min-height: 0 !important;
-            max-height: 0 !important;
-            overflow: hidden !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border: none !important;
-          }
-
-          /* Reset page body and admin wrappers so nothing gets clipped */
-          html,
-          body,
-          .admin-shell-container,
-          .admin-main-wrap,
-          .admin-main-content,
-          main {
-            display: block !important;
-            min-height: auto !important;
-            height: auto !important;
-            background: #ffffff !important;
-            color: #000000 !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            border: none !important;
-            overflow: visible !important;
-            overflow-x: visible !important;
-            overflow-y: visible !important;
-            max-width: 100% !important;
-            width: 100% !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-
-          /* Ensure print container is shown cleanly */
-          .qr-print-container {
-            display: block !important;
-            visibility: visible !important;
-            width: 100% !important;
-            background: #ffffff !important;
-            margin: 0 auto !important;
-            padding: 0 !important;
-          }
-
-          .qr-stand-page {
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-            justify-content: center !important;
-            padding: 20px 0 !important;
-            margin: 0 auto !important;
-            box-sizing: border-box !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
-
-          .qr-stand-page.page-break {
-            page-break-after: always !important;
-            break-after: page !important;
-          }
-
-          .qr-stand-card {
-            border: 2px solid #0f172a !important;
-            box-shadow: none !important;
-            margin: 10px auto !important;
-            background: #ffffff !important;
-            color: #0f172a !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-
-          .qr-stand-card * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-        }
-      `}</style>
     </>
   )
 }
