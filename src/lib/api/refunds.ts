@@ -23,11 +23,17 @@ export const refundsApi = {
   get: (id: number, token?: string) =>
     apiRequest<RefundResponse>(`/refunds/${id}`, { token }),
 
-  // POST /api/v1/refunds/ (201; body: order_id, refund_amount, refund_method, reason?, external_reference?)
+  // POST /api/v1/refunds/ is REMOVED in backend (405 Method Not Allowed).
+  // Refunds must be processed via paymentsApi.refund(orderId, ...) or returnsApi.process(returnId, ...)
   create: (data: RefundCreate, token?: string) =>
-    apiRequest<RefundResponse>('/refunds/', {
+    apiRequest<RefundResponse>(`/payments/${data.order_id}/refund`, {
       method: 'POST',
-      body: data,
+      body: {
+        refund_amount: data.refund_amount,
+        refund_method: data.refund_method,
+        reason: data.reason,
+        external_reference: data.external_reference,
+      },
       token,
     }),
 }

@@ -34,8 +34,8 @@ export const ordersApi = {
   },
 
   // 5.1 Create Order — POST /api/v1/orders/
-  create: (data: OrderCreate, token?: string, branchId?: number) =>
-    apiRequest<OrderResponse>('/orders/', { method: 'POST', body: data, token, branchId }),
+  create: (data: OrderCreate, token?: string, branchId?: number, idempotencyKey?: string) =>
+    apiRequest<OrderResponse>('/orders/', { method: 'POST', body: data, token, branchId, idempotencyKey }),
 
   // 5.3 Get Order — GET /api/v1/orders/{reference} (numeric id or order_number string)
   get: (reference: number | string, token?: string) =>
@@ -69,8 +69,28 @@ export const ordersApi = {
   ) =>
     apiRequest<OrderResponse>(`/orders/${id}/tracking`, { method: 'PUT', body: data, token }),
 
-  // 5.9 Public Tracking Lookup — GET /api/v1/orders/track/{tracking_or_ref} (No auth required)
-  track: (trackingOrRef: string) =>
+  // Generate public tracking token — POST /api/v1/orders/{order_id}/tracking-token
+  createTrackingToken: (orderId: number, token?: string) =>
+    apiRequest<{ token: string; expires_at: string }>(`/orders/${orderId}/tracking-token`, {
+      method: 'POST',
+      token,
+    }),
+
+  // Customer Public Tracking Lookup — POST /api/v1/orders/track (Public, no auth)
+  trackPublic: (data: { ref: string; contact?: string }) =>
+    apiRequest<{
+      order_number: string
+      tracking_number: string | null
+      status: string
+      shipping_carrier?: string | null
+      updated_at: string
+    }>('/orders/track', {
+      method: 'POST',
+      body: data,
+    }),
+
+  // Customer Public Tracking by Token — GET /api/v1/orders/track/public/{token} (Public)
+  trackByPublicToken: (publicToken: string) =>
     apiRequest<{
       order_number: string
       status: string
@@ -78,11 +98,27 @@ export const ordersApi = {
       tracking_number: string | null
       created_at: string
       completed_at: string | null
-    }>(`/orders/track/${encodeURIComponent(trackingOrRef)}`),
+    }>(`/orders/track/public/${encodeURIComponent(publicToken)}`),
+
+  // Staff Tracking Lookup — GET /api/v1/orders/track/{tracking_or_ref} (login orders.read)
+  track: (trackingOrRef: string, token?: string) =>
+    apiRequest<{
+      order_number: string
+      status: string
+      fulfillment_status: string
+      tracking_number: string | null
+      created_at: string
+      completed_at: string | null
+    }>(`/orders/track/${encodeURIComponent(trackingOrRef)}`, { token }),
 
   // 9. Checkout & Payment — POST /api/v1/orders/{order_id}/checkout
-  checkout: (id: number, data: CheckoutRequest, token?: string) =>
-    apiRequest<CheckoutResponse>(`/orders/${id}/checkout`, { method: 'POST', body: data, token }),
+  checkout: (id: number, data: CheckoutRequest, token?: string, idempotencyKey?: string) =>
+    apiRequest<CheckoutResponse>(`/orders/${id}/checkout`, {
+      method: 'POST',
+      body: data,
+      token,
+      idempotencyKey,
+    }),
 
   // 5.10 Station Queues (KDS)
   kitchenQueue: (

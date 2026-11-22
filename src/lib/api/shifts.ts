@@ -39,7 +39,7 @@ export const shiftsApi = {
     if (params.date_to) q.set('date_to', params.date_to)
     if (params.page) q.set('page', String(params.page))
     if (params.per_page) q.set('per_page', String(params.per_page))
-    return apiRequest<ShiftListResponse>(`/shifts/?${q}`, { token })
+    return apiRequest<ShiftListResponse>(`/shifts/?${q}`, { token, branchId: params.branch_id })
   },
 
   getXReport: (shiftId: number, token?: string) =>

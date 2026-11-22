@@ -102,11 +102,44 @@ export default function AdminLoginPage() {
       const cleanEmail = email.trim()
       const cleanPass = password.trim()
 
-      // Exclusive access check: Only superadmin@thebottleclub.com with postthebottleclub is allowed
       const isAllowedCeo = (cleanEmail.toLowerCase() === 'superadmin@thebottleclub.com' || cleanEmail.toLowerCase() === 'superadmin') && cleanPass === 'postthebottleclub'
-      
-      if (!isAllowedCeo) {
-        // Trigger Progressive Lockout!
+
+      // 1. Authenticate with Wayneven Backend API
+      let apiSuccess = false
+      const attempts = [
+        { username: cleanEmail, password: cleanPass },
+        { username: cleanEmail.split('@')[0], password: cleanPass },
+      ]
+      for (const cred of attempts) {
+        try {
+          const tokens = await authApi.login(cred)
+          if (tokens?.access_token) {
+            setTokens(tokens.access_token, tokens.refresh_token || '')
+            try {
+              const profile = await authApi.me(tokens.access_token)
+              setProfile(profile)
+            } catch {}
+            apiSuccess = true
+            break
+          }
+        } catch {}
+      }
+
+      // 2. Authenticate with Supabase Auth
+      let supabaseSuccess = false
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password: cleanPass,
+        })
+        if (!error && data.user) {
+          supabaseSuccess = true
+        }
+      } catch {}
+
+      // 3. Fallback CEO Super Admin bypass for offline/local development
+      if (!apiSuccess && !supabaseSuccess && !isAllowedCeo) {
+        // Trigger Progressive Lockout only on invalid credentials
         const nextAttempts = lockoutAttempts + 1
         const cooldown = getCooldownForAttempt(nextAttempts)
         const lockoutUntil = Date.now() + cooldown * 1000
@@ -122,59 +155,18 @@ export default function AdminLoginPage() {
         setRemainingSeconds(cooldown)
 
         throw new Error(
-          `ไม่อนุญาตให้อีเมลนี้เข้าสู่ระบบ! (จำกัดสิทธิ์เฉพาะบัญชี CEO Super Admin: superadmin@thebottleclub.com เท่านั้น) ระบบระงับการเข้าสู่ระบบ ${formatRemainingTime(cooldown)} และจะทวีคูณระยะเวลานานขึ้นเรื่อยๆ ทุกครั้งที่พยายามล็อกอินผิด`
+          `ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง! กรุณาตรวจสอบข้อมูลกับระบบ API หรือติดต่อผู้ดูแลระบบ (ระงับชั่วคราว ${formatRemainingTime(cooldown)})`
         )
       }
 
-      // CEO Super Admin authenticated successfully! Clear any lockout record
+      // Authentication successful! Clear any lockout record
       try {
         localStorage.removeItem(STORAGE_LOCKOUT_KEY)
       } catch {}
       setRemainingSeconds(0)
       setLockoutAttempts(0)
 
-      // 1. Authenticate with Backend API in parallel
-      const apiLoginPromise = (async () => {
-        const attempts = [
-          { username: cleanEmail, password: cleanPass },
-          { username: cleanEmail.split('@')[0], password: cleanPass },
-        ]
-        for (const cred of attempts) {
-          try {
-            const tokens = await authApi.login(cred)
-            if (tokens?.access_token) {
-              setTokens(tokens.access_token, tokens.refresh_token)
-              try {
-                const profile = await authApi.me(tokens.access_token)
-                setProfile(profile)
-              } catch {}
-              return true
-            }
-          } catch {}
-        }
-        return false
-      })()
-
-      // 2. Authenticate with Supabase Auth
-      let supabaseSuccess = false
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: cleanEmail,
-          password: cleanPass,
-        })
-        if (!error && data.user) {
-          supabaseSuccess = true
-        }
-      } catch {}
-
-      const apiSuccess = await apiLoginPromise
-
-      if (!supabaseSuccess && !apiSuccess) {
-        // Allow CEO Super Admin bypass even if backend network is temporarily unreachable
-        supabaseSuccess = true
-      }
-
-      // 3. Mark admin session as active in cookies and localStorage
+      // 4. Mark admin session as active in cookies and localStorage
       if (typeof window !== 'undefined') {
         document.cookie = 'bottleclub_admin_session=active; path=/; max-age=604800; SameSite=Lax'
         localStorage.setItem('bottleclub_logged_in', '1')

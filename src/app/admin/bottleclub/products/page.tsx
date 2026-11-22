@@ -290,7 +290,57 @@ export default function AdminProductsPage() {
     }
     setError(null);
     try {
-      // 1. Fetch Categories & Products concurrently from Supabase
+      // 1. Try Wayneven Catalog API first (E-Commerce Web Wine)
+      const token = accessToken || await ensureApiAuth();
+      if (token) {
+        try {
+          const [apiCats, apiProds] = await Promise.all([
+            catalogApi.listCategories(token),
+            catalogApi.listProducts({ per_page: 100 }, token)
+          ]);
+          if (Array.isArray(apiCats) && apiCats.length > 0 && Array.isArray(apiProds) && apiProds.length > 0) {
+            const catList: CategoryRow[] = apiCats.map(c => ({
+              id: c.id,
+              rowKey: `cat_${c.id}`,
+              name: c.name,
+              description: c.description ?? null,
+              icon: '',
+              color: '#8B1A2C',
+              parent_id: c.parent_id ?? null,
+              sort_order: c.sort_order ?? 0,
+              is_active: c.is_active ?? true,
+              created_at: c.created_at ? new Date(c.created_at).toLocaleDateString('th-TH') : '-',
+            }));
+            setCategories(catList);
+            const catMapLocal = new Map<string, string>();
+            catList.forEach(c => catMapLocal.set(String(c.id), c.name));
+            setProducts(apiProds.map(p => ({
+              id: p.id,
+              rowKey: `prod_${p.id}`,
+              name: p.name,
+              description: p.description ?? null,
+              category_id: p.category_id ?? null,
+              category_name: p.category_name || (p.category_id ? catMapLocal.get(String(p.category_id)) : undefined) || 'ทั่วไป',
+              sku: p.sku ?? null,
+              barcode: p.barcode ?? null,
+              selling_price: Number(p.selling_price ?? 0),
+              cost_price: Number(p.cost_price ?? 0),
+              unit: p.unit ?? 'ขวด',
+              stock: 0,
+              image_url: null,
+              is_active: p.is_active ?? true,
+              created_at: p.created_at ? new Date(p.created_at).toLocaleDateString('th-TH') : '-',
+            })));
+            setLoading(false);
+            setRefreshing(false);
+            return;
+          }
+        } catch (apiErr) {
+          console.warn('Wayneven catalog API call failed, falling back to Supabase:', apiErr);
+        }
+      }
+
+      // 2. Fetch Categories & Products concurrently from Supabase
       const [{ data: catData, error: catErr }, { data: prodData, error: prodErr }] = await Promise.all([
         supabase.from('categories').select('*').order('sort_order').order('name'),
         supabase.from('products').select('*, categories(name, icon, color)').order('name')

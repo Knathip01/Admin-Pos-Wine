@@ -39,12 +39,19 @@ export const slipVerifyApi = {
     return apiRequest<{ items: SlipVerificationResult[]; total: number }>(`/slip-verify/list?${q}`, { token })
   },
 
-  approve: (verificationId: number, note?: string, token?: string) =>
-    apiRequest<SlipVerificationResult>(`/slip-verify/${verificationId}/approve`, {
+  approve: (
+    verificationId: number,
+    data: { confirmed_amount: number; bank_reference?: string; note?: string } | number,
+    token?: string
+  ) => {
+    // Support both object payload and shorthand amount number for backward compatibility
+    const body = typeof data === 'number' ? { confirmed_amount: data } : data
+    return apiRequest<SlipVerificationResult>(`/slip-verify/${verificationId}/approve`, {
       method: 'POST',
-      body: note ? { note } : {},
+      body,
       token,
-    }),
+    })
+  },
 
   reject: (verificationId: number, note?: string, token?: string) =>
     apiRequest<SlipVerificationResult>(`/slip-verify/${verificationId}/reject`, {

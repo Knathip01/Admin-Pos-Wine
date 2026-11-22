@@ -672,6 +672,9 @@ export default function AdminPaymentsPage() {
 
   // ── Approve handler
   const handleApprove = async (orderId: number, note: string) => {
+    const targetOrder = orders.find(o => o.id === orderId);
+    const amountToPay = targetOrder ? targetOrder.total : 1;
+
     // Instant local state update
     setOrders(prev => prev.map(o => o.id === orderId ? {
       ...o,
@@ -684,7 +687,7 @@ export default function AdminPaymentsPage() {
       const token = await ensureApiAuth();
       if (token) {
         await ordersApi.checkout(orderId, {
-          payments: [{ payment_method: 'promptpay', amount: 1, notes: note || 'ยืนยันการชำระเงิน' }]
+          payments: [{ payment_method: targetOrder?.paymentMethod || 'promptpay', amount: amountToPay, notes: note || 'ยืนยันการชำระเงิน' }]
         }, token).catch(() => {});
       }
     } catch {}

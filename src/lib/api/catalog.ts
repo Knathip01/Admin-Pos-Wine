@@ -35,6 +35,8 @@ export const catalogApi = {
     apiRequest<ProductResponse>('/catalog/products', { method: 'POST', body: data, token }),
   getProduct: (id: number, token?: string) =>
     apiRequest<ProductResponse>(`/catalog/products/${id}`, { token }),
+  getProductCosts: (token?: string) =>
+    apiRequest<any[]>('/catalog/products/costs', { token }),
   updateProduct: (id: number, data: ProductUpdate, token?: string) =>
     apiRequest<ProductResponse>(`/catalog/products/${id}`, { method: 'PUT', body: data, token }),
   deleteProduct: (id: number, token?: string) =>

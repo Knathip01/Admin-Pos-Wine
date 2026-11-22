@@ -111,7 +111,27 @@ export async function ensureApiAuth(forceRefresh = false): Promise<string | null
         }
       }
 
-      // User must explicitly log in at /admin/login. No automatic background auto-login.
+      // 4. Attempt login with configured credentials if token is missing
+      const attempts = [
+        { username: DEFAULT_API_CREDENTIALS.username, password: DEFAULT_API_CREDENTIALS.password },
+        { username: DEFAULT_API_CREDENTIALS.email, password: DEFAULT_API_CREDENTIALS.password },
+      ]
+
+      for (const cred of attempts) {
+        try {
+          const tokens = await authApi.login(cred)
+          if (tokens?.access_token) {
+            state.setTokens(tokens.access_token, tokens.refresh_token || '')
+            authApi.me(tokens.access_token).then((profile) => {
+              if (profile) state.setProfile(profile)
+            }).catch(() => {})
+            return tokens.access_token
+          }
+        } catch {
+          // Continue to next attempt
+        }
+      }
+
       return null
     } catch {
       return null

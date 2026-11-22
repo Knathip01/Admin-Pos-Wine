@@ -25,6 +25,8 @@ type RequestOptions = {
   skipCache?: boolean
   cacheTtlMs?: number
   _retry?: boolean
+  idempotencyKey?: string
+  headers?: Record<string, string>
 }
 
 type CacheEntry = {
@@ -118,10 +120,25 @@ export async function apiRequest<T>(
     const headers: Record<string, string> = {
       'Accept': 'application/json',
       'X-Branch-Id': String(branchId || 1),
+      ...(opts.headers || {}),
     }
 
     if (token) headers['Authorization'] = `Bearer ${token}`
     if (!isFormData && body !== undefined) headers['Content-Type'] = 'application/json'
+
+    // Mandatory Idempotency-Key on POST /orders/, /payments/, /returns/
+    if (opts.idempotencyKey) {
+      headers['Idempotency-Key'] = opts.idempotencyKey
+    } else if (
+      method === 'POST' &&
+      (path.startsWith('/orders') || path.startsWith('/payments') || path.startsWith('/returns'))
+    ) {
+      const generatedKey =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `idemp-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+      headers['Idempotency-Key'] = generatedKey
+    }
 
     // Add safe timeout: 10s for GET, 15s for mutations
     const timeoutMs = isGet ? 10_000 : 15_000
@@ -189,6 +206,14 @@ export async function apiRequest<T>(
     // Unwrap { data: ... } envelope if present from FastAPI backend
     let result: T
     if (data && typeof data === 'object' && 'data' in data && data.data !== undefined) {
+      if (Array.isArray(data.data) && data.meta) {
+        Object.assign(data.data, {
+          meta: data.meta,
+          total: data.meta.total,
+          page: data.meta.page,
+          per_page: data.meta.per_page,
+        })
+      }
       result = data.data as T
     } else {
       result = data as T

@@ -12,6 +12,8 @@ export const couponsApi = {
     apiRequest<CouponResponse>('/coupons/', { method: 'POST', body: data, token }),
   get: (id: number, token?: string) =>
     apiRequest<CouponResponse>(`/coupons/${id}`, { token }),
+  update: (id: number, data: Partial<CouponCreate>, token?: string) =>
+    apiRequest<CouponResponse>(`/coupons/${id}`, { method: 'PATCH', body: data, token }),
   delete: (id: number, token?: string) =>
     apiRequest<void>(`/coupons/${id}`, { method: 'DELETE', token }),
   validate: (data: CouponValidate, token?: string) =>

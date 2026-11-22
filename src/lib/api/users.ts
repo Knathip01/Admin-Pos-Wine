@@ -27,4 +27,16 @@ export const usersApi = {
     apiRequest<UserRoleAssign>(`/users/${userId}/roles`, { method: 'POST', body: data, token }),
   removeRole: (userId: number, roleId: number, branchId: number, token?: string) =>
     apiRequest<void>(`/users/${userId}/roles/${roleId}/${branchId}`, { method: 'DELETE', token }),
+  removeRoleFromOrg: (userId: number, roleId: number, token?: string) =>
+    apiRequest<void>(`/users/${userId}/roles/${roleId}`, { method: 'DELETE', token }),
+  resetPassword: (userId: number, token?: string) =>
+    apiRequest<{ message: string; temporary_password?: string }>(`/users/${userId}/reset-password`, {
+      method: 'POST',
+      token,
+    }),
+  unlockLogin: (userId: number, token?: string) =>
+    apiRequest<{ message: string }>(`/users/${userId}/unlock-login`, {
+      method: 'POST',
+      token,
+    }),
 }
